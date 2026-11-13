@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://josediaztutoring.com/sitemap.xml

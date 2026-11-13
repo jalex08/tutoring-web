@@ -1,0 +1,68 @@
+# App Engine standard — static files only. No application code is ever run:
+# every URL is matched by a static handler below, so no instance starts.
+runtime: python313
+
+instance_class: F1
+automatic_scaling:
+  min_instances: 0
+  max_instances: 1
+
+default_expiration: "10m"
+
+handlers:
+# Homepage — short cache so edits show up fast.
+- url: /
+  static_files: www/index.html
+  upload: www/index\.html
+  secure: always
+  redirect_http_response_code: 301
+  expiration: "10m"
+  http_headers:
+    Strict-Transport-Security: "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options: "nosniff"
+    Referrer-Policy: "strict-origin-when-cross-origin"
+
+# Link-preview image — long cache.
+- url: /og-image\.png
+  static_files: www/og-image.png
+  upload: www/og-image\.png
+  secure: always
+  redirect_http_response_code: 301
+  expiration: "7d"
+  http_headers:
+    Strict-Transport-Security: "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options: "nosniff"
+    Referrer-Policy: "strict-origin-when-cross-origin"
+
+- url: /robots\.txt
+  static_files: www/robots.txt
+  upload: www/robots\.txt
+  secure: always
+  redirect_http_response_code: 301
+  http_headers:
+    Strict-Transport-Security: "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options: "nosniff"
+    Referrer-Policy: "strict-origin-when-cross-origin"
+
+- url: /sitemap\.xml
+  static_files: www/sitemap.xml
+  upload: www/sitemap\.xml
+  secure: always
+  redirect_http_response_code: 301
+  http_headers:
+    Strict-Transport-Security: "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options: "nosniff"
+    Referrer-Policy: "strict-origin-when-cross-origin"
+
+# Anything else (old links, typos, /index.html) gets the homepage.
+# The page's <link rel="canonical"> tells search engines the real URL is "/".
+- url: /.*
+  static_files: www/index.html
+  upload: www/index\.html
+  secure: always
+  redirect_http_response_code: 301
+  expiration: "10m"
+  http_headers:
+    Strict-Transport-Security: "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options: "nosniff"
+    Referrer-Policy: "strict-origin-when-cross-origin"

@@ -1,0 +1,4 @@
+# Upload only app.yaml and www/ — everything else stays local.
+/*
+!/app.yaml
+!/www/
