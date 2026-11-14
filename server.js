@@ -42,7 +42,9 @@ async function secret(name, required = true) {
   let value = "";
   if (r.ok) {
     value = Buffer.from((await r.json()).payload.data, "base64").toString("utf8").trim();
-  } else if (required || r.status !== 404) {
+  } else if (required || ![403, 404].includes(r.status)) {
+    // An optional secret that doesn't exist reads as 403, not 404, when access
+    // is granted per secret, so both mean "not set" for optional secrets.
     throw new Error(`secret ${name}: HTTP ${r.status}`);
   }
   secrets.set(name, value);
