@@ -263,6 +263,11 @@
   .form-foot small{color:var(--muted);flex:1;min-width:200px}
   .err{color:#A3261B;font-weight:700;margin-bottom:14px;display:none}
   .err.show{display:block}
+  .form-status{margin:16px 0 0;font-weight:700;display:none}
+  .form-status.show{display:block}
+  .form-status.ok{color:#1E6B3A}
+  .form-status.bad{color:#A3261B}
+  .hp{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
   @media (max-width:860px){.contact-grid{grid-template-columns:1fr;gap:32px}}
   @media (max-width:520px){.row2{grid-template-columns:1fr}form{padding:22px}}
 
@@ -596,10 +601,12 @@
         </div>
         <div class="field"><label for="f-course" data-i18n="fCourse">Course</label><input id="f-course" name="course" data-i18n-ph="phCourse" placeholder="e.g. Calculus II at FIU"></div>
         <div class="field"><label for="f-msg"><span data-i18n="fMsg">What do you need help with?</span> <span class="opt" data-i18n="optional">(optional)</span></label><textarea id="f-msg" name="message" data-i18n-ph="phMsg" placeholder="Upcoming exam dates, topics you're stuck on, online or in person…"></textarea></div>
+        <div class="hp" aria-hidden="true"><label for="f-website">Website</label><input id="f-website" name="website" tabindex="-1" autocomplete="off"></div>
         <div class="form-foot">
           <button class="btn btn-primary" type="submit" data-i18n="send">Send request</button>
-          <small data-i18n="sendNote">This opens your email app with your message ready to send.</small>
+          <small data-i18n="sendNote">You'll get a confirmation email, and I'll reply within one business day.</small>
         </div>
+        <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
       </form>
     </div>
   </section>
@@ -615,7 +622,6 @@
 <script>
 /* ---- Edit these before publishing ---- */
 const CONFIG = {
-  email: "you@example.com",       // where booking requests go
   whatsapp: "17868329107",        // country code + number, digits only
   linkedin: "https://www.linkedin.com/in/jalex-diaz/"  // your LinkedIn profile URL
 };
@@ -696,13 +702,17 @@ const ES = {
   fName:"Nombre", fEmail:"Correo electrónico", fPhone:"Teléfono", optional:"(opcional)", fLevel:"Nivel",
   oHs:"Secundaria (high school)", oU:"Universidad", fCourse:"Curso", phCourse:"p. ej., Calculus II en FIU",
   fMsg:"¿En qué necesitas ayuda?", phMsg:"Fechas de examen, temas difíciles, en línea o en persona…",
-  send:"Enviar solicitud", sendNote:"Se abrirá tu app de correo con el mensaje listo para enviar.",
+  send:"Enviar solicitud", sendNote:"Recibirás un correo de confirmación y te respondo en un día hábil.",
   foot:"Tutorías de matemáticas, física e ingeniería, en línea y en el sur de Florida."
 };
 
-const MAIL = {
-  en:{subject:"Tutoring intro request", name:"Name", email:"Email", phone:"Phone", level:"Level", course:"Course", msg:"Message"},
-  es:{subject:"Solicitud de intro para tutoría", name:"Nombre", email:"Correo", phone:"Teléfono", level:"Nivel", course:"Curso", msg:"Mensaje"}
+const FORM_MSG = {
+  en:{sending:"Sending…", ok:"Thanks! Your request was sent. Check your inbox for a confirmation email; I'll reply within one business day.",
+      fail:"Sorry, your request couldn't be sent. Please try again in a moment, or message me on WhatsApp.",
+      busy:"Too many requests from this connection. Please try again later, or message me on WhatsApp."},
+  es:{sending:"Enviando…", ok:"¡Gracias! Tu solicitud fue enviada. Revisa tu correo para ver la confirmación; te respondo en un día hábil.",
+      fail:"Lo siento, no se pudo enviar tu solicitud. Inténtalo de nuevo en un momento o escríbeme por WhatsApp.",
+      busy:"Demasiadas solicitudes desde esta conexión. Inténtalo más tarde o escríbeme por WhatsApp."}
 };
 
 const EN = {}, EN_PH = {};
@@ -755,23 +765,35 @@ if ("IntersectionObserver" in window) {
 } else { waFloat.classList.remove("is-hidden"); }
 document.querySelectorAll(".li-link").forEach(a => a.href = CONFIG.linkedin);
 
-document.getElementById("contact-form").addEventListener("submit", e => {
+document.getElementById("contact-form").addEventListener("submit", async e => {
   e.preventDefault();
-  const f = e.target, err = document.getElementById("form-err");
+  const f = e.target, err = document.getElementById("form-err"), st = document.getElementById("form-status");
+  const btn = f.querySelector('button[type="submit"]');
   const name = f.name.value.trim(), email = f.email.value.trim();
+  st.className = "form-status";
   if (!name || !/^\S+@\S+\.\S+$/.test(email)) {
     err.classList.add("show"); (name ? f.email : f.name).focus(); return;
   }
   err.classList.remove("show");
-  const L = MAIL[current];
-  const body = [
-    `${L.name}: ${name}`, `${L.email}: ${email}`,
-    f.phone.value.trim() && `${L.phone}: ${f.phone.value.trim()}`,
-    `${L.level}: ${f.level.options[f.level.selectedIndex].text}`,
-    f.course.value.trim() && `${L.course}: ${f.course.value.trim()}`,
-    f.message.value.trim() && `\n${L.msg}:\n${f.message.value.trim()}`
-  ].filter(Boolean).join("\n");
-  location.href = `mailto:${CONFIG.email}?subject=${encodeURIComponent(L.subject + " — " + name)}&body=${encodeURIComponent(body)}`;
+  const M = FORM_MSG[current];
+  btn.disabled = true; st.textContent = M.sending; st.classList.add("show");
+  try {
+    const res = await fetch("/api/contact", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name, email, phone: f.phone.value.trim(),
+        level: f.level.options[f.level.selectedIndex].text,
+        course: f.course.value.trim(), message: f.message.value.trim(),
+        website: f.website.value, lang: current
+      })
+    });
+    if (!res.ok) throw res.status;
+    st.textContent = M.ok; st.classList.add("ok"); f.reset();
+  } catch (status) {
+    st.textContent = status === 429 ? M.busy : M.fail; st.classList.add("bad");
+  } finally {
+    btn.disabled = false;
+  }
 });
 </script>
 </body>

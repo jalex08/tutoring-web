@@ -1,4 +1,6 @@
-# Upload only app.yaml and www/ — everything else stays local.
+# Upload only what App Engine needs — everything else stays local.
 /*
 !/app.yaml
+!/main.py
+!/requirements.txt
 !/www/

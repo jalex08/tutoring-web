@@ -1,6 +1,7 @@
-# App Engine standard — static files only. No application code is ever run:
-# every URL is matched by a static handler below, so no instance starts.
+# App Engine standard. Pages are static files; the only code is main.py,
+# which handles POST /api/contact (the booking form) and sends the emails.
 runtime: python313
+entrypoint: gunicorn -b :$PORT -w 1 --threads 4 --timeout 30 main:app
 
 instance_class: F1
 automatic_scaling:
@@ -53,6 +54,12 @@ handlers:
     Strict-Transport-Security: "max-age=31536000; includeSubDomains"
     X-Content-Type-Options: "nosniff"
     Referrer-Policy: "strict-origin-when-cross-origin"
+
+# Booking form -> main.py (emails Jose + a confirmation to the client).
+- url: /api/.*
+  script: auto
+  secure: always
+  redirect_http_response_code: 301
 
 # Anything else (old links, typos, /index.html) gets the homepage.
 # The page's <link rel="canonical"> tells search engines the real URL is "/".
