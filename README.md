@@ -1,15 +1,16 @@
 # josediaztutoring.com
 
 One-page site (EN/ES) on Google App Engine standard. The pages are static
-files; the only code is `main.py`, which receives the booking form
+files; the only code is `server.js` (Node.js), which receives the booking form
 (`POST /api/contact`) and sends two emails through Gmail: the request to Jose
 (Reply-To = the client) and a fixed confirmation to the client.
 
 ```
 app.yaml          App Engine config (handlers, caching, security headers, scaling)
-main.py           booking-form endpoint (Flask)
-requirements.txt  Python dependencies for main.py
-.gcloudignore     uploads only app.yaml, main.py, requirements.txt and www/
+server.js         booking-form endpoint (Node.js, no framework)
+package.json      Node dependencies (just nodemailer) and `npm start`
+package-lock.json
+.gcloudignore     uploads only app.yaml, server.js, package files and www/
 www/
   index.html    the whole site: HTML, CSS, JS and the photo (base64) in one file
   og-image.png  1200x630 link-preview image (WhatsApp, Facebook, LinkedIn)
@@ -73,7 +74,7 @@ and 40 per day in total, and the client confirmation never repeats the free-text
 message (so the form can't be used to send arbitrary text to someone).
 Delivery failures are in Logs Explorer (search "Failed to send booking email").
 
-Edit the email wording in `CONFIRM` and `LABELS` in `main.py`.
+Edit the email wording in `CONFIRM` and `LABELS` in `server.js`.
 
 ## Caching and headers
 
@@ -82,7 +83,7 @@ Edit the email wording in `CONFIRM` and `LABELS` in `main.py`.
 | `/` and any unknown URL | 10 min | unknown URLs serve the homepage (canonical tag points to `/`) |
 | `/og-image.png` | 7 days | |
 | `/robots.txt`, `/sitemap.xml` | 10 min | |
-| `/api/*` | never | handled by `main.py` |
+| `/api/*` | never | handled by `server.js` |
 
 Every handler: `secure: always` (HTTP → 301 to HTTPS), `Strict-Transport-Security`,
 `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`.

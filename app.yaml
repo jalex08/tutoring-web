@@ -1,7 +1,7 @@
-# App Engine standard. Pages are static files; the only code is main.py,
+# App Engine standard. Pages are static files; the only code is server.js,
 # which handles POST /api/contact (the booking form) and sends the emails.
-runtime: python313
-entrypoint: gunicorn -b :$PORT -w 1 --threads 4 --timeout 30 main:app
+# App Engine installs package.json dependencies and runs `npm start`.
+runtime: nodejs22
 
 instance_class: F1
 automatic_scaling:
@@ -55,7 +55,7 @@ handlers:
     X-Content-Type-Options: "nosniff"
     Referrer-Policy: "strict-origin-when-cross-origin"
 
-# Booking form -> main.py (emails Jose + a confirmation to the client).
+# Booking form -> server.js (emails Jose + a confirmation to the client).
 - url: /api/.*
   script: auto
   secure: always

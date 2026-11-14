@@ -1,0 +1,15 @@
+{
+  "name": "josediaztutoring",
+  "private": true,
+  "description": "Booking-form endpoint for josediaztutoring.com (App Engine standard)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "nodemailer": "10.3.1"
+  }
+}

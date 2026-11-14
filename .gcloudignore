@@ -1,6 +1,7 @@
-# Upload only what App Engine needs — everything else stays local.
+# Upload only what App Engine needs — everything else (incl. node_modules) stays local.
 /*
 !/app.yaml
-!/main.py
-!/requirements.txt
+!/server.js
+!/package.json
+!/package-lock.json
 !/www/
