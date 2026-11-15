@@ -2,8 +2,9 @@
  * Booking-form endpoint for josediaztutoring.com.
  *
  * POST /api/contact (JSON) -> emails the request to Jose and a confirmation to
- * the client, via Gmail SMTP. Everything else on the site is served as static
- * files by App Engine and never reaches this code.
+ * the client, via Gmail SMTP. The pages are served as static files by App
+ * Engine (see app.yaml); any URL without a static handler reaches this code and
+ * gets a 301 (/index.html, /es, /es/index.html) or a real 404 page.
  *
  * Credentials live in Secret Manager (never in this repo):
  *   smtp-user      the Gmail address that sends the mail (also gets the requests)
@@ -14,6 +15,8 @@
 "use strict";
 
 const http = require("node:http");
+const fs = require("node:fs");
+const path = require("node:path");
 const nodemailer = require("nodemailer");
 
 const PORT = Number(process.env.PORT) || 8080;
@@ -217,9 +220,50 @@ async function contact(req, res) {
   return reply(res, 200, { ok: true });
 }
 
+// --- pages: redirects and the 404 page ------------------------------------------
+const SECURITY_HEADERS = {
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+};
+const REDIRECTS = { "/index.html": "/", "/es": "/es/", "/es/index.html": "/es/" };
+let page404 = null;
+
+function notFoundPage(req, res) {
+  try {
+    page404 ??= fs.readFileSync(path.join(__dirname, "www/404.html"));
+  } catch {
+    page404 = Buffer.from("<!doctype html><title>404</title><p>Page not found. <a href=\"/\">Home</a></p>");
+  }
+  res.writeHead(404, {
+    ...SECURITY_HEADERS,
+    "Content-Type": "text/html; charset=utf-8",
+    "Cache-Control": "public, max-age=600",
+    "X-Robots-Tag": "noindex",
+  });
+  res.end(req.method === "HEAD" ? undefined : page404);
+}
+
+function page(req, res, pathname, query) {
+  let to = REDIRECTS[pathname];
+  // old ?lang=es links (in production "/" is static and handled in the page itself)
+  if ((pathname === "/" || pathname === "/index.html") && query.get("lang") === "es") to = "/es/";
+  if (to && (req.method === "GET" || req.method === "HEAD")) {
+    res.writeHead(301, { ...SECURITY_HEADERS, Location: to, "Cache-Control": "public, max-age=3600" });
+    return res.end();
+  }
+  return notFoundPage(req, res);
+}
+
 const server = http.createServer((req, res) => {
-  const path = (req.url || "").split("?")[0];
-  if (path !== "/api/contact") return reply(res, 404, { ok: false, error: "not_found" });
+  let url;
+  try {
+    url = new URL("http://localhost" + (req.url || "/"));
+  } catch {
+    return notFoundPage(req, res);
+  }
+  if (!url.pathname.startsWith("/api/")) return page(req, res, url.pathname, url.searchParams);
+  if (url.pathname !== "/api/contact") return reply(res, 404, { ok: false, error: "not_found" });
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return reply(res, 405, { ok: false, error: "method_not_allowed" });
