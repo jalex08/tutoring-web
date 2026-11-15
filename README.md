@@ -42,6 +42,9 @@ www/
    npm run build
    ```
 
+   The build runs on your machine, not on App Engine: `"gcp-build": ""` in
+   `package.json` stops App Engine from running `npm run build` during deploy
+   (`scripts/` isn't uploaded). Don't remove it.
 3. Check locally (optional): `npm test` runs the checks; `npm run dev` serves the
    site at http://localhost:8080 the way App Engine does, with email stubbed.
 4. Update `www/llms.txt` by hand if you changed rates, subjects or credentials.
