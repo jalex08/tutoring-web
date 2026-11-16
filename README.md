@@ -81,34 +81,28 @@ below CONFIG.
 
 ## Booking form (email)
 
-Mail goes out through any SMTP server. **Which server** is set in `app.yaml`
-under `env_variables` (not secret); **the login** is in Secret Manager, never in
-this repo. The defaults are Gmail with an App Password.
+Mail goes out through any SMTP server (Gmail with an App Password by default).
+All mail settings are secrets in Secret Manager (project `jalex-hub`), never in
+this repo. The server re-reads them every 5 minutes, so **changing a secret
+takes effect within ~5 minutes, no redeploy needed.**
 
-`app.yaml` → `env_variables`:
-
-| Variable | Default | Meaning |
-|---|---|---|
-| `SMTP_HOST` | `smtp.gmail.com` | SMTP server |
-| `SMTP_PORT` | `465` | `465` (implicit TLS) or `587` (STARTTLS) |
-| `SMTP_SECURE` | `true` on 465, else `false` | `false` = STARTTLS; TLS is still required, the password is never sent in clear text |
-| `MAIL_DAILY_LIMIT` | `40` | form submissions per day in total (each sends 2 emails); keep it under your provider's limit |
-
-Secret Manager (project `jalex-hub`):
-
-| Secret | Value |
-|---|---|
-| `smtp-user` | the SMTP login (for Gmail: the address that sends the mail) |
-| `smtp-password` | the SMTP password, App Password or API key |
-| `smtp-from` | optional: the From address, when the login isn't an email address (e.g. SendGrid's `apikey`, Amazon SES keys); default `smtp-user` |
-| `owner-email` | optional: send requests to this address; default the From address |
+| Secret | Required | Default | Value |
+|---|---|---|---|
+| `smtp-user` | yes | | the SMTP login (for Gmail: the address that sends the mail) |
+| `smtp-password` | yes | | the SMTP password, App Password or API key |
+| `smtp-host` | no | `smtp.gmail.com` | SMTP server |
+| `smtp-port` | no | `465` | `465` (implicit TLS) or `587` (STARTTLS) |
+| `smtp-secure` | no | `true` on 465, else `false` | `false` = STARTTLS; TLS is still required, the password is never sent in clear text |
+| `smtp-from` | no | `smtp-user` | the From address, when the login isn't an email address (SendGrid's `apikey`, Amazon SES keys) |
+| `owner-email` | no | the From address | where requests are sent |
+| `mail-daily-limit` | no | `40` | form submissions per day in total (2 emails each); keep it under your provider's limit |
 
 The From address must be one the provider lets you send as (a verified
 sender/domain), or mail will be rejected or land in spam.
 
 Common providers:
 
-| Provider | `SMTP_HOST` | `SMTP_PORT` | `smtp-user` | `smtp-password` |
+| Provider | `smtp-host` | `smtp-port` | `smtp-user` | `smtp-password` |
 |---|---|---|---|---|
 | Gmail / Google Workspace | `smtp.gmail.com` | `465` | the address | App Password |
 | Microsoft 365 / Outlook | `smtp.office365.com` | `587` | the address | account password (SMTP AUTH must be enabled for the mailbox) |
@@ -117,23 +111,31 @@ Common providers:
 | Mailgun | `smtp.mailgun.org` | `587` | SMTP login from Mailgun | its SMTP password |
 | Amazon SES | `email-smtp.<region>.amazonaws.com` | `465` | SMTP username | SMTP password (+ `smtp-from`) |
 
-Switch provider: edit `env_variables` in `app.yaml`, then set the secrets
-(`gcloud secrets create NAME --data-file=- --project=jalex-hub` for a new one,
-`versions add` for an existing one), then deploy:
+Change an existing secret (e.g. a new App Password):
 
 ```bash
-printf '%s' 'LOGIN' | gcloud secrets versions add smtp-user --data-file=- --project=jalex-hub
-printf '%s' 'PASSWORD-OR-KEY' | gcloud secrets versions add smtp-password --data-file=- --project=jalex-hub
-printf '%s' 'hello@josediaztutoring.com' | gcloud secrets create smtp-from --data-file=- --project=jalex-hub
-gcloud secrets add-iam-policy-binding smtp-from --project=jalex-hub \
-  --member=serviceAccount:jalex-hub@appspot.gserviceaccount.com --role=roles/secretmanager.secretAccessor
-gcloud app deploy app.yaml --project=jalex-hub
+printf '%s' 'NEW-VALUE' | gcloud secrets versions add smtp-password --data-file=- --project=jalex-hub
 ```
 
-(The IAM binding is only needed for a new secret if access is granted per
-secret rather than project-wide.) After only changing a secret's value,
-redeploy or wait for the instance to restart, since secrets are cached in memory.
-On startup the log shows `Listening on 8080 (SMTP host:port, TLS|STARTTLS)`.
+Create an optional secret the first time (e.g. switching to Microsoft 365):
+
+```bash
+printf '%s' 'smtp.office365.com' | gcloud secrets create smtp-host --data-file=- --project=jalex-hub
+printf '%s' '587' | gcloud secrets create smtp-port --data-file=- --project=jalex-hub
+```
+
+If the app's service account gets access per secret rather than project-wide,
+grant it on each new secret too, or the app treats the secret as not set:
+
+```bash
+gcloud secrets add-iam-policy-binding smtp-host --project=jalex-hub \
+  --member=serviceAccount:jalex-hub@appspot.gserviceaccount.com --role=roles/secretmanager.secretAccessor
+```
+
+To go back to a default, delete the optional secret
+(`gcloud secrets delete smtp-port --project=jalex-hub`). An invalid value (e.g.
+`smtp-port` = `abc`) makes sending fail with a clear message in the logs; if a
+refresh from Secret Manager fails, the last good value keeps being used.
 
 Abuse protection: a hidden honeypot field, max 3 requests per visitor per hour
 and `MAIL_DAILY_LIMIT` (40) per day in total, and the client confirmation never repeats the free-text

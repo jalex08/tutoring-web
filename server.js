@@ -2,24 +2,24 @@
  * Booking-form endpoint for josediaztutoring.com.
  *
  * POST /api/contact (JSON) -> emails the request to Jose and a confirmation to
- * the client, through any SMTP server (Gmail by default). The pages are served as static files by App
- * Engine (see app.yaml); any URL without a static handler reaches this code and
- * gets a 301 (/index.html, /es, /es/index.html) or a real 404 page.
+ * the client, through any SMTP server (Gmail by default). The pages are
+ * served as static files by App Engine (see app.yaml); any URL without a
+ * static handler reaches this code and gets a 301 (/index.html, /es, /es/index.html) or a real 404 page.
  *
- * SMTP server (env_variables in app.yaml; defaults are Gmail):
- *   SMTP_HOST      e.g. smtp.gmail.com, smtp.office365.com, smtp.sendgrid.net
- *   SMTP_PORT      465 (implicit TLS) or 587 (STARTTLS); default 465
- *   SMTP_SECURE    "true" for implicit TLS, "false" for STARTTLS (TLS still
- *                  required); default true on port 465, false otherwise
- *   MAIL_DAILY_LIMIT  max form submissions per day in total; default 40
- *
- * Credentials live in Secret Manager (never in this repo):
+ * Everything about the mail server lives in Secret Manager (never in this
+ * repo), so it can be changed without a redeploy: values are re-read every
+ * SECRET_TTL (5 minutes). Required:
  *   smtp-user      the SMTP login (for Gmail, the address that sends the mail)
  *   smtp-password  the SMTP password / App Password / API key
- * Optional secrets:
+ * Optional (default in brackets):
+ *   smtp-host      SMTP server [smtp.gmail.com]
+ *   smtp-port      465 = implicit TLS, 587 = STARTTLS [465]
+ *   smtp-secure    "true" = implicit TLS, "false" = STARTTLS (TLS still
+ *                  required) [true on port 465, false otherwise]
  *   smtp-from      the From address, if the login isn't an email address
- *                  (e.g. SendGrid's "apikey"); default smtp-user
- *   owner-email    send requests here instead of the From address
+ *                  (e.g. SendGrid's "apikey") [smtp-user]
+ *   owner-email    where requests go [the From address]
+ *   mail-daily-limit  max form submissions per day in total [40]
  */
 "use strict";
 
@@ -35,34 +35,13 @@ const EMAIL_RE = /^[^@\s<>"',;]+@[^@\s<>"',;]+\.[^@\s<>"',;]+$/;
 const LIMITS = { name: 100, email: 254, phone: 40, level: 60, course: 150, message: 4000 };
 const MAX_BODY = 16 * 1024;
 
-// --- SMTP server (non-secret settings from the environment) ------------------
-function envInt(name, def, min, max) {
-  const raw = (process.env[name] || "").trim();
-  if (!raw) return def;
-  const n = Number(raw);
-  if (!Number.isInteger(n) || n < min || n > max) throw new Error(`${name} must be an integer ${min}-${max}, got "${raw}"`);
-  return n;
-}
-
-function envBool(name, def) {
-  const raw = (process.env[name] || "").trim().toLowerCase();
-  if (!raw) return def;
-  if (["true", "1", "yes"].includes(raw)) return true;
-  if (["false", "0", "no"].includes(raw)) return false;
-  throw new Error(`${name} must be true or false, got "${raw}"`);
-}
-
-const SMTP = (() => {
-  const port = envInt("SMTP_PORT", 465, 1, 65535);
-  return {
-    host: (process.env.SMTP_HOST || "").trim() || "smtp.gmail.com",
-    port,
-    secure: envBool("SMTP_SECURE", port === 465),
-  };
-})();
-
 // --- secrets (Secret Manager REST API, token from the metadata server) -------
+// Cached for SECRET_TTL so a changed value takes effect without a redeploy. If
+// a refresh fails, the last good value keeps being used. Values put straight
+// into `secrets` (the dev server's stubs) never expire.
+const SECRET_TTL = 5 * 60e3;
 const secrets = new Map();
+const fetchedAt = new Map();
 
 async function accessToken() {
   const r = await fetch(
@@ -73,35 +52,81 @@ async function accessToken() {
   return (await r.json()).access_token;
 }
 
-async function secret(name, required = true) {
-  if (secrets.has(name)) return secrets.get(name);
+async function fetchSecret(name, required) {
   const url = `https://secretmanager.googleapis.com/v1/projects/${PROJECT}/secrets/${name}/versions/latest:access`;
   const r = await fetch(url, { headers: { Authorization: `Bearer ${await accessToken()}` } });
-  let value = "";
-  if (r.ok) {
-    value = Buffer.from((await r.json()).payload.data, "base64").toString("utf8").trim();
-  } else if (required || ![403, 404].includes(r.status)) {
-    // An optional secret that doesn't exist reads as 403, not 404, when access
-    // is granted per secret, so both mean "not set" for optional secrets.
-    throw new Error(`secret ${name}: HTTP ${r.status}`);
+  if (r.ok) return Buffer.from((await r.json()).payload.data, "base64").toString("utf8").trim();
+  // An optional secret that doesn't exist reads as 403, not 404, when access
+  // is granted per secret, so both mean "not set" for optional secrets.
+  if (!required && [403, 404].includes(r.status)) return "";
+  throw new Error(`secret ${name}: HTTP ${r.status}`);
+}
+
+async function secret(name, required = true) {
+  if (secrets.has(name)) {
+    const at = fetchedAt.get(name);
+    if (at === undefined || Date.now() - at < SECRET_TTL) return secrets.get(name);
+  }
+  let value;
+  try {
+    value = await fetchSecret(name, required);
+  } catch (err) {
+    if (!secrets.has(name)) throw err;
+    console.error(`Using cached ${name}; refresh failed:`, err.message);
+    fetchedAt.set(name, Date.now()); // don't retry on every request
+    return secrets.get(name);
   }
   secrets.set(name, value);
+  fetchedAt.set(name, Date.now());
   return value;
+}
+
+function parseInt_(name, raw, def, min, max) {
+  if (!raw) return def;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < min || n > max) throw new Error(`${name} must be an integer ${min}-${max}, got "${raw}"`);
+  return n;
+}
+
+function parseBool(name, raw, def) {
+  if (!raw) return def;
+  const v = raw.toLowerCase();
+  if (["true", "1", "yes"].includes(v)) return true;
+  if (["false", "0", "no"].includes(v)) return false;
+  throw new Error(`${name} must be true or false, got "${raw}"`);
+}
+
+async function smtpConfig() {
+  const port = parseInt_("smtp-port", await secret("smtp-port", false), 465, 1, 65535);
+  return {
+    host: (await secret("smtp-host", false)) || "smtp.gmail.com",
+    port,
+    secure: parseBool("smtp-secure", await secret("smtp-secure", false), port === 465),
+  };
+}
+
+async function dailyLimit() {
+  try {
+    return parseInt_("mail-daily-limit", await secret("mail-daily-limit", false), 40, 1, 100000);
+  } catch (err) {
+    console.error("Using a daily limit of 40:", err.message); // a bad limit shouldn't stop bookings
+    return 40;
+  }
 }
 
 // --- abuse limits (in memory; app.yaml keeps this to one instance) -----------
 const PER_IP = { max: 3, ms: 3600e3 };   // 3 requests per IP per hour
-// requests per day in total; keep it well under the provider's sending limit
-// (each request sends 2 emails; Gmail allows ~500/day)
-const GLOBAL = { max: envInt("MAIL_DAILY_LIMIT", 40, 1, 100000), ms: 86400e3 };
+// Requests per day in total come from the mail-daily-limit secret (default 40);
+// keep it well under the provider's limit (2 emails each; Gmail allows ~500/day).
+const DAY = 86400e3;
 const byIp = new Map();
 let all = [];
 
-function allowed(ip) {
+function allowed(ip, dailyMax = 40) {
   const now = Date.now();
   const q = (byIp.get(ip) || []).filter((t) => now - t < PER_IP.ms);
-  all = all.filter((t) => now - t < GLOBAL.ms);
-  if (q.length >= PER_IP.max || all.length >= GLOBAL.max) {
+  all = all.filter((t) => now - t < DAY);
+  if (q.length >= PER_IP.max || all.length >= dailyMax) {
     byIp.set(ip, q);
     return false;
   }
@@ -180,11 +205,12 @@ async function buildMessages(d, lang) {
 }
 
 async function send(messages) {
+  const smtp = await smtpConfig();
   const transport = nodemailer.createTransport({
-    host: SMTP.host,
-    port: SMTP.port,
-    secure: SMTP.secure,
-    requireTLS: !SMTP.secure, // STARTTLS is mandatory: never send the password in clear text
+    host: smtp.host,
+    port: smtp.port,
+    secure: smtp.secure,
+    requireTLS: !smtp.secure, // STARTTLS is mandatory: never send the password in clear text
     auth: { user: await secret("smtp-user"), pass: await secret("smtp-password") },
     connectionTimeout: 20000,
   });
@@ -246,7 +272,7 @@ async function contact(req, res) {
   if (!d.name || !EMAIL_RE.test(d.email)) return reply(res, 400, { ok: false, error: "invalid" });
 
   const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
-  if (!allowed(ip)) return reply(res, 429, { ok: false, error: "rate_limited" });
+  if (!allowed(ip, await dailyLimit())) return reply(res, 429, { ok: false, error: "rate_limited" });
 
   try {
     await send(await buildMessages(d, lang));
@@ -313,8 +339,7 @@ const server = http.createServer((req, res) => {
 });
 
 if (require.main === module) {
-  server.listen(PORT, () =>
-    console.log(`Listening on ${PORT} (SMTP ${SMTP.host}:${SMTP.port}, ${SMTP.secure ? "TLS" : "STARTTLS"})`));
+  server.listen(PORT, () => console.log(`Listening on ${PORT}`));
 }
 
-module.exports = { server, secrets, SMTP, buildMessages, allowed, _setSend: (fn) => (send = fn) };
+module.exports = { server, secrets, smtpConfig, buildMessages, allowed, _setSend: (fn) => (send = fn) };
