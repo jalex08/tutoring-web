@@ -58,7 +58,16 @@ async function fetchSecret(name, required) {
   if (r.ok) return Buffer.from((await r.json()).payload.data, "base64").toString("utf8").trim();
   // An optional secret that doesn't exist reads as 403, not 404, when access
   // is granted per secret, so both mean "not set" for optional secrets.
-  if (!required && [403, 404].includes(r.status)) return "";
+  if (!required && r.status === 404) return "";
+  if (!required && r.status === 403) {
+    // Either the secret doesn't exist, or it does and the app may not read it.
+    // Say so: silently falling back to a default hides a missing IAM binding.
+    console.warn(
+      `Secret ${name}: permission denied (HTTP 403), using its default. If this secret exists, ` +
+      "grant the app's service account roles/secretmanager.secretAccessor on it."
+    );
+    return "";
+  }
   throw new Error(`secret ${name}: HTTP ${r.status}`);
 }
 
@@ -206,6 +215,7 @@ async function buildMessages(d, lang) {
 
 async function send(messages) {
   const smtp = await smtpConfig();
+  console.log(`Sending via ${smtp.host}:${smtp.port} (${smtp.secure ? "TLS" : "STARTTLS"})`);
   const transport = nodemailer.createTransport({
     host: smtp.host,
     port: smtp.port,
@@ -339,7 +349,13 @@ const server = http.createServer((req, res) => {
 });
 
 if (require.main === module) {
-  server.listen(PORT, () => console.log(`Listening on ${PORT}`));
+  server.listen(PORT, () => {
+    console.log(`Listening on ${PORT}`);
+    smtpConfig().then(
+      (c) => console.log(`SMTP server: ${c.host}:${c.port} (${c.secure ? "TLS" : "STARTTLS"})`),
+      (err) => console.error("SMTP settings are invalid:", err.message)
+    );
+  });
 }
 
 module.exports = { server, secrets, smtpConfig, buildMessages, allowed, _setSend: (fn) => (send = fn) };

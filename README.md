@@ -132,6 +132,13 @@ gcloud secrets add-iam-policy-binding smtp-host --project=jalex-hub \
   --member=serviceAccount:jalex-hub@appspot.gserviceaccount.com --role=roles/secretmanager.secretAccessor
 ```
 
+**Mail still goes through Gmail after changing settings?** Check the logs (Logs
+Explorer): on startup and on every send the app logs `SMTP server:` /
+`Sending via host:port`. A `Secret smtp-host: permission denied (HTTP 403)`
+line means the secret exists but the app may not read it, so the default is
+used: run the `add-iam-policy-binding` command above for that secret. No such
+lines at all means the running version predates these settings: deploy again.
+
 To go back to a default, delete the optional secret
 (`gcloud secrets delete smtp-port --project=jalex-hub`). An invalid value (e.g.
 `smtp-port` = `abc`) makes sending fail with a clear message in the logs; if a
