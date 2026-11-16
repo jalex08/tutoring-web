@@ -90,7 +90,52 @@ srv.listen(0, async () => {
     assert.deepEqual(await r.json(), { ok: true });
     assert.equal(sent.length, 1);
     assert.equal(sent[0].length, 2);
-    assert.equal(sent[0][1].subject, "Recibí tu solicitud de tutoría");
+    const c = sent[0][1];
+    assert.equal(c.subject, "Recibí tu mensaje, Test | Jose Diaz Tutoring");
+    assert.equal(c.to, form.email);
+    assert.equal(c.replyTo.address, "site@example.test");
+    assert.match(c.html, /<html lang="es"/);
+    assert.match(c.html, /Recibí tu mensaje, Test\.<\/h1>/);
+    assert.match(c.html, /te respondo en menos de 24 horas\./);
+    assert.match(c.text, /^Recibí tu mensaje, Test\.\n/);
+    assert.ok(c.text.includes("WhatsApp: https://wa.me/17868329107"));
+    assert.ok(!/\{\{|Placeholders/.test(c.html), "unfilled placeholder or template comment");
+    // the owner notification is unchanged: everything the client typed, Reply-To = client
+    assert.equal(sent[0][0].replyTo.address, form.email);
+    assert.match(sent[0][0].text, /Cálculo II[\s\S]*hola/);
+  });
+  await check("confirmation never echoes anything typed except a cleaned first name", async () => {
+    sent = [];
+    const evil = "<a href=//evil.test>CLICK</a>";
+    await post({ ...form, lang: "en", name: `${evil} Ann`, course: evil, message: evil, phone: evil, level: evil });
+    const c = sent[0][1];
+    assert.equal(c.subject, "Got your message, a | Jose Diaz Tutoring");
+    for (const part of [c.html, c.text, c.subject]) assert.ok(!/evil\.test|CLICK|<a href=\/\//.test(part), part.slice(0, 80));
+  });
+  await check("confirmation without a usable name drops ', {{first_name}}'", async () => {
+    sent = [];
+    await post({ ...form, lang: "en", name: "123 !!" });
+    const c = sent[0][1];
+    assert.equal(c.subject, "Got your message | Jose Diaz Tutoring");
+    assert.match(c.html, /Got your message\.<\/h1>/);
+    assert.match(c.text, /^Got your message\.\n/);
+  });
+  await check("lang: field wins; Referer /es/ is only the fallback", async () => {
+    let i = 0; // a new address each time: the per-email hourly limit is 3
+    const lang = async (body, referer) => {
+      sent = [];
+      body = { ...body, email: `lang${i++}@example.test` };
+      await get("/api/contact", { method: "POST", headers: { "Content-Type": "application/json", ...(referer && { Referer: referer }) }, body: JSON.stringify(body) });
+      return sent[0][1].subject.startsWith("Recibí") ? "es" : "en";
+    };
+    const { lang: _, ...noLang } = form;
+    assert.equal(await lang({ ...form, lang: "en" }, `${base}/es/`), "en");
+    assert.equal(await lang(noLang, `${base}/es/`), "es");
+    assert.equal(await lang(noLang, `${base}/`), "en");
+    assert.equal(await lang(noLang), "en");
+  });
+  await check("email templates aren't served", async () => {
+    for (const p of ["/email-templates/contact-confirmation.en.html", "/email-templates/"]) assert.equal((await get(p)).status, 404, p);
   });
   await check("honeypot filled -> 200 but nothing sent", async () => {
     sent = [];
@@ -177,6 +222,8 @@ srv.listen(0, async () => {
       assert.ok(en.includes(s) && !es.includes(s), s);
     assert.match(pages.es, /placeholder="p\. ej\., Calculus II en FIU"/);
     assert.match(pages.es, /aria-label="Escríbele a Jose por WhatsApp"/);
+    assert.ok(pages.en.includes('<input type="hidden" name="lang" value="en">'));
+    assert.ok(pages.es.includes('<input type="hidden" name="lang" value="es">'));
   });
   await check("sitemap lists / and /es/ with hreflang", async () => {
     const xml = await (await get("/sitemap.xml")).text();

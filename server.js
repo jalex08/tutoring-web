@@ -178,28 +178,87 @@ const LABELS = {
   es: { name: "Nombre", email: "Correo", phone: "Teléfono", level: "Nivel", course: "Curso", message: "Mensaje" },
 };
 
+// The client confirmation: a branded HTML email (email-templates/) plus a short
+// plain-text part. Only two values are filled in, on purpose: a cleaned-up
+// first name and a fixed reply time. Nothing else the visitor typed is echoed,
+// so the form can't be used to send arbitrary text from this domain to any
+// address someone types in.
+const WHATSAPP = "https://wa.me/17868329107";
 const CONFIRM = {
   en: {
-    subject: "I got your tutoring request",
-    body: (v) =>
-      `Hi ${v.name},\n\n` +
-      "Thanks for reaching out. I received your request for a free 20-minute intro " +
-      "and I'll reply within one business day to set up a time.\n\n" +
-      `Level: ${v.level}\nCourse: ${v.course}\n\n` +
-      "If you need to add anything, just reply to this email.\n\n" +
-      "Jose Diaz\nhttps://josediaztutoring.com\n",
+    replyTime: "within 24 hours",
+    subject: (n) => `Got your message${n ? `, ${n}` : ""} | ${SITE_NAME}`,
+    text: (n, t) => [
+      `Got your message${n ? `, ${n}` : ""}.`,
+      "",
+      `Thanks for reaching out. I read every message myself and I'll reply ${t}.`,
+      "",
+      "The next step is a free 20-minute intro call, where we look at your material and make a plan.",
+      "",
+      `WhatsApp: ${WHATSAPP}`,
+      "",
+      "Jose",
+      "",
+      "I don't just teach. I make sure you learn.",
+    ],
   },
   es: {
-    subject: "Recibí tu solicitud de tutoría",
-    body: (v) =>
-      `Hola ${v.name}:\n\n` +
-      "Gracias por escribirme. Recibí tu solicitud para una intro gratis de 20 minutos " +
-      "y te respondo en un día hábil para coordinar el horario.\n\n" +
-      `Nivel: ${v.level}\nCurso: ${v.course}\n\n` +
-      "Si quieres agregar algo, solo responde a este correo.\n\n" +
-      "Jose Diaz\nhttps://josediaztutoring.com\n",
+    replyTime: "en menos de 24 horas",
+    subject: (n) => `Recibí tu mensaje${n ? `, ${n}` : ""} | ${SITE_NAME}`,
+    text: (n, t) => [
+      `Recibí tu mensaje${n ? `, ${n}` : ""}.`,
+      "",
+      `Gracias por escribirme. Leo cada mensaje personalmente y te respondo ${t}.`,
+      "",
+      "El próximo paso es una llamada de introducción gratis de 20 minutos para ver tu material y armar un plan.",
+      "",
+      `WhatsApp: ${WHATSAPP}`,
+      "",
+      "Jose",
+      "",
+      "Mi meta no es enseñarte. Es que aprendas.",
+    ],
   },
 };
+
+const TEMPLATE_DIR = path.join(__dirname, "email-templates");
+const templates = {};
+
+/** The HTML template for a language, read once. The header comment (which
+ *  documents the placeholders) is dropped so it isn't filled in and sent. */
+function template(lang) {
+  if (!templates[lang]) {
+    const html = fs
+      .readFileSync(path.join(TEMPLATE_DIR, `contact-confirmation.${lang}.html`), "utf8")
+      .replace(/<!--\s*\n\s*Jose Diaz Tutoring · Contact-form confirmation[\s\S]*?-->\n?/, "");
+    for (const p of ["{{first_name}}", "{{reply_time}}"]) {
+      if (!html.includes(p)) throw new Error(`email template ${lang}: ${p} missing`);
+    }
+    templates[lang] = html;
+  }
+  return templates[lang];
+}
+
+const escapeHtml = (s) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+
+/** First word of the name field: letters, apostrophes and hyphens only, max 30
+ *  characters. "" if nothing usable is left. Not HTML-escaped. */
+function firstName(name) {
+  const cleaned = String(name || "").normalize("NFC").replace(/[^\p{L}\p{M}\s'’-]/gu, "");
+  const word = cleaned.trim().split(/\s+/)[0] || "";
+  return [...word.replace(/^['’-]+|['’-]+$/g, "")].slice(0, 30).join("").replace(/['’-]+$/, "");
+}
+
+/** Subject, HTML and plain text of the client confirmation. */
+function renderConfirmation(lang, name) {
+  const c = CONFIRM[lang];
+  const n = firstName(name);
+  let html = template(lang);
+  if (!n) html = html.split(", {{first_name}}").join("");
+  html = html.split("{{first_name}}").join(escapeHtml(n)).split("{{reply_time}}").join(escapeHtml(c.replyTime));
+  return { subject: c.subject(n), html, text: c.text(n, c.replyTime).join("\n") + "\n" };
+}
 
 /**
  * Reads a secret holding an email address. Accepts "addr@x.com" or
@@ -238,20 +297,9 @@ async function buildMessages(d, lang) {
     text: lines.join("\n"),
   };
 
-  // To the client: a fixed confirmation. Their free-text message is NOT echoed,
-  // so the form can't be used to send arbitrary text to arbitrary addresses.
-  const c = CONFIRM[lang];
-  const toClient = {
-    from,
-    to: d.email,
-    replyTo: owner,
-    subject: c.subject,
-    text: c.body({
-      name: oneLine(d.name).slice(0, 60),
-      level: oneLine(d.level).slice(0, 60) || "-",
-      course: oneLine(d.course).slice(0, 100) || "-",
-    }),
-  };
+  // To the client: the branded confirmation (see renderConfirmation).
+  // nodemailer sends text + html as multipart/alternative.
+  const toClient = { from, to: d.email, replyTo: owner, ...renderConfirmation(lang, d.name) };
   return [toOwner, toClient];
 }
 
@@ -303,6 +351,16 @@ function readBody(req) {
   });
 }
 
+/** The form's hidden lang field; if it's missing, the Referer path (/es/...). */
+function formLang(field, referer) {
+  if (field === "es" || field === "en") return field;
+  try {
+    return /^\/es(\/|$)/.test(new URL(referer).pathname) ? "es" : "en";
+  } catch {
+    return "en";
+  }
+}
+
 async function contact(req, res) {
   let raw;
   try {
@@ -320,7 +378,7 @@ async function contact(req, res) {
 
   const d = {};
   for (const [k, n] of Object.entries(LIMITS)) d[k] = String(raw[k] ?? "").trim().slice(0, n);
-  const lang = raw.lang === "es" ? "es" : "en";
+  const lang = formLang(raw.lang, req.headers.referer);
   if (!d.name || !EMAIL_RE.test(d.email)) return reply(res, 400, { ok: false, error: "invalid" });
 
   const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
@@ -400,4 +458,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { server, secrets, smtpConfig, buildMessages, allowed, _setSend: (fn) => (send = fn) };
+module.exports = { server, secrets, smtpConfig, buildMessages, allowed, renderConfirmation, firstName, formLang, _setSend: (fn) => (send = fn) };

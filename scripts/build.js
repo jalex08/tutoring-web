@@ -238,6 +238,7 @@ const head = [
   [/(<meta property="og:url" content=")[^"]*"/, `$1${URLS.es}"`, "og:url"],
   [/(data-lang="en") aria-current="page"/, "$1", "EN link"],
   [/(data-lang="es")>/, '$1 aria-current="page">', "ES link"],
+  [/(<input type="hidden" name="lang" value=")en"/, '$1es"', "form lang field"],
 ];
 for (const [re, to, what] of head) es = replaceOne(es, re, to, what);
 

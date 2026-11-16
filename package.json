@@ -8,6 +8,8 @@
     "gcp-build": "",
     "build": "node scripts/build.js",
     "dev": "node scripts/dev-server.js",
+    "preview-email": "node scripts/preview-email.js",
+    "send-test-email": "node scripts/send-test-email.js",
     "test": "node scripts/build.js --check && node scripts/smoke-test.js"
   },
   "engines": {

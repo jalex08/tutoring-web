@@ -885,6 +885,7 @@
         <div class="field"><label for="f-course" data-i18n="fCourse">Course</label><input id="f-course" name="course" data-i18n-ph="phCourse" placeholder="e.g. Calculus II at FIU"></div>
         <div class="field"><label for="f-msg"><span data-i18n="fMsg">What do you need help with?</span> <span class="opt" data-i18n="optional">(optional)</span></label><textarea id="f-msg" name="message" data-i18n-ph="phMsg" placeholder="Upcoming exam dates, topics you're stuck on, online or in person…"></textarea></div>
         <div class="hp" aria-hidden="true"><label for="f-website">Website</label><input id="f-website" name="website" tabindex="-1" autocomplete="off"></div>
+        <input type="hidden" name="lang" value="en">
         <div class="form-foot">
           <button class="btn btn-primary" type="submit" data-i18n="send">Send request</button>
           <small data-i18n="sendNote">You'll get a confirmation email, and I'll reply within one business day.</small>
@@ -1015,7 +1016,7 @@ document.getElementById("contact-form").addEventListener("submit", async e => {
         name, email, phone: f.phone.value.trim(),
         level: f.level.options[f.level.selectedIndex].text,
         course: f.course.value.trim(), message: f.message.value.trim(),
-        website: f.website.value, lang: LANG
+        website: f.website.value, lang: f.elements.lang.value
       })
     });
     if (!res.ok) throw res.status;
