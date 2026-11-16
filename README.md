@@ -95,6 +95,8 @@ takes effect within ~5 minutes, no redeploy needed.**
 | `smtp-secure` | no | `true` on 465, else `false` | `false` = STARTTLS; TLS is still required, the password is never sent in clear text |
 | `smtp-from` | no | `smtp-user` | the From address, when the login isn't an email address (SendGrid's `apikey`, Amazon SES keys) |
 | `owner-email` | no | the From address | where requests are sent |
+| `mail-ip-hourly-limit` | no | `20` | form submissions per IP address per hour (a school or university shares one IP) |
+| `mail-email-hourly-limit` | no | `3` | form submissions per client email address per hour |
 | `mail-daily-limit` | no | `40` | form submissions per day in total (2 emails each); keep it under your provider's limit |
 
 The From address must be one the provider lets you send as (a verified
@@ -144,10 +146,14 @@ To go back to a default, delete the optional secret
 `smtp-port` = `abc`) makes sending fail with a clear message in the logs; if a
 refresh from Secret Manager fails, the last good value keeps being used.
 
-Abuse protection: a hidden honeypot field, max 3 requests per visitor per hour
-and `MAIL_DAILY_LIMIT` (40) per day in total, and the client confirmation never repeats the free-text
-message (so the form can't be used to send arbitrary text to someone).
-Delivery failures are in Logs Explorer (search "Failed to send booking email").
+Abuse protection: a hidden honeypot field, and per hour at most
+`mail-ip-hourly-limit` (20) requests per IP address and `mail-email-hourly-limit`
+(3) per client email, plus `mail-daily-limit` (40) per day in total. The IP limit
+is generous because a school or university network shares one IP; the per-email
+limit stops anyone from flooding one inbox with confirmations. The client
+confirmation never repeats the free-text message (so the form can't be used to
+send arbitrary text to someone). The counters are in memory and reset on a
+restart or redeploy.
 
 Edit the email wording in `CONFIRM` and `LABELS` in `server.js`.
 

@@ -19,7 +19,9 @@
  *   smtp-from      the From address, if the login isn't an email address
  *                  (e.g. SendGrid's "apikey") [smtp-user]
  *   owner-email    where requests go [the From address]
- *   mail-daily-limit  max form submissions per day in total [40]
+ *   mail-ip-hourly-limit     form submissions per IP address per hour [20]
+ *   mail-email-hourly-limit  form submissions per client email per hour [3]
+ *   mail-daily-limit         form submissions per day in total [40]
  */
 "use strict";
 
@@ -114,34 +116,59 @@ async function smtpConfig() {
   };
 }
 
-async function dailyLimit() {
+// A bad limit value is logged and replaced by its default: it shouldn't stop bookings.
+async function limit(name, def) {
   try {
-    return parseInt_("mail-daily-limit", await secret("mail-daily-limit", false), 40, 1, 100000);
+    return parseInt_(name, await secret(name, false), def, 1, 100000);
   } catch (err) {
-    console.error("Using a daily limit of 40:", err.message); // a bad limit shouldn't stop bookings
-    return 40;
+    console.error(`Using ${name} = ${def}:`, err.message);
+    return def;
   }
 }
 
+async function limits() {
+  return {
+    ip: await limit("mail-ip-hourly-limit", 20),       // per IP address per hour
+    email: await limit("mail-email-hourly-limit", 3),  // per client email per hour
+    day: await limit("mail-daily-limit", 40),          // in total per day
+  };
+}
+
 // --- abuse limits (in memory; app.yaml keeps this to one instance) -----------
-const PER_IP = { max: 3, ms: 3600e3 };   // 3 requests per IP per hour
-// Requests per day in total come from the mail-daily-limit secret (default 40);
-// keep it well under the provider's limit (2 emails each; Gmail allows ~500/day).
+// A school or university shares one IP among many students, so the IP limit is
+// generous; the per-email limit is what stops one inbox from being flooded with
+// confirmations, and the daily total caps everything (2 emails per request;
+// keep it well under the provider's limit, e.g. Gmail ~500/day).
+const HOUR = 3600e3;
 const DAY = 86400e3;
 const byIp = new Map();
+const byEmail = new Map();
 let all = [];
 
-function allowed(ip, dailyMax = 40) {
+function recent(map, key, now) {
+  const q = (map.get(key) || []).filter((t) => now - t < HOUR);
+  if (q.length) map.set(key, q);
+  else map.delete(key);
+  return q;
+}
+
+function sweep(map, now) {
+  if (map.size < 5000) return;
+  for (const key of [...map.keys()]) recent(map, key, now);
+}
+
+function allowed(ip, email, max = { ip: 20, email: 3, day: 40 }) {
   const now = Date.now();
-  const q = (byIp.get(ip) || []).filter((t) => now - t < PER_IP.ms);
+  sweep(byIp, now);
+  sweep(byEmail, now);
+  email = email.toLowerCase();
+  const qi = recent(byIp, ip, now);
+  const qe = recent(byEmail, email, now);
   all = all.filter((t) => now - t < DAY);
-  if (q.length >= PER_IP.max || all.length >= dailyMax) {
-    byIp.set(ip, q);
-    return false;
-  }
-  q.push(now);
+  if (qi.length >= max.ip || qe.length >= max.email || all.length >= max.day) return false;
+  byIp.set(ip, [...qi, now]);
+  byEmail.set(email, [...qe, now]);
   all.push(now);
-  byIp.set(ip, q);
   return true;
 }
 
@@ -282,7 +309,7 @@ async function contact(req, res) {
   if (!d.name || !EMAIL_RE.test(d.email)) return reply(res, 400, { ok: false, error: "invalid" });
 
   const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
-  if (!allowed(ip, await dailyLimit())) return reply(res, 429, { ok: false, error: "rate_limited" });
+  if (!allowed(ip, d.email, await limits())) return reply(res, 429, { ok: false, error: "rate_limited" });
 
   try {
     await send(await buildMessages(d, lang));
