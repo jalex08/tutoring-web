@@ -2,15 +2,26 @@
  * Booking-form endpoint for josediaztutoring.com.
  *
  * POST /api/contact (JSON) -> emails the request to Jose and a confirmation to
- * the client, via Gmail SMTP. The pages are served as static files by App
- * Engine (see app.yaml); any URL without a static handler reaches this code and
- * gets a 301 (/index.html, /es, /es/index.html) or a real 404 page.
+ * the client, through any SMTP server (Gmail by default). The pages are
+ * served as static files by App Engine (see app.yaml); any URL without a
+ * static handler reaches this code and gets a 301 (/index.html, /es, /es/index.html) or a real 404 page.
  *
- * Credentials live in Secret Manager (never in this repo):
- *   smtp-user      the Gmail address that sends the mail (also gets the requests)
- *   smtp-password  a Gmail App Password for that account
- * Optional secret:
- *   owner-email    send requests here instead of smtp-user
+ * Everything about the mail server lives in Secret Manager (never in this
+ * repo), so it can be changed without a redeploy: values are re-read every
+ * SECRET_TTL (5 minutes). Required:
+ *   smtp-user      the SMTP login (for Gmail, the address that sends the mail)
+ *   smtp-password  the SMTP password / App Password / API key
+ * Optional (default in brackets):
+ *   smtp-host      SMTP server [smtp.gmail.com]
+ *   smtp-port      465 = implicit TLS, 587 = STARTTLS [465]
+ *   smtp-secure    "true" = implicit TLS, "false" = STARTTLS (TLS still
+ *                  required) [true on port 465, false otherwise]
+ *   smtp-from      the From address, if the login isn't an email address
+ *                  (e.g. SendGrid's "apikey") [smtp-user]
+ *   owner-email    where requests go [the From address]
+ *   mail-ip-hourly-limit     form submissions per IP address per hour [20]
+ *   mail-email-hourly-limit  form submissions per client email per hour [3]
+ *   mail-daily-limit         form submissions per day in total [40]
  */
 "use strict";
 
@@ -27,7 +38,12 @@ const LIMITS = { name: 100, email: 254, phone: 40, level: 60, course: 150, messa
 const MAX_BODY = 16 * 1024;
 
 // --- secrets (Secret Manager REST API, token from the metadata server) -------
+// Cached for SECRET_TTL so a changed value takes effect without a redeploy. If
+// a refresh fails, the last good value keeps being used. Values put straight
+// into `secrets` (the dev server's stubs) never expire.
+const SECRET_TTL = 5 * 60e3;
 const secrets = new Map();
+const fetchedAt = new Map();
 
 async function accessToken() {
   const r = await fetch(
@@ -38,39 +54,121 @@ async function accessToken() {
   return (await r.json()).access_token;
 }
 
-async function secret(name, required = true) {
-  if (secrets.has(name)) return secrets.get(name);
+async function fetchSecret(name, required) {
   const url = `https://secretmanager.googleapis.com/v1/projects/${PROJECT}/secrets/${name}/versions/latest:access`;
   const r = await fetch(url, { headers: { Authorization: `Bearer ${await accessToken()}` } });
-  let value = "";
-  if (r.ok) {
-    value = Buffer.from((await r.json()).payload.data, "base64").toString("utf8").trim();
-  } else if (required || ![403, 404].includes(r.status)) {
-    // An optional secret that doesn't exist reads as 403, not 404, when access
-    // is granted per secret, so both mean "not set" for optional secrets.
-    throw new Error(`secret ${name}: HTTP ${r.status}`);
+  if (r.ok) return Buffer.from((await r.json()).payload.data, "base64").toString("utf8").trim();
+  // An optional secret that doesn't exist reads as 403, not 404, when access
+  // is granted per secret, so both mean "not set" for optional secrets.
+  if (!required && r.status === 404) return "";
+  if (!required && r.status === 403) {
+    // Either the secret doesn't exist, or it does and the app may not read it.
+    // Say so: silently falling back to a default hides a missing IAM binding.
+    console.warn(
+      `Secret ${name}: permission denied (HTTP 403), using its default. If this secret exists, ` +
+      "grant the app's service account roles/secretmanager.secretAccessor on it."
+    );
+    return "";
+  }
+  throw new Error(`secret ${name}: HTTP ${r.status}`);
+}
+
+async function secret(name, required = true) {
+  if (secrets.has(name)) {
+    const at = fetchedAt.get(name);
+    if (at === undefined || Date.now() - at < SECRET_TTL) return secrets.get(name);
+  }
+  let value;
+  try {
+    value = await fetchSecret(name, required);
+  } catch (err) {
+    if (!secrets.has(name)) throw err;
+    console.error(`Using cached ${name}; refresh failed:`, err.message);
+    fetchedAt.set(name, Date.now()); // don't retry on every request
+    return secrets.get(name);
   }
   secrets.set(name, value);
+  fetchedAt.set(name, Date.now());
   return value;
 }
 
+function parseInt_(name, raw, def, min, max) {
+  if (!raw) return def;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < min || n > max) throw new Error(`${name} must be an integer ${min}-${max}, got "${raw}"`);
+  return n;
+}
+
+function parseBool(name, raw, def) {
+  if (!raw) return def;
+  const v = raw.toLowerCase();
+  if (["true", "1", "yes"].includes(v)) return true;
+  if (["false", "0", "no"].includes(v)) return false;
+  throw new Error(`${name} must be true or false, got "${raw}"`);
+}
+
+async function smtpConfig() {
+  const port = parseInt_("smtp-port", await secret("smtp-port", false), 465, 1, 65535);
+  return {
+    host: (await secret("smtp-host", false)) || "smtp.gmail.com",
+    port,
+    secure: parseBool("smtp-secure", await secret("smtp-secure", false), port === 465),
+  };
+}
+
+// A bad limit value is logged and replaced by its default: it shouldn't stop bookings.
+async function limit(name, def) {
+  try {
+    return parseInt_(name, await secret(name, false), def, 1, 100000);
+  } catch (err) {
+    console.error(`Using ${name} = ${def}:`, err.message);
+    return def;
+  }
+}
+
+async function limits() {
+  return {
+    ip: await limit("mail-ip-hourly-limit", 20),       // per IP address per hour
+    email: await limit("mail-email-hourly-limit", 3),  // per client email per hour
+    day: await limit("mail-daily-limit", 40),          // in total per day
+  };
+}
+
 // --- abuse limits (in memory; app.yaml keeps this to one instance) -----------
-const PER_IP = { max: 3, ms: 3600e3 };   // 3 requests per IP per hour
-const GLOBAL = { max: 40, ms: 86400e3 }; // 40 requests per day in total (Gmail allows ~500/day)
+// A school or university shares one IP among many students, so the IP limit is
+// generous; the per-email limit is what stops one inbox from being flooded with
+// confirmations, and the daily total caps everything (2 emails per request;
+// keep it well under the provider's limit, e.g. Gmail ~500/day).
+const HOUR = 3600e3;
+const DAY = 86400e3;
 const byIp = new Map();
+const byEmail = new Map();
 let all = [];
 
-function allowed(ip) {
+function recent(map, key, now) {
+  const q = (map.get(key) || []).filter((t) => now - t < HOUR);
+  if (q.length) map.set(key, q);
+  else map.delete(key);
+  return q;
+}
+
+function sweep(map, now) {
+  if (map.size < 5000) return;
+  for (const key of [...map.keys()]) recent(map, key, now);
+}
+
+function allowed(ip, email, max = { ip: 20, email: 3, day: 40 }) {
   const now = Date.now();
-  const q = (byIp.get(ip) || []).filter((t) => now - t < PER_IP.ms);
-  all = all.filter((t) => now - t < GLOBAL.ms);
-  if (q.length >= PER_IP.max || all.length >= GLOBAL.max) {
-    byIp.set(ip, q);
-    return false;
-  }
-  q.push(now);
+  sweep(byIp, now);
+  sweep(byEmail, now);
+  email = email.toLowerCase();
+  const qi = recent(byIp, ip, now);
+  const qe = recent(byEmail, email, now);
+  all = all.filter((t) => now - t < DAY);
+  if (qi.length >= max.ip || qe.length >= max.email || all.length >= max.day) return false;
+  byIp.set(ip, [...qi, now]);
+  byEmail.set(email, [...qe, now]);
   all.push(now);
-  byIp.set(ip, q);
   return true;
 }
 
@@ -103,12 +201,27 @@ const CONFIRM = {
   },
 };
 
+/**
+ * Reads a secret holding an email address. Accepts "addr@x.com" or
+ * "Name <addr@x.com>" (the name becomes the display name; default SITE_NAME).
+ * Returns { name, address }, or null for an empty optional secret.
+ */
+async function addressSecret(name, required = false) {
+  const raw = await secret(name, required);
+  if (!raw) return null;
+  const m = raw.match(/^\s*"?([^"<]*?)"?\s*<([^<>]+)>\s*$/);
+  const address = (m ? m[2] : raw).trim();
+  if (!EMAIL_RE.test(address) || /\s/.test(address)) {
+    throw new Error(`secret ${name} must be an email address like jose@example.com or "Name <jose@example.com>", got "${raw}"`);
+  }
+  return { name: (m && m[1].trim()) || SITE_NAME, address };
+}
+
 const oneLine = (s) => s.split(/\s+/).filter(Boolean).join(" ");
 
 async function buildMessages(d, lang) {
-  const user = await secret("smtp-user");
-  const owner = (await secret("owner-email", false)) || user;
-  const from = { name: SITE_NAME, address: user };
+  const from = await addressSecret("smtp-from") || await addressSecret("smtp-user", true);
+  const owner = (await addressSecret("owner-email")) || from;
   const L = LABELS[lang];
 
   // To Jose: everything the client typed. Reply goes straight to the client.
@@ -143,10 +256,13 @@ async function buildMessages(d, lang) {
 }
 
 async function send(messages) {
+  const smtp = await smtpConfig();
+  console.log(`Sending via ${smtp.host}:${smtp.port} (${smtp.secure ? "TLS" : "STARTTLS"})`);
   const transport = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
+    host: smtp.host,
+    port: smtp.port,
+    secure: smtp.secure,
+    requireTLS: !smtp.secure, // STARTTLS is mandatory: never send the password in clear text
     auth: { user: await secret("smtp-user"), pass: await secret("smtp-password") },
     connectionTimeout: 20000,
   });
@@ -208,7 +324,7 @@ async function contact(req, res) {
   if (!d.name || !EMAIL_RE.test(d.email)) return reply(res, 400, { ok: false, error: "invalid" });
 
   const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
-  if (!allowed(ip)) return reply(res, 429, { ok: false, error: "rate_limited" });
+  if (!allowed(ip, d.email, await limits())) return reply(res, 429, { ok: false, error: "rate_limited" });
 
   try {
     await send(await buildMessages(d, lang));
@@ -275,7 +391,13 @@ const server = http.createServer((req, res) => {
 });
 
 if (require.main === module) {
-  server.listen(PORT, () => console.log(`Listening on ${PORT}`));
+  server.listen(PORT, () => {
+    console.log(`Listening on ${PORT}`);
+    smtpConfig().then(
+      (c) => console.log(`SMTP server: ${c.host}:${c.port} (${c.secure ? "TLS" : "STARTTLS"})`),
+      (err) => console.error("SMTP settings are invalid:", err.message)
+    );
+  });
 }
 
-module.exports = { server, secrets, buildMessages, allowed, _setSend: (fn) => (send = fn) };
+module.exports = { server, secrets, smtpConfig, buildMessages, allowed, _setSend: (fn) => (send = fn) };

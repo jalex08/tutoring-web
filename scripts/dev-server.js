@@ -47,6 +47,7 @@ function createDevServer({ onSend } = {}) {
   const app = require(path.join(ROOT, "server.js"));
   // stub the mailer and secrets: nothing leaves this machine
   app.secrets.set("smtp-user", "site@example.test");
+  for (const name of ["smtp-host", "smtp-port", "smtp-secure", "smtp-from", "mail-daily-limit", "mail-ip-hourly-limit", "mail-email-hourly-limit"]) app.secrets.set(name, "");
   app.secrets.set("owner-email", "");
   app._setSend(async (messages) => {
     for (const m of messages) console.log(`[email stub] to=${m.to} subject=${JSON.stringify(m.subject)}`);

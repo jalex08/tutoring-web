@@ -3,7 +3,7 @@
 One-page site in English (`/`) and Spanish (`/es/`) on Google App Engine
 standard. The pages are static files; the only code is `server.js` (Node.js),
 which receives the booking form (`POST /api/contact`) and sends two emails
-through Gmail (the request to Jose, Reply-To = the client, and a fixed
+through an SMTP server, Gmail by default (the request to Jose, Reply-To = the client, and a fixed
 confirmation to the client), plus a few redirects and the 404 page.
 
 ```
@@ -81,27 +81,81 @@ below CONFIG.
 
 ## Booking form (email)
 
-Mail is sent from a Gmail account using an App Password. Credentials are in
-Secret Manager, never in this repo:
+Mail goes out through any SMTP server (Gmail with an App Password by default).
+All mail settings are secrets in Secret Manager (project `jalex-hub`), never in
+this repo. The server re-reads them every 5 minutes, so **changing a secret
+takes effect within ~5 minutes, no redeploy needed.**
 
-| Secret | Value |
-|---|---|
-| `smtp-user` | the Gmail address that sends the mail; requests go here too |
-| `smtp-password` | a 16-character Gmail App Password for that account |
-| `owner-email` | optional: send requests to this address instead |
+| Secret | Required | Default | Value |
+|---|---|---|---|
+| `smtp-user` | yes | | the SMTP login (for Gmail: the address that sends the mail) |
+| `smtp-password` | yes | | the SMTP password, App Password or API key |
+| `smtp-host` | no | `smtp.gmail.com` | SMTP server |
+| `smtp-port` | no | `465` | `465` (implicit TLS) or `587` (STARTTLS) |
+| `smtp-secure` | no | `true` on 465, else `false` | `false` = STARTTLS; TLS is still required, the password is never sent in clear text |
+| `smtp-from` | no | `smtp-user` | the From address, when the login isn't an email address (SendGrid's `apikey`, Amazon SES keys) |
+| `owner-email` | no | the From address | where requests are sent |
+| `mail-ip-hourly-limit` | no | `20` | form submissions per IP address per hour (a school or university shares one IP) |
+| `mail-email-hourly-limit` | no | `3` | form submissions per client email address per hour |
+| `mail-daily-limit` | no | `40` | form submissions per day in total (2 emails each); keep it under your provider's limit |
 
-Change the password (e.g. after revoking an App Password):
+`smtp-from` and `owner-email` take a bare address (`jose@example.com`) or a
+name and address (`Jose Diaz Tutoring <jose@example.com>`); without a name the
+mail shows "Jose Diaz Tutoring". The From address must be one the provider lets you send as (a verified
+sender/domain), or mail will be rejected or land in spam.
+
+Common providers:
+
+| Provider | `smtp-host` | `smtp-port` | `smtp-user` | `smtp-password` |
+|---|---|---|---|---|
+| Gmail / Google Workspace | `smtp.gmail.com` | `465` | the address | App Password |
+| Microsoft 365 / Outlook | `smtp.office365.com` | `587` | the address | account password (SMTP AUTH must be enabled for the mailbox) |
+| Zoho Mail | `smtp.zoho.com` | `465` | the address | app-specific password |
+| SendGrid | `smtp.sendgrid.net` | `465` | `apikey` | API key (+ `smtp-from`) |
+| Mailgun | `smtp.mailgun.org` | `587` | SMTP login from Mailgun | its SMTP password |
+| Amazon SES | `email-smtp.<region>.amazonaws.com` | `465` | SMTP username | SMTP password (+ `smtp-from`) |
+
+Change an existing secret (e.g. a new App Password):
 
 ```bash
-printf '%s' 'NEW-APP-PASSWORD' | gcloud secrets versions add smtp-password --data-file=- --project=jalex-hub
+printf '%s' 'NEW-VALUE' | gcloud secrets versions add smtp-password --data-file=- --project=jalex-hub
 ```
 
-Then redeploy, or wait for the instance to restart, since secrets are cached in memory.
+Create an optional secret the first time (e.g. switching to Microsoft 365):
 
-Abuse protection: a hidden honeypot field, max 3 requests per visitor per hour
-and 40 per day in total, and the client confirmation never repeats the free-text
-message (so the form can't be used to send arbitrary text to someone).
-Delivery failures are in Logs Explorer (search "Failed to send booking email").
+```bash
+printf '%s' 'smtp.office365.com' | gcloud secrets create smtp-host --data-file=- --project=jalex-hub
+printf '%s' '587' | gcloud secrets create smtp-port --data-file=- --project=jalex-hub
+```
+
+If the app's service account gets access per secret rather than project-wide,
+grant it on each new secret too, or the app treats the secret as not set:
+
+```bash
+gcloud secrets add-iam-policy-binding smtp-host --project=jalex-hub \
+  --member=serviceAccount:jalex-hub@appspot.gserviceaccount.com --role=roles/secretmanager.secretAccessor
+```
+
+**Mail still goes through Gmail after changing settings?** Check the logs (Logs
+Explorer): on startup and on every send the app logs `SMTP server:` /
+`Sending via host:port`. A `Secret smtp-host: permission denied (HTTP 403)`
+line means the secret exists but the app may not read it, so the default is
+used: run the `add-iam-policy-binding` command above for that secret. No such
+lines at all means the running version predates these settings: deploy again.
+
+To go back to a default, delete the optional secret
+(`gcloud secrets delete smtp-port --project=jalex-hub`). An invalid value (e.g.
+`smtp-port` = `abc`) makes sending fail with a clear message in the logs; if a
+refresh from Secret Manager fails, the last good value keeps being used.
+
+Abuse protection: a hidden honeypot field, and per hour at most
+`mail-ip-hourly-limit` (20) requests per IP address and `mail-email-hourly-limit`
+(3) per client email, plus `mail-daily-limit` (40) per day in total. The IP limit
+is generous because a school or university network shares one IP; the per-email
+limit stops anyone from flooding one inbox with confirmations. The client
+confirmation never repeats the free-text message (so the form can't be used to
+send arbitrary text to someone). The counters are in memory and reset on a
+restart or redeploy.
 
 Edit the email wording in `CONFIRM` and `LABELS` in `server.js`.
 
