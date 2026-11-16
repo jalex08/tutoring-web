@@ -2,15 +2,24 @@
  * Booking-form endpoint for josediaztutoring.com.
  *
  * POST /api/contact (JSON) -> emails the request to Jose and a confirmation to
- * the client, via Gmail SMTP. The pages are served as static files by App
+ * the client, through any SMTP server (Gmail by default). The pages are served as static files by App
  * Engine (see app.yaml); any URL without a static handler reaches this code and
  * gets a 301 (/index.html, /es, /es/index.html) or a real 404 page.
  *
+ * SMTP server (env_variables in app.yaml; defaults are Gmail):
+ *   SMTP_HOST      e.g. smtp.gmail.com, smtp.office365.com, smtp.sendgrid.net
+ *   SMTP_PORT      465 (implicit TLS) or 587 (STARTTLS); default 465
+ *   SMTP_SECURE    "true" for implicit TLS, "false" for STARTTLS (TLS still
+ *                  required); default true on port 465, false otherwise
+ *   MAIL_DAILY_LIMIT  max form submissions per day in total; default 40
+ *
  * Credentials live in Secret Manager (never in this repo):
- *   smtp-user      the Gmail address that sends the mail (also gets the requests)
- *   smtp-password  a Gmail App Password for that account
- * Optional secret:
- *   owner-email    send requests here instead of smtp-user
+ *   smtp-user      the SMTP login (for Gmail, the address that sends the mail)
+ *   smtp-password  the SMTP password / App Password / API key
+ * Optional secrets:
+ *   smtp-from      the From address, if the login isn't an email address
+ *                  (e.g. SendGrid's "apikey"); default smtp-user
+ *   owner-email    send requests here instead of the From address
  */
 "use strict";
 
@@ -25,6 +34,32 @@ const SITE_NAME = "Jose Diaz Tutoring";
 const EMAIL_RE = /^[^@\s<>"',;]+@[^@\s<>"',;]+\.[^@\s<>"',;]+$/;
 const LIMITS = { name: 100, email: 254, phone: 40, level: 60, course: 150, message: 4000 };
 const MAX_BODY = 16 * 1024;
+
+// --- SMTP server (non-secret settings from the environment) ------------------
+function envInt(name, def, min, max) {
+  const raw = (process.env[name] || "").trim();
+  if (!raw) return def;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < min || n > max) throw new Error(`${name} must be an integer ${min}-${max}, got "${raw}"`);
+  return n;
+}
+
+function envBool(name, def) {
+  const raw = (process.env[name] || "").trim().toLowerCase();
+  if (!raw) return def;
+  if (["true", "1", "yes"].includes(raw)) return true;
+  if (["false", "0", "no"].includes(raw)) return false;
+  throw new Error(`${name} must be true or false, got "${raw}"`);
+}
+
+const SMTP = (() => {
+  const port = envInt("SMTP_PORT", 465, 1, 65535);
+  return {
+    host: (process.env.SMTP_HOST || "").trim() || "smtp.gmail.com",
+    port,
+    secure: envBool("SMTP_SECURE", port === 465),
+  };
+})();
 
 // --- secrets (Secret Manager REST API, token from the metadata server) -------
 const secrets = new Map();
@@ -56,7 +91,9 @@ async function secret(name, required = true) {
 
 // --- abuse limits (in memory; app.yaml keeps this to one instance) -----------
 const PER_IP = { max: 3, ms: 3600e3 };   // 3 requests per IP per hour
-const GLOBAL = { max: 40, ms: 86400e3 }; // 40 requests per day in total (Gmail allows ~500/day)
+// requests per day in total; keep it well under the provider's sending limit
+// (each request sends 2 emails; Gmail allows ~500/day)
+const GLOBAL = { max: envInt("MAIL_DAILY_LIMIT", 40, 1, 100000), ms: 86400e3 };
 const byIp = new Map();
 let all = [];
 
@@ -106,9 +143,9 @@ const CONFIRM = {
 const oneLine = (s) => s.split(/\s+/).filter(Boolean).join(" ");
 
 async function buildMessages(d, lang) {
-  const user = await secret("smtp-user");
-  const owner = (await secret("owner-email", false)) || user;
-  const from = { name: SITE_NAME, address: user };
+  const sender = (await secret("smtp-from", false)) || (await secret("smtp-user"));
+  const owner = (await secret("owner-email", false)) || sender;
+  const from = { name: SITE_NAME, address: sender };
   const L = LABELS[lang];
 
   // To Jose: everything the client typed. Reply goes straight to the client.
@@ -144,9 +181,10 @@ async function buildMessages(d, lang) {
 
 async function send(messages) {
   const transport = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
+    host: SMTP.host,
+    port: SMTP.port,
+    secure: SMTP.secure,
+    requireTLS: !SMTP.secure, // STARTTLS is mandatory: never send the password in clear text
     auth: { user: await secret("smtp-user"), pass: await secret("smtp-password") },
     connectionTimeout: 20000,
   });
@@ -275,7 +313,8 @@ const server = http.createServer((req, res) => {
 });
 
 if (require.main === module) {
-  server.listen(PORT, () => console.log(`Listening on ${PORT}`));
+  server.listen(PORT, () =>
+    console.log(`Listening on ${PORT} (SMTP ${SMTP.host}:${SMTP.port}, ${SMTP.secure ? "TLS" : "STARTTLS"})`));
 }
 
-module.exports = { server, secrets, buildMessages, allowed, _setSend: (fn) => (send = fn) };
+module.exports = { server, secrets, SMTP, buildMessages, allowed, _setSend: (fn) => (send = fn) };

@@ -11,6 +11,15 @@ automatic_scaling:
 
 default_expiration: "10m"
 
+# Outgoing mail server for the booking form (credentials are in Secret Manager,
+# see README "Booking form (email)"). Gmail by default; for another provider
+# change these and the smtp-* secrets, e.g. smtp.office365.com / 587.
+env_variables:
+  SMTP_HOST: "smtp.gmail.com"
+  SMTP_PORT: "465"
+  # SMTP_SECURE: "false"     # optional; default true on 465, false (STARTTLS) otherwise
+  MAIL_DAILY_LIMIT: "40"     # form submissions per day in total (2 emails each)
+
 handlers:
 # English homepage. Short cache so edits show up fast.
 - url: /

@@ -3,7 +3,7 @@
 One-page site in English (`/`) and Spanish (`/es/`) on Google App Engine
 standard. The pages are static files; the only code is `server.js` (Node.js),
 which receives the booking form (`POST /api/contact`) and sends two emails
-through Gmail (the request to Jose, Reply-To = the client, and a fixed
+through an SMTP server, Gmail by default (the request to Jose, Reply-To = the client, and a fixed
 confirmation to the client), plus a few redirects and the 404 page.
 
 ```
@@ -81,25 +81,62 @@ below CONFIG.
 
 ## Booking form (email)
 
-Mail is sent from a Gmail account using an App Password. Credentials are in
-Secret Manager, never in this repo:
+Mail goes out through any SMTP server. **Which server** is set in `app.yaml`
+under `env_variables` (not secret); **the login** is in Secret Manager, never in
+this repo. The defaults are Gmail with an App Password.
+
+`app.yaml` → `env_variables`:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `SMTP_HOST` | `smtp.gmail.com` | SMTP server |
+| `SMTP_PORT` | `465` | `465` (implicit TLS) or `587` (STARTTLS) |
+| `SMTP_SECURE` | `true` on 465, else `false` | `false` = STARTTLS; TLS is still required, the password is never sent in clear text |
+| `MAIL_DAILY_LIMIT` | `40` | form submissions per day in total (each sends 2 emails); keep it under your provider's limit |
+
+Secret Manager (project `jalex-hub`):
 
 | Secret | Value |
 |---|---|
-| `smtp-user` | the Gmail address that sends the mail; requests go here too |
-| `smtp-password` | a 16-character Gmail App Password for that account |
-| `owner-email` | optional: send requests to this address instead |
+| `smtp-user` | the SMTP login (for Gmail: the address that sends the mail) |
+| `smtp-password` | the SMTP password, App Password or API key |
+| `smtp-from` | optional: the From address, when the login isn't an email address (e.g. SendGrid's `apikey`, Amazon SES keys); default `smtp-user` |
+| `owner-email` | optional: send requests to this address; default the From address |
 
-Change the password (e.g. after revoking an App Password):
+The From address must be one the provider lets you send as (a verified
+sender/domain), or mail will be rejected or land in spam.
+
+Common providers:
+
+| Provider | `SMTP_HOST` | `SMTP_PORT` | `smtp-user` | `smtp-password` |
+|---|---|---|---|---|
+| Gmail / Google Workspace | `smtp.gmail.com` | `465` | the address | App Password |
+| Microsoft 365 / Outlook | `smtp.office365.com` | `587` | the address | account password (SMTP AUTH must be enabled for the mailbox) |
+| Zoho Mail | `smtp.zoho.com` | `465` | the address | app-specific password |
+| SendGrid | `smtp.sendgrid.net` | `465` | `apikey` | API key (+ `smtp-from`) |
+| Mailgun | `smtp.mailgun.org` | `587` | SMTP login from Mailgun | its SMTP password |
+| Amazon SES | `email-smtp.<region>.amazonaws.com` | `465` | SMTP username | SMTP password (+ `smtp-from`) |
+
+Switch provider: edit `env_variables` in `app.yaml`, then set the secrets
+(`gcloud secrets create NAME --data-file=- --project=jalex-hub` for a new one,
+`versions add` for an existing one), then deploy:
 
 ```bash
-printf '%s' 'NEW-APP-PASSWORD' | gcloud secrets versions add smtp-password --data-file=- --project=jalex-hub
+printf '%s' 'LOGIN' | gcloud secrets versions add smtp-user --data-file=- --project=jalex-hub
+printf '%s' 'PASSWORD-OR-KEY' | gcloud secrets versions add smtp-password --data-file=- --project=jalex-hub
+printf '%s' 'hello@josediaztutoring.com' | gcloud secrets create smtp-from --data-file=- --project=jalex-hub
+gcloud secrets add-iam-policy-binding smtp-from --project=jalex-hub \
+  --member=serviceAccount:jalex-hub@appspot.gserviceaccount.com --role=roles/secretmanager.secretAccessor
+gcloud app deploy app.yaml --project=jalex-hub
 ```
 
-Then redeploy, or wait for the instance to restart, since secrets are cached in memory.
+(The IAM binding is only needed for a new secret if access is granted per
+secret rather than project-wide.) After only changing a secret's value,
+redeploy or wait for the instance to restart, since secrets are cached in memory.
+On startup the log shows `Listening on 8080 (SMTP host:port, TLS|STARTTLS)`.
 
 Abuse protection: a hidden honeypot field, max 3 requests per visitor per hour
-and 40 per day in total, and the client confirmation never repeats the free-text
+and `MAIL_DAILY_LIMIT` (40) per day in total, and the client confirmation never repeats the free-text
 message (so the form can't be used to send arbitrary text to someone).
 Delivery failures are in Logs Explorer (search "Failed to send booking email").
 
