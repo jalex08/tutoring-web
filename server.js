@@ -201,12 +201,27 @@ const CONFIRM = {
   },
 };
 
+/**
+ * Reads a secret holding an email address. Accepts "addr@x.com" or
+ * "Name <addr@x.com>" (the name becomes the display name; default SITE_NAME).
+ * Returns { name, address }, or null for an empty optional secret.
+ */
+async function addressSecret(name, required = false) {
+  const raw = await secret(name, required);
+  if (!raw) return null;
+  const m = raw.match(/^\s*"?([^"<]*?)"?\s*<([^<>]+)>\s*$/);
+  const address = (m ? m[2] : raw).trim();
+  if (!EMAIL_RE.test(address) || /\s/.test(address)) {
+    throw new Error(`secret ${name} must be an email address like jose@example.com or "Name <jose@example.com>", got "${raw}"`);
+  }
+  return { name: (m && m[1].trim()) || SITE_NAME, address };
+}
+
 const oneLine = (s) => s.split(/\s+/).filter(Boolean).join(" ");
 
 async function buildMessages(d, lang) {
-  const sender = (await secret("smtp-from", false)) || (await secret("smtp-user"));
-  const owner = (await secret("owner-email", false)) || sender;
-  const from = { name: SITE_NAME, address: sender };
+  const from = await addressSecret("smtp-from") || await addressSecret("smtp-user", true);
+  const owner = (await addressSecret("owner-email")) || from;
   const L = LABELS[lang];
 
   // To Jose: everything the client typed. Reply goes straight to the client.

@@ -99,7 +99,9 @@ takes effect within ~5 minutes, no redeploy needed.**
 | `mail-email-hourly-limit` | no | `3` | form submissions per client email address per hour |
 | `mail-daily-limit` | no | `40` | form submissions per day in total (2 emails each); keep it under your provider's limit |
 
-The From address must be one the provider lets you send as (a verified
+`smtp-from` and `owner-email` take a bare address (`jose@example.com`) or a
+name and address (`Jose Diaz Tutoring <jose@example.com>`); without a name the
+mail shows "Jose Diaz Tutoring". The From address must be one the provider lets you send as (a verified
 sender/domain), or mail will be rejected or land in spam.
 
 Common providers:
