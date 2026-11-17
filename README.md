@@ -159,6 +159,25 @@ restart or redeploy.
 
 Edit the email wording in `CONFIRM` and `LABELS` in `server.js`.
 
+## Analytics (Google Tag Manager)
+
+Every page (`/`, `/es/`, the 404 page) loads Google Tag Manager container
+`GTM-TG7DX6ZB`: the official snippet sits high in `<head>` and its `<noscript>`
+iframe right after `<body>`. To change the container, replace the ID in
+`www/index.html` and `www/404.html`, then `npm run build`.
+
+The page pushes these events to the `dataLayer` (no names, emails or messages):
+
+| Event | When | Parameters |
+|---|---|---|
+| `generate_lead` | booking form sent successfully | `form_name`, `student_level`, `page_language` |
+| `contact_click` | WhatsApp, phone or email link clicked | `contact_method`, `link_location`, `page_language` |
+
+In Tag Manager: add a **Google tag** with your GA4 measurement ID (`G-…`) on
+*Initialization – All Pages*, then a **GA4 Event** tag per event above (trigger:
+*Custom Event* with that name, event parameters from *Data Layer Variables*).
+Mark `generate_lead` as a key event in GA4. Preview mode shows the events firing.
+
 ## Caching and headers
 
 | Path | Cache | Notes |
