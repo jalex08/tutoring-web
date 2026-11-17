@@ -290,6 +290,18 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .faq details[open] summary::after{content:"\2212"}
   .faq details p{padding:0 0 22px;color:var(--muted);max-width:40em}
 
+  /* share band */
+  .share{padding:72px 0;border-bottom:1.5px solid var(--graphite)}
+  .share h2{font-weight:800;max-width:22em}
+  .share h2 span{display:block}
+  .share h2 span + span{color:var(--ink)}
+  .share-lede{margin-top:16px;font-size:1.15rem;max-width:36em}
+  .share-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+  .share-actions [hidden]{display:none}
+  .share-actions svg{width:18px;height:18px;flex:none}
+  .share-status{margin-top:12px;min-height:1.6em;font-weight:700;color:var(--ink)}
+  @media (max-width:520px){.share{padding:56px 0}}
+
   /* contact */
   .contact-grid{display:grid;grid-template-columns:1fr 1.15fr;gap:56px;align-items:start}
   .contact-side p{margin-top:16px;color:var(--muted);max-width:28em}
@@ -880,6 +892,27 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
   </section>
 
+  <!-- SHARE -->
+  <section id="share" class="share pad" aria-labelledby="share-title"
+    data-share-text="Found a math, physics &amp; engineering tutor in South Florida. He's an engineer, teaches in English and Spanish, and the 20-min intro is free:"
+    data-share-url="https://josediaztutoring.com/?src=share"
+    data-share-copied="Link copied"
+    data-i18n-attr="data-share-text:shareText;data-share-url:shareUrl;data-share-copied:shareCopied">
+    <div class="wrap">
+      <h2 id="share-title"><span data-i18n="shareT1">Not for you?</span> <span data-i18n="shareT2">It might be for someone you know.</span></h2>
+      <p class="share-lede" data-i18n="shareP">A friend stuck in Calc II, a cousin with the EOC coming up, a classmate in Circuits.</p>
+      <div class="share-actions">
+        <button class="btn btn-primary" type="button" id="share-native" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>
+          <span data-i18n="shareBtn">Share with a friend</span>
+        </button>
+        <a class="btn btn-ghost" id="share-wa" href="https://wa.me/?text=Found%20a%20math%2C%20physics%20%26%20engineering%20tutor%20in%20South%20Florida.%20He's%20an%20engineer%2C%20teaches%20in%20English%20and%20Spanish%2C%20and%20the%2020-min%20intro%20is%20free%3A%20https%3A%2F%2Fjosediaztutoring.com%2F%3Fsrc%3Dshare" target="_blank" rel="noopener" data-i18n-attr="href:shareWaHref" data-i18n="shareWa">Send on WhatsApp</a>
+        <button class="btn btn-ghost" type="button" id="share-copy" hidden data-i18n="shareCopy">Copy link</button>
+      </div>
+      <p class="share-status" id="share-status" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+
   <!-- CONTACT -->
   <section id="contact" class="pad">
     <div class="wrap contact-grid">
@@ -1051,6 +1084,44 @@ if ("IntersectionObserver" in window) {
   new IntersectionObserver(es => { es.forEach(e => { seen.contact = e.isIntersecting; }); sync(); }, { threshold: 0.15 })
     .observe(document.getElementById("contact"));
 } else { waFloat.classList.remove("is-hidden"); }
+
+/* share band: native share sheet on touch devices, WhatsApp + copy link elsewhere.
+   Without JS only the WhatsApp link shows (its href is built into the page). */
+(function(){
+  const box = document.getElementById("share");
+  const text = box.dataset.shareText, url = box.dataset.shareUrl;
+  const native = document.getElementById("share-native"), wa = document.getElementById("share-wa");
+  const copy = document.getElementById("share-copy"), status = document.getElementById("share-status");
+  wa.href = "https://wa.me/?text=" + encodeURIComponent(text + " " + url);
+  const fallbacks = () => { wa.hidden = false; copy.hidden = false; };
+
+  if (navigator.share && matchMedia("(pointer: coarse)").matches) {
+    native.hidden = false; wa.hidden = true;
+    native.addEventListener("click", async () => {
+      try { await navigator.share({ title: "Jose Diaz Tutoring", text, url }); }
+      catch (e) { if (!e || e.name !== "AbortError") fallbacks(); }
+    });
+  } else {
+    fallbacks();
+  }
+
+  function legacyCopy(){
+    const ta = document.createElement("textarea");
+    ta.value = url; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand("copy"); } catch (_) {}
+    ta.remove(); copy.focus();
+    return ok;
+  }
+  let timer;
+  copy.addEventListener("click", async () => {
+    let ok = false;
+    try { await navigator.clipboard.writeText(url); ok = true; } catch (_) { ok = legacyCopy(); }
+    if (!ok) return;
+    status.textContent = box.dataset.shareCopied;
+    clearTimeout(timer); timer = setTimeout(() => { status.textContent = ""; }, 2000);
+  });
+})();
 
 document.getElementById("contact-form").addEventListener("submit", async e => {
   e.preventDefault();

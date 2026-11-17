@@ -92,6 +92,13 @@ module.exports = {
   q4: "¿Me haces la tarea o los trabajos evaluados?", a4: "No. Te ayudo a entender cómo resolver problemas parecidos para que hagas tú mismo los trabajos evaluados. Eso es también lo que te prepara para el examen.",
   q5: "¿Y si necesito cancelar?", a5: "Puedes reprogramar gratis con al menos 24 horas de aviso. Las sesiones canceladas con menos aviso se cobran completas.",
   q6: "Mi examen es la semana que viene. ¿Es muy tarde?", a6: "No, pero reserva pronto. Las semanas de exámenes se llenan primero. Un repaso enfocado en los temas que van a evaluar todavía puede marcar una gran diferencia.",
+  shareT1: "¿No es para ti?", shareT2: "Quizás sí para alguien que conoces.",
+  shareP: "Un amigo con Cálculo II, un primo con el EOC encima, alguien de tu clase de Circuitos.",
+  shareBtn: "Compártelo", shareWa: "Envíalo por WhatsApp", shareCopy: "Copiar enlace", shareCopied: "Enlace copiado",
+  shareText: "Te paso este tutor de matemáticas, física e ingeniería en el sur de la Florida. Es ingeniero, enseña en inglés y en español, y la primera llamada de 20 minutos es gratis:",
+  shareUrl: "https://josediaztutoring.com/es/?src=share",
+  // no-JS WhatsApp link: "https://wa.me/?text=" + encodeURIComponent(shareText + " " + shareUrl)
+  shareWaHref: "https://wa.me/?text=Te%20paso%20este%20tutor%20de%20matem%C3%A1ticas%2C%20f%C3%ADsica%20e%20ingenier%C3%ADa%20en%20el%20sur%20de%20la%20Florida.%20Es%20ingeniero%2C%20ense%C3%B1a%20en%20ingl%C3%A9s%20y%20en%20espa%C3%B1ol%2C%20y%20la%20primera%20llamada%20de%2020%20minutos%20es%20gratis%3A%20https%3A%2F%2Fjosediaztutoring.com%2Fes%2F%3Fsrc%3Dshare",
   contactTitle: "Agenda tu llamada gratis",
   contactLede: "Cuéntame el curso y en qué te atascas. Te respondo en un día hábil para coordinar una llamada de 20 minutos.",
   wa: "Escríbeme por WhatsApp",
