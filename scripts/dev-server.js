@@ -6,6 +6,9 @@
  *
  *   npm run dev            -> http://localhost:8080
  *   PORT=3000 npm run dev
+ *   PRICING_FILE=pricing.json npm run dev
+ *                          prices from a local file instead of the site-pricing secret
+ *                          (re-read as soon as the file changes; without it: the fallback)
  */
 "use strict";
 
@@ -43,12 +46,21 @@ function handlers() {
   return out;
 }
 
-function createDevServer({ onSend } = {}) {
+function createDevServer({ onSend, pricingFile = process.env.PRICING_FILE } = {}) {
   const app = require(path.join(ROOT, "server.js"));
   // stub the mailer and secrets: nothing leaves this machine
   app.secrets.set("smtp-user", "site@example.test");
   for (const name of ["smtp-host", "smtp-port", "smtp-secure", "smtp-from", "mail-daily-limit", "mail-ip-hourly-limit", "mail-email-hourly-limit"]) app.secrets.set(name, "");
   app.secrets.set("owner-email", "");
+  // prices: a local file stands in for the secret ("" = not set -> fallback prices)
+  if (pricingFile) {
+    const f = path.resolve(pricingFile);
+    app._setPricingSource(async () => (fs.existsSync(f) ? fs.readFileSync(f, "utf8").trim() : ""));
+    fs.watchFile(f, { interval: 500 }, () => app._clearPricingCache());
+    console.log(`Prices from ${f}`);
+  } else {
+    app._setPricingSource(async () => "");
+  }
   app._setSend(async (messages) => {
     for (const m of messages) console.log(`[email stub] to=${m.to} subject=${JSON.stringify(m.subject)}`);
     if (onSend) onSend(messages);

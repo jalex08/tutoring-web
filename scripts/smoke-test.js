@@ -7,9 +7,11 @@
 
 const assert = require("node:assert/strict");
 const { createDevServer } = require("./dev-server.js");
+const app = require("../server.js");
+const pricing = require("../pricing.js");
 
 let sent = [];
-const srv = createDevServer({ onSend: (m) => sent.push(m) });
+const srv = createDevServer({ onSend: (m) => sent.push(m), pricingFile: "" });
 let failures = 0;
 
 async function check(name, fn) {
@@ -26,7 +28,8 @@ const decode = (s) =>
   s.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
 const visible = (html) =>
   decode(
-    html.replace(/<script[\s\S]*?<\/script>/g, " ").replace(/<style[\s\S]*?<\/style>/g, " ").replace(/<[^>]*>/g, " ")
+    html.replace(/<script[\s\S]*?<\/script>/g, " ").replace(/<style[\s\S]*?<\/style>/g, " ")
+      .replace(/<\/?(span|a|strong|b|i|em)\b[^>]*>/g, "").replace(/<[^>]*>/g, " ") // inline tags add no space
   ).replace(/\s+/g, " ");
 
 srv.listen(0, async () => {
@@ -69,9 +72,10 @@ srv.listen(0, async () => {
       assert.equal(r.headers.get("location"), to);
     });
   }
-  await check("/?lang=es -> /es/ (static page: redirect script at the top of <head>)", async () => {
-    const html = await (await get("/?lang=es")).text();
-    assert.match(html.slice(0, 600), /<script id="legacy-lang">[^<]*get\("lang"\) === "es"\) location\.replace\("\/es\/"/);
+  await check("/?lang=es&topic=calculus -> 301 /es/?topic=calculus", async () => {
+    const r = await get("/?lang=es&topic=calculus");
+    assert.equal(r.status, 301);
+    assert.equal(r.headers.get("location"), "/es/?topic=calculus");
   });
 
   console.log("booking form (email stubbed)");
@@ -181,11 +185,13 @@ srv.listen(0, async () => {
       walk(ld, "");
       const biz = ld["@graph"][1];
       const prices = biz.hasOfferCatalog.itemListElement.map((o) => o.price);
-      assert.deepEqual(prices, [65, 90, 110, 40, 480, 970]);
-      for (const p of prices) assert.ok(page.includes(`$${p}`), `$${p} not visible`);
+      assert.deepEqual(prices, [65, 90, 110, 40, 429, 899, 1099]);
+      for (const p of prices) assert.ok(page.includes("$" + p.toLocaleString("en-US")), `$${p} not visible`);
+      assert.equal(biz.priceRange, "$40–$110");
       assert.ok(page.includes("+1 (786) 832-9107") && biz.telephone === "+1-786-832-9107");
       const faq = ld["@graph"][3].mainEntity;
-      assert.equal(faq.length, 6);
+      assert.equal(faq.length, 7);
+      assert.equal((html.match(/<details><summary data-i18n="q\d+">/g) || []).length, 7, "7 questions on the page");
       for (const q of faq) {
         assert.ok(page.includes(q.name), q.name);
         assert.ok(page.includes(q.acceptedAnswer.text), q.acceptedAnswer.text);
@@ -209,6 +215,85 @@ srv.listen(0, async () => {
   await check("home: privacy notice under the form, in the page's language", () => {
     assert.match(pages.en, /<p class="form-note"[^>]*>By sending this form, you agree to the <a href="\/privacy\/">Privacy Policy<\/a>/);
     assert.match(pages.es, /<p class="form-note"[^>]*>Al enviar este formulario, aceptas la <a href="\/es\/privacidad\/">Política de privacidad<\/a>/);
+  });
+
+  console.log("prices (site-pricing secret, filled by the server)");
+  const rates = (h) => h.slice(h.indexOf('<section id="rates"'), h.indexOf("<!-- FAQ -->"));
+  const OLD = /\b(From|Desde) \$|\$480|\$970|\$60\/|\$81|10%/;
+  const shown = {
+    en: ["$65", "$90", "$110", "$40", "Save about 17%", "$429", "about $54/hour, save $91", "$899", "about $75/hour, save $181", "$1,099", "about $92/hour, save $221"],
+    es: ["$65", "$90", "$110", "$40", "Ahorra alrededor de un 17%", "$429", "unos $54/hora, ahorras $91", "$899", "unos $75/hora, ahorras $181", "$1,099", "unos $92/hora, ahorras $221"],
+  };
+  for (const lang of ["en", "es"]) {
+    await check(`${lang}: rates show the computed prices, no "From"/"Desde", no old prices`, () => {
+      const t = visible(rates(pages[lang]));
+      for (const s of shown[lang]) assert.ok(t.includes(s), s);
+      assert.ok(!OLD.test(t), String(t.match(OLD)));
+      // every $ amount in the rates section is a filled value
+      assert.ok(!/\$\d/.test(visible(rates(pages[lang]).replace(/<span data-price="[^"]+">[^<]*<\/span>/g, ""))), "hard-coded $ amount");
+    });
+    await check(`${lang}: one highlighter on the rates screen (the guarantee); form line has the check icon`, () => {
+      const r = rates(pages[lang]);
+      assert.equal((r.match(/<div class="guarantee">/g) || []).length, 1);
+      assert.ok(!/\.rate\.featured \.price span\{background/.test(pages[lang]), "old featured-price highlighter CSS");
+      assert.match(pages[lang], /\.guarantee strong\{[^}]*background:var\(--hi\)/);
+      assert.match(pages[lang], /<p class="form-promise"><svg class="check" viewBox="0 0 24 24" aria-hidden="true">/);
+    });
+  }
+  await check("/, /es/, /llms.txt: served by the app, Cache-Control public, max-age=600", async () => {
+    for (const p of ["/", "/es/", "/llms.txt"]) {
+      const r = await get(p);
+      assert.equal(r.status, 200);
+      assert.equal(r.headers.get("cache-control"), "public, max-age=600");
+      assert.ok(r.headers.get("strict-transport-security"));
+    }
+    assert.equal((await get("/", { method: "HEAD" })).status, 200);
+  });
+  await check("built files hold the fallback prices (filling them with the fallback changes nothing)", () => {
+    const fs = require("node:fs");
+    for (const f of ["www/index.html", "www/es/index.html"]) {
+      const h = fs.readFileSync(f, "utf8");
+      assert.equal(pricing.fillHtml(h, pricing.FALLBACK), h, f);
+    }
+    const l = fs.readFileSync("www/llms.txt", "utf8");
+    assert.equal(pricing.fillLlms(l, pricing.FALLBACK), l);
+  });
+  await check("a changed secret shows up without a rebuild; invalid or missing -> fallback", async () => {
+    const changed = JSON.parse(JSON.stringify(pricing.FALLBACK));
+    changed.rates.college = 95;
+    changed.plans[2].price = 1199;
+    const quiet = console.warn, warnings = [];
+    console.warn = (...a) => warnings.push(a.join(" "));
+    try {
+      app._setPricingSource(async () => JSON.stringify(changed));
+      const en = await (await get("/")).text(), es = await (await get("/es/")).text(), llms = await (await get("/llms.txt")).text();
+      assert.ok(visible(rates(en)).includes("$95") && visible(rates(en)).includes("$1,199"), "new prices not shown");
+      assert.ok(visible(rates(en)).includes("about $100/hour, save $121"), "engineering plan per hour/save");
+      assert.ok(visible(rates(es)).includes("unos $100/hora, ahorras $121"));
+      assert.ok(visible(rates(en)).includes("Save about 16%"), String(visible(rates(en)).match(/Save about \d+%/)));
+      const ld = JSON.parse(en.match(/<script type="application\/ld\+json" id="ld">([\s\S]*?)<\/script>/)[1]);
+      const offers = ld["@graph"][1].hasOfferCatalog.itemListElement;
+      assert.deepEqual(offers.map((o) => o.price), [65, 95, 110, 40, 429, 899, 1199]);
+      assert.equal(offers[6].priceSpecification.price, 1199);
+      assert.equal(ld["@graph"][1].priceRange, "$40–$110");
+      assert.ok(llms.includes("College, one-on-one: $95 per hour") && llms.includes("$1,199 for 12"), "llms.txt not filled");
+      // cached: the secret is read once, then not again within 10 minutes
+      let reads = 0;
+      const realSource = async () => { reads++; return JSON.stringify(changed); };
+      app._setPricingSource(realSource);
+      await get("/"); await get("/es/"); await get("/");
+      assert.equal(reads, 1, "secret read more than once within the cache window");
+
+      for (const [what, raw] of [["invalid JSON", "{nope"], ["a from flag", JSON.stringify({ ...changed, from: true })], ["missing", ""]]) {
+        app._setPricingSource(async () => raw);
+        const h = await (await get("/")).text();
+        assert.ok(visible(rates(h)).includes("$90") && visible(rates(h)).includes("$1,099"), `${what}: fallback not served`);
+      }
+      assert.ok(warnings.some((w) => /invalid/.test(w)) && warnings.some((w) => /not set/.test(w)), "no warning logged");
+    } finally {
+      console.warn = quiet;
+      app._setPricingSource(async () => "");
+    }
   });
 
   console.log("legal pages");

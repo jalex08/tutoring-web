@@ -290,8 +290,20 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .rate p{color:var(--muted)}
   .price{font:700 1.5rem/1 var(--display);text-align:right;white-space:nowrap}
   .price small{display:block;font:400 .88rem/1.4 var(--body);color:var(--muted);margin-top:6px}
-  .rate.featured .price span{background:linear-gradient(transparent 55%,var(--hi) 55%);padding:0 3px}
-  .price-sm{font-size:1.15rem}
+  .price-sm{font-size:1.15rem;white-space:normal}
+  .pill{display:inline-block;font:700 .8rem/1.2 var(--body);color:var(--ink);background:#fff;box-shadow:inset 0 0 0 1.5px var(--ink);border-radius:999px;padding:5.5px 12.5px;letter-spacing:0;white-space:nowrap}
+  .rates-aside{margin-top:12px;color:var(--muted);font-size:.95rem}
+  .rates-aside a{font-weight:700}
+  .rates-plans{margin-top:28px;border-top:1px solid var(--rule)}
+  /* first-session guarantee: a soft-line sheet; its bold line is the rates screen's one highlighter */
+  .guarantee{display:flex;gap:14px;align-items:flex-start;margin-top:28px;background:#fff;border:1px solid var(--line);box-shadow:var(--soft-shadow);border-radius:6px;padding:20px 24px;max-width:46em}
+  .check{flex:none;width:26px;height:26px;color:var(--ink)}
+  .guarantee p{color:var(--muted);font-size:1.02rem}
+  .guarantee strong{display:inline;color:var(--graphite);background:var(--hi);border-radius:3px;padding:1px 4px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+  .form-promise{display:flex;gap:10px;align-items:flex-start;margin:0 0 20px;font-weight:700}
+  .form-promise .check{width:22px;height:22px;margin-top:1px}
+  @media (max-width:520px){.guarantee{padding:16px 16px;gap:12px}}
+  @media (max-width:760px){.rates-plans .price-sm{grid-column:1/-1;grid-row:2;text-align:left;max-width:none}.rates-plans .rate p{grid-row:3}}
   .plan-more{grid-column:1/-1}
   .plan-more summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:8px;color:var(--ink);font-weight:700;padding:4px 0}
   .plan-more summary::-webkit-details-marker{display:none}
@@ -409,6 +421,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     "itemListElement": [
      {
       "@type": "Offer",
+      "@id": "https://josediaztutoring.com/#rate-highSchool",
       "name": "High school, one-on-one",
       "description": "Weekly sessions or exam prep as needed.",
       "price": 65,
@@ -430,6 +443,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
      },
      {
       "@type": "Offer",
+      "@id": "https://josediaztutoring.com/#rate-college",
       "name": "College, one-on-one",
       "description": "Calculus, differential equations and physics.",
       "price": 90,
@@ -451,6 +465,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
      },
      {
       "@type": "Offer",
+      "@id": "https://josediaztutoring.com/#rate-engineering",
       "name": "Engineering courses, one-on-one",
       "description": "Circuits, digital logic, programming and embedded systems.",
       "price": 110,
@@ -472,6 +487,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
      },
      {
       "@type": "Offer",
+      "@id": "https://josediaztutoring.com/#rate-groupPerStudent",
       "name": "Group exam review",
       "description": "3–5 students from the same course, 2-hour session before a midterm or final.",
       "price": 40,
@@ -499,20 +515,21 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
      },
      {
       "@type": "Offer",
-      "name": "High school, monthly plan",
-      "description": "8 sessions a month, same day and time each week.",
-      "price": 480,
+      "@id": "https://josediaztutoring.com/#plan-hs-monthly",
+      "name": "High school, monthly",
+      "description": "8 sessions a month, same days and times each week.",
+      "price": 429,
       "priceCurrency": "USD",
       "priceSpecification": {
        "@type": "UnitPriceSpecification",
        "priceCurrency": "USD",
        "unitCode": "MON",
        "unitText": "MONTH",
-       "price": 480
+       "price": 429
       },
       "itemOffered": {
        "@type": "Service",
-       "name": "High school, monthly plan",
+       "name": "High school, monthly",
        "provider": {
         "@id": "https://josediaztutoring.com/#jose"
        }
@@ -520,18 +537,39 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
      },
      {
       "@type": "Offer",
-      "name": "College, semester package",
+      "@id": "https://josediaztutoring.com/#plan-college-semester",
+      "name": "College, semester",
       "description": "12 one-on-one sessions scheduled around your midterms and final.",
-      "price": 970,
+      "price": 899,
       "priceCurrency": "USD",
       "priceSpecification": {
        "@type": "PriceSpecification",
        "priceCurrency": "USD",
-       "price": 970
+       "price": 899
       },
       "itemOffered": {
        "@type": "Service",
-       "name": "College, semester package",
+       "name": "College, semester",
+       "provider": {
+        "@id": "https://josediaztutoring.com/#jose"
+       }
+      }
+     },
+     {
+      "@type": "Offer",
+      "@id": "https://josediaztutoring.com/#plan-engineering-semester",
+      "name": "Engineering, semester",
+      "description": "12 one-on-one sessions in your engineering course, scheduled around your midterms and final.",
+      "price": 1099,
+      "priceCurrency": "USD",
+      "priceSpecification": {
+       "@type": "PriceSpecification",
+       "priceCurrency": "USD",
+       "price": 1099
+      },
+      "itemOffered": {
+       "@type": "Service",
+       "name": "Engineering, semester",
        "provider": {
         "@id": "https://josediaztutoring.com/#jose"
        }
@@ -622,6 +660,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
      "acceptedAnswer": {
       "@type": "Answer",
       "text": "Reschedule for free with at least 24 hours' notice. Sessions cancelled with less notice are charged in full."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "What if the first session isn't a good fit?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Tell me within 24 hours and I'll refund it in full, no reason needed. It's for new students, one per family. If you bought a plan, I refund the whole plan."
      }
     },
     {
@@ -1120,37 +1166,45 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="rate" role="listitem">
           <h3 data-i18n="r1t">High school, one-on-one</h3>
           <p data-i18n="r1p">Weekly sessions or exam prep as needed.</p>
-          <div class="price">$65<small data-i18n="perHour">per hour</small></div>
+          <div class="price"><span data-price="rate.highSchool">$65</span><small data-i18n="perHour">per hour</small></div>
         </div>
         <div class="rate" role="listitem">
           <h3 data-i18n="r3t">College, one-on-one</h3>
           <p data-i18n="r3p">Calculus, differential equations and physics.</p>
-          <div class="price">$90<small data-i18n="perHour">per hour</small></div>
+          <div class="price"><span data-price="rate.college">$90</span><small data-i18n="perHour">per hour</small></div>
         </div>
         <div class="rate" role="listitem">
           <h3 data-i18n="r6t">Engineering courses, one-on-one</h3>
           <p data-i18n="r6p">Circuits, digital logic, programming and embedded systems.</p>
-          <div class="price">$110<small data-i18n="perHour">per hour</small></div>
+          <div class="price"><span data-price="rate.engineering">$110</span><small data-i18n="perHour">per hour</small></div>
         </div>
         <div class="rate" role="listitem">
           <h3 data-i18n="r5t">Group exam review</h3>
           <p data-i18n="r5p">3–5 students from the same course, 2-hour session before a midterm or final.</p>
-          <div class="price">$40<small data-i18n="r5s">per student, per hour</small></div>
+          <div class="price"><span data-price="rate.groupPerStudent">$40</span><small data-i18n="r5s">per student, per hour</small></div>
         </div>
+      </div>
+      <p class="rates-aside" data-i18n="ratesAside">Two students together, or something custom? <a href="#contact">Let's talk</a>.</p>
+      <div class="guarantee">
+        <svg class="check" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7.2 12.4l3.2 3.2 6.4-7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <p data-i18n="guarantee"><strong>If your first session isn't worth it, you don't pay.</strong> New students, one per family. Tell me within 24 hours.</p>
+      </div>
+      <div class="rates rates-plans" role="list">
         <div class="rate featured" role="listitem">
           <h3 data-i18n="pT">Monthly and semester plans</h3>
           <p data-i18n="pP">Pay upfront, keep a fixed weekly time and save.</p>
-          <div class="price price-sm"><span data-i18n="pPrice">Save up to 10%</span></div>
+          <div class="price price-sm"><span class="pill" data-i18n="pPrice">Save about <span data-price="badge">17%</span></span></div>
           <details class="plan-more">
             <summary data-i18n="pMore">Learn more</summary>
             <dl>
-              <div><dt data-i18n="r2t">High school, monthly plan</dt><dd data-i18n="r2p">8 sessions a month, same day and time each week.</dd><dd class="pp">$480<small data-i18n="r2s">$60/hour, save $40</small></dd></div>
-              <div><dt data-i18n="r4t">College, semester package</dt><dd data-i18n="r4p">12 one-on-one sessions scheduled around your midterms and final.</dd><dd class="pp">$970<small data-i18n="r4s">about $81/hour, save $110</small></dd></div>
+              <div><dt data-i18n="r2t">High school, monthly</dt><dd data-i18n="r2p"><span data-price="plan.hs-monthly.sessions">8</span> sessions a month, same days and times each week.</dd><dd class="pp"><span data-price="plan.hs-monthly.price">$429</span><small data-i18n="r2s"><span data-price="plan.hs-monthly.perHour">about $54/hour</span>, save <span data-price="plan.hs-monthly.save">$91</span></small></dd></div>
+              <div><dt data-i18n="r4t">College, semester</dt><dd data-i18n="r4p"><span data-price="plan.college-semester.sessions">12</span> one-on-one sessions scheduled around your midterms and final.</dd><dd class="pp"><span data-price="plan.college-semester.price">$899</span><small data-i18n="r4s"><span data-price="plan.college-semester.perHour">about $75/hour</span>, save <span data-price="plan.college-semester.save">$181</span></small></dd></div>
+              <div><dt data-i18n="r7t">Engineering, semester</dt><dd data-i18n="r7p"><span data-price="plan.engineering-semester.sessions">12</span> one-on-one sessions in your engineering course, scheduled around your midterms and final.</dd><dd class="pp"><span data-price="plan.engineering-semester.price">$1,099</span><small data-i18n="r7s"><span data-price="plan.engineering-semester.perHour">about $92/hour</span>, save <span data-price="plan.engineering-semester.save">$221</span></small></dd></div>
             </dl>
           </details>
         </div>
       </div>
-      <p class="rates-note" data-i18n="ratesNote">In-person sessions in Broward and Miami-Dade are the same price. Packages are paid at the start and valid for the current semester.</p>
+      <p class="rates-note" data-i18n="ratesNote">In-person sessions in Broward and Miami-Dade are the same price. Plans are paid at the start. Monthly plans: unused sessions carry over to the next month, then expire. Semester plans are valid for the current semester.</p>
       <div class="rates-more"><a class="btn btn-ghost" href="#contact" data-i18n="moreQ">I have more questions</a></div>
     </div>
   </section>
@@ -1170,6 +1224,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <p data-i18n="a4">No. I'll help you understand how to solve similar problems so you can do graded work yourself. That's also what gets you through the exam.</p></details>
         <details><summary data-i18n="q5">What if I need to cancel?</summary>
           <p data-i18n="a5">Reschedule for free with at least 24 hours' notice. Sessions cancelled with less notice are charged in full.</p></details>
+        <details><summary data-i18n="q7">What if the first session isn't a good fit?</summary>
+          <p data-i18n="a7">Tell me within 24 hours and I'll refund it in full, no reason needed. It's for new students, one per family. If you bought a plan, I refund the whole plan.</p></details>
         <details><summary data-i18n="q6">My exam is next week. Is it too late?</summary>
           <p data-i18n="a6">No, but book soon. Exam weeks fill up first. A focused review on the topics that will be tested can still make a real difference.</p></details>
       </div>
@@ -1203,6 +1259,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <a class="btn btn-ghost wa wa-link" id="wa-link" href="https://wa.me/17868329107" target="_blank" rel="noopener" data-i18n="wa">Message me on WhatsApp</a>
       </div>
       <form id="contact-form" novalidate>
+        <p class="form-promise"><svg class="check" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7.2 12.4l3.2 3.2 6.4-7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="formPromise">Free 20-minute intro. And if your first session isn't worth it, you don't pay.</span></p>
         <p class="err" id="form-err" role="alert" data-i18n="err">Add your name and email so I can reply.</p>
         <div class="row2">
           <div class="field"><label for="f-name"><span data-i18n="fName">Name</span> <span class="opt" data-i18n="required">(required)</span></label><input id="f-name" name="name" autocomplete="name" required></div>

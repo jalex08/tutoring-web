@@ -2,10 +2,16 @@
  * Booking-form endpoint for josediaztutoring.com.
  *
  * POST /api/contact (JSON) -> emails the request to Jose and a confirmation to
- * the client, through any SMTP server (Gmail by default). The pages are
- * served as static files by App Engine (see app.yaml); any URL without a
- * static handler reaches this code and gets a 301 (/index.html, /es, /es/index.html, legal
- * pages without the trailing slash) or a real 404 page.
+ * the client, through any SMTP server (Gmail by default).
+ *
+ * Pages: /, /es/ and /llms.txt are served here, with the prices filled in from
+ * the JSON secret `site-pricing` (cached PRICING_TTL = 10 minutes; see
+ * pricing.js). If the secret is missing or invalid, the built-in fallback
+ * prices are used and a warning is logged; if filling fails, the built file
+ * (which already holds the fallback prices) is sent as is. Every other page is
+ * a static file (see app.yaml); any URL without a static handler reaches this
+ * code and gets a 301 (/index.html, /es, /es/index.html, legal pages without
+ * the trailing slash) or a real 404 page.
  *
  * Everything about the mail server lives in Secret Manager (never in this
  * repo), so it can be changed without a redeploy: values are re-read every
@@ -30,6 +36,7 @@ const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
 const nodemailer = require("nodemailer");
+const pricingLib = require("./pricing.js");
 
 const PORT = Number(process.env.PORT) || 8080;
 const PROJECT = process.env.GOOGLE_CLOUD_PROJECT || "";
@@ -347,7 +354,77 @@ async function contact(req, res) {
   return reply(res, 200, { ok: true });
 }
 
-// --- pages: redirects and the 404 page ------------------------------------------
+// --- prices (JSON secret site-pricing) ------------------------------------------------
+// Cached for PRICING_TTL. Missing or invalid -> the fallback, with a warning. A failed
+// refresh (network, Secret Manager down) keeps the last good value.
+const PRICING_TTL = 10 * 60e3;
+const PRICING_SECRET = "site-pricing";
+let pricingSource = () => fetchSecret(PRICING_SECRET, false); // "" = not set; the dev server swaps this
+let pricingCache = null; // { value, at }
+let pricingLoad = null;
+
+async function loadPricing() {
+  let raw;
+  try {
+    raw = await pricingSource();
+  } catch (err) {
+    console.warn(`Pricing: couldn't read secret ${PRICING_SECRET} (${err.message}); using ${pricingCache ? "the last good prices" : "the fallback prices"}.`);
+    return pricingCache ? pricingCache.value : pricingLib.FALLBACK;
+  }
+  if (!raw) {
+    console.warn(`Pricing: secret ${PRICING_SECRET} is not set; using the fallback prices.`);
+    return pricingLib.FALLBACK;
+  }
+  try {
+    const value = pricingLib.parse(raw);
+    if (!pricingCache || JSON.stringify(pricingCache.value) !== JSON.stringify(value)) {
+      console.log(`Pricing: loaded ${PRICING_SECRET}: ${pricingLib.summary(value).replace(/\n/g, " | ")}`);
+    }
+    return value;
+  } catch (err) {
+    console.warn(`Pricing: secret ${PRICING_SECRET} is invalid (${err.message}); using the fallback prices.`);
+    return pricingLib.FALLBACK;
+  }
+}
+
+async function currentPricing() {
+  if (pricingCache && Date.now() - pricingCache.at < PRICING_TTL) return pricingCache.value;
+  pricingLoad ??= loadPricing()
+    .then((value) => (pricingCache = { value, at: Date.now() }).value)
+    .finally(() => (pricingLoad = null));
+  return pricingLoad;
+}
+
+// --- pages: priced pages, redirects and the 404 page ----------------------------------
+const PRICED = {
+  "/": { file: "www/index.html", type: "text/html; charset=utf-8", fill: pricingLib.fillHtml },
+  "/es/": { file: "www/es/index.html", type: "text/html; charset=utf-8", fill: pricingLib.fillHtml },
+  "/llms.txt": { file: "www/llms.txt", type: "text/plain; charset=utf-8", fill: pricingLib.fillLlms },
+};
+const pageFiles = new Map(); // path -> built file (read once)
+const rendered = new WeakMap(); // pricing value -> { path: filled page }
+
+async function pricedPage(req, res, pathname) {
+  const pg = PRICED[pathname];
+  if (!pageFiles.has(pathname)) pageFiles.set(pathname, fs.readFileSync(path.join(__dirname, pg.file), "utf8"));
+  const built = pageFiles.get(pathname);
+  let body = built;
+  try {
+    const p = await currentPricing();
+    if (!rendered.has(p)) rendered.set(p, {});
+    const cache = rendered.get(p);
+    body = cache[pathname] ??= pg.fill(built, p);
+  } catch (err) {
+    console.error(`Pricing: couldn't fill ${pathname}, sending the built page (fallback prices):`, err.message);
+  }
+  res.writeHead(200, {
+    ...SECURITY_HEADERS,
+    "Content-Type": pg.type,
+    "Cache-Control": "public, max-age=600",
+  });
+  res.end(req.method === "HEAD" ? undefined : body);
+}
+
 const SECURITY_HEADERS = {
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "X-Content-Type-Options": "nosniff",
@@ -376,12 +453,21 @@ function notFoundPage(req, res) {
 }
 
 function page(req, res, pathname, query) {
+  const read = req.method === "GET" || req.method === "HEAD";
   let to = REDIRECTS[pathname];
-  // old ?lang=es links (in production "/" is static and handled in the page itself)
-  if ((pathname === "/" || pathname === "/index.html") && query.get("lang") === "es") to = "/es/";
-  if (to && (req.method === "GET" || req.method === "HEAD")) {
+  // old ?lang=es links -> /es/ (keeps ?topic=, the class picked in the hero)
+  if ((pathname === "/" || pathname === "/index.html") && query.get("lang") === "es") {
+    to = "/es/" + (query.get("topic") ? "?topic=" + encodeURIComponent(query.get("topic")) : "");
+  }
+  if (to && read) {
     res.writeHead(301, { ...SECURITY_HEADERS, Location: to, "Cache-Control": "public, max-age=3600" });
     return res.end();
+  }
+  if (PRICED[pathname] && read) {
+    return pricedPage(req, res, pathname).catch((err) => {
+      console.error(err);
+      if (!res.headersSent) notFoundPage(req, res);
+    });
   }
   return notFoundPage(req, res);
 }
@@ -408,6 +494,7 @@ const server = http.createServer((req, res) => {
 if (require.main === module) {
   server.listen(PORT, () => {
     console.log(`Listening on ${PORT}`);
+    currentPricing().catch(() => {}); // warm the price cache before the first visitor
     smtpConfig().then(
       (c) => console.log(`SMTP server: ${c.host}:${c.port} (${c.secure ? "TLS" : "STARTTLS"})`),
       (err) => console.error("SMTP settings are invalid:", err.message)
@@ -415,4 +502,10 @@ if (require.main === module) {
   });
 }
 
-module.exports = { server, secrets, smtpConfig, buildMessages, allowed, _setSend: (fn) => (send = fn) };
+module.exports = {
+  server, secrets, smtpConfig, buildMessages, allowed, currentPricing,
+  _setSend: (fn) => (send = fn),
+  // dev server / tests: read prices from somewhere else; clear the 10-minute cache
+  _setPricingSource: (fn) => { pricingSource = fn; pricingCache = null; },
+  _clearPricingCache: () => { pricingCache = null; },
+};
