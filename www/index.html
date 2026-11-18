@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script id="legacy-lang">/* old ?lang=es links -> the Spanish page (keeps ?topic=) */ if (new URLSearchParams(location.search).get("lang") === "es") location.replace("/es/" + (t => t ? "?topic=" + encodeURIComponent(t) : "")(new URLSearchParams(location.search).get("topic")) + location.hash);</script>
+<script id="legacy-lang">/* old ?lang=es links -> the Spanish page (keeps ?topic=) */ if (new URLSearchParams(location.search).get("lang") === "es") location.replace("/es/" + (function (t) { return t ? "?topic=" + encodeURIComponent(t) : ""; })(new URLSearchParams(location.search).get("topic")) + location.hash);</script>
 <!-- Google Tag Manager -->
 <script>window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
