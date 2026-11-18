@@ -1,12 +1,21 @@
 #!/usr/bin/env node
 /**
- * Builds the Spanish page and the structured data. No dependencies.
+ * Builds the Spanish pages, the legal pages and the structured data. No dependencies.
  *
- *   Sources (edit these):  www/index.html   English page + CONFIG
+ *   Sources (edit these):  www/index.html   English home page + CONFIG, and the site's
+ *                                           shared header, footer, CSS and analytics
+ *                          pages/*.html     English legal pages (privacy, terms, accessibility)
+ *                          pages/legal.css  their extra CSS
  *                          i18n/es.js       Spanish text, keyed by data-i18n
  *   Outputs (generated):   www/es/index.html
- *                          the JSON-LD <script id="ld"> block inside www/index.html
- *                          www/sitemap.xml  (lastmod = build date)
+ *                          www/privacy.html, www/terms.html, www/accessibility.html
+ *                          www/es/privacidad.html, www/es/terminos.html, www/es/accesibilidad.html
+ *                          in place: the JSON-LD block and footer year in www/index.html,
+ *                                    the footer in www/404.html
+ *                          www/sitemap.xml  (lastmod = date the page last changed)
+ *
+ * The legal pages show a "Last updated" date: the build date (America/New_York) of the
+ * last build that changed the page's text, so it is the date of the first deploy with that text.
  *
  * Run: npm run build      Check only (exit 1 if outputs are stale): npm run build -- --check
  */
@@ -20,12 +29,25 @@ const ROOT = path.join(__dirname, "..");
 const SRC = path.join(ROOT, "www/index.html");
 const OUT_ES = path.join(ROOT, "www/es/index.html");
 const SITEMAP = path.join(ROOT, "www/sitemap.xml");
+const PAGE404 = path.join(ROOT, "www/404.html");
 const SITE = "https://josediaztutoring.com";
 const URLS = { en: `${SITE}/`, es: `${SITE}/es/` };
 const CHECK = process.argv.includes("--check");
 
 const ES = require(path.join(ROOT, "i18n/es.js"));
 let html = fs.readFileSync(SRC, "utf8");
+// Dates ("Last updated", sitemap lastmod, footer year) are in Florida time, whatever the machine's time zone.
+const TZ = "America/New_York";
+const today = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()); // YYYY-MM-DD
+
+// Legal pages: English source, URL in each language. `strict`: no prices, no phone.
+const LEGAL = [
+  { id: "privacy", src: "pages/privacy.html", en: "/privacy/", es: "/es/privacidad/", strict: true },
+  { id: "terms", src: "pages/terms.html", en: "/terms/", es: "/es/terminos/", strict: true, noPrices: true },
+  { id: "accessibility", src: "pages/accessibility.html", en: "/accessibility/", es: "/es/accesibilidad/" },
+];
+// English path -> Spanish path, for links on the Spanish pages
+const ES_PATH = { "/": "/es/", ...Object.fromEntries(LEGAL.map((p) => [p.en, p.es])) };
 
 // --- small HTML helpers (the page is hand-written, so these stay simple) -------
 function fail(msg) {
@@ -79,6 +101,10 @@ const CONFIG = vm.runInNewContext(`(${cfgSrc[1]})`);
 const isSet = (v) => typeof v === "string" && v.trim() !== "" && !/^\[.*\]$/.test(v.trim());
 const telDigits = (html.match(/href="tel:\+?(\d+)"/) || [])[1];
 if (telDigits !== String(CONFIG.phone).replace(/\D/g, "")) fail(`footer tel: link (${telDigits}) doesn't match CONFIG.phone (${CONFIG.phone})`);
+const footMail = (html.match(/<footer[\s\S]*?href="mailto:([^"]+)"/) || [])[1];
+if (isSet(CONFIG.email) && footMail !== CONFIG.email) fail(`footer mailto: link (${footMail}) doesn't match CONFIG.email (${CONFIG.email})`);
+// © year in the footer (static, so the pages need no script for it)
+html = replaceOne(html, /(<span id="yr">)\d{4}(<\/span>)/, `$1${today.slice(0, 4)}$2`, "footer year");
 
 // --- structured data --------------------------------------------------------------
 function price(src, key) {
@@ -207,23 +233,39 @@ const enHtml = replaceOne(html, LD_RE, () => ldBlock(jsonld("en", enStrings)), "
 const missing = Object.keys(enStrings).filter((k) => !["metaDesc", "jobTitle"].includes(k) && !(k in ES));
 if (missing.length) fail(`i18n/es.js is missing: ${missing.join(", ")}`);
 
-let es = enHtml;
-// inner HTML of data-i18n elements, last to first so offsets stay valid
-for (const el of i18nElements(es).reverse()) es = es.slice(0, el.start) + ES[el.key] + es.slice(el.end);
-es = es.replace(/<[^>]*\sdata-i18n-ph="([^"]+)"[^>]*>/g, (tag, k) => {
-  if (!(k in ES)) fail(`i18n/es.js is missing placeholder ${k}`);
-  return replaceOne(tag, /(\splaceholder=")[^"]*"/, (_, a) => `${a}${esc(ES[k])}"`, `placeholder for ${k}`);
-});
-es = es.replace(/<[^>]*\sdata-i18n-attr="([^"]+)"[^>]*>/g, (tag, spec) => {
-  for (const pair of spec.split(";")) {
-    const [attr, k] = pair.split(":");
-    if (!(k in ES)) fail(`i18n/es.js is missing ${k}`);
-    const re = new RegExp(`(\\s${attr}=")[^"]*"`);
-    if (!re.test(tag)) fail(`${attr} not found on element with data-i18n-attr="${spec}"`);
-    tag = tag.replace(re, (_, a) => `${a}${esc(ES[k])}"`);
+/** The Spanish version of an English page or fragment (every data-i18n* must be in i18n/es.js). */
+function translate(src) {
+  let out = src;
+  // inner HTML of data-i18n elements, last to first so offsets stay valid
+  for (const el of i18nElements(out).reverse()) {
+    if (!(el.key in ES)) fail(`i18n/es.js is missing: ${el.key}`);
+    out = out.slice(0, el.start) + ES[el.key] + out.slice(el.end);
   }
-  return tag;
-});
+  out = out.replace(/<[^>]*\sdata-i18n-ph="([^"]+)"[^>]*>/g, (tag, k) => {
+    if (!(k in ES)) fail(`i18n/es.js is missing placeholder ${k}`);
+    return replaceOne(tag, /(\splaceholder=")[^"]*"/, (_, a) => `${a}${esc(ES[k])}"`, `placeholder for ${k}`);
+  });
+  out = out.replace(/<[^>]*\sdata-i18n-attr="([^"]+)"[^>]*>/g, (tag, spec) => {
+    for (const pair of spec.split(";")) {
+      const [attr, k] = pair.split(":");
+      if (!(k in ES)) fail(`i18n/es.js is missing ${k}`);
+      const re = new RegExp(`(\\s${attr}=")[^"]*"`);
+      if (!re.test(tag)) fail(`${attr} not found on element with data-i18n-attr="${spec}"`);
+      tag = tag.replace(re, (_, a) => `${a}${esc(ES[k])}"`);
+    }
+    return tag;
+  });
+  return out;
+}
+
+/** Spanish pages link to Spanish pages (links with hreflang, i.e. the language toggle, are left alone). */
+function localizeLinks(src) {
+  return src.replace(/<a\b[^>]*>/g, (tag) =>
+    /\shreflang=/.test(tag) ? tag : tag.replace(/(\shref=")(\/[^"#]*)(#[^"]*)?"/, (m, a, p, h = "") => (p in ES_PATH ? `${a}${ES_PATH[p]}${h}"` : m))
+  );
+}
+
+let es = localizeLinks(translate(enHtml));
 
 const head = [
   [/<html lang="en">/, '<html lang="es">', "<html lang>"],
@@ -249,43 +291,209 @@ es = es.replace(
   "<!DOCTYPE html>\n<!-- Generated by scripts/build.js from www/index.html + i18n/es.js. Edit those, then run `npm run build`. -->\n"
 );
 
+// --- shared parts, taken from the built home pages ----------------------------------
+/** The text between two marker strings (inclusive of neither unless `keep`), exactly once. */
+function between(src, from, to, what, keep = false) {
+  const a = src.indexOf(from), b = a < 0 ? -1 : src.indexOf(to, a + from.length);
+  if (a < 0 || b < 0 || src.indexOf(from, a + 1) >= 0) fail(`${what}: markers not found exactly once`);
+  return keep ? src.slice(a, b + to.length) : src.slice(a + from.length, b);
+}
+function parts(page) {
+  return {
+    gtmHead: between(page, "<!-- Google Tag Manager -->", "<!-- End Google Tag Manager -->", "GTM <head> snippet", true),
+    gtmBody: between(page, "<!-- Google Tag Manager (noscript) -->", "<!-- End Google Tag Manager (noscript) -->", "GTM <body> snippet", true),
+    css: between(page, "/* ==== shared:start", "/* ==== shared:end ==== */", "shared CSS", true),
+    footerCss: between(page, "/* ---- footer-css:start", "/* ---- footer-css:end ---- */", "footer CSS", true),
+    skip: between(page, '<a class="skip"', "</a>", "skip link", true),
+    header: between(page, '<header class="site-head">', "</header>", "header", true),
+    footer: between(page, '<footer class="site-foot">', "</footer>", "footer", true),
+    wa: between(page, '<a class="wa-float', "</a>", "WhatsApp button", true),
+    analytics: between(page, "/* analytics:start", "/* analytics:end */", "analytics script", true),
+  };
+}
+const PARTS = { en: parts(enHtml), es: parts(es) };
+
+/** Footer without scripts: links whose CONFIG value is set are shown, the current page is marked. */
+function staticFooter(footer, current) {
+  for (const [id, url] of [["foot-gbp", CONFIG.googleBusinessProfile], ["foot-review", CONFIG.googleReview]]) {
+    if (isSet(url)) footer = replaceOne(footer, new RegExp(`<li id="${id}" hidden><a href="#"`), `<li id="${id}"><a href="${esc(url)}"`, id);
+  }
+  if (current) footer = replaceOne(footer, new RegExp(`<a href="${current}"`), `<a href="${current}" aria-current="page"`, `footer link to ${current}`);
+  return footer;
+}
+
+const slug = (t) => t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const longDate = (iso, lang) =>
+  new Date(iso + "T12:00:00Z").toLocaleDateString(lang === "es" ? "es-US" : "en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
+const DATE_RE = /<time datetime="(\d{4}-\d\d-\d\d)">[^<]*<\/time>/;
+const visibleText = (h) => text(h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, " "));
+
+/** One legal page in one language. Returns { html, date, sections }. `old` = the file as it is now. */
+function legalPage(page, lang, old) {
+  const P = PARTS[lang];
+  let body = fs.readFileSync(path.join(ROOT, page.src), "utf8").replace(/^<!--[\s\S]*?-->\s*/, "");
+  if (lang === "es") body = localizeLinks(translate(body));
+  const meta = (name) => {
+    const m = body.match(new RegExp(`<meta name="${name}" content="([^"]*)"[^>]*>\\n?`));
+    if (!m) fail(`${page.src}: <meta name="${name}"> missing`);
+    body = body.replace(m[0], "");
+    return m[1];
+  };
+  const title = meta("title"), desc = meta("description");
+  if (text(desc).length > 155) fail(`${page.src} (${lang}): meta description is ${text(desc).length} chars (max 155)`);
+  body = body.trim();
+
+  // section ids + the table of contents (static HTML)
+  const toc = [], ids = new Set(["main", "toc-title", "summary-title"]);
+  body = body.replace(/(<section class="sec"[^>]*>\s*)<h2>([\s\S]*?)<\/h2>/g, (_, open, h) => {
+    const id = slug(text(h));
+    if (!id || ids.has(id)) fail(`${page.src} (${lang}): duplicate or empty section id "${id}"`);
+    ids.add(id);
+    toc.push(`<li><a href="#${id}">${h}</a></li>`);
+    return `${open}<h2 id="${id}">${h}</h2>`;
+  });
+  if (!toc.length) fail(`${page.src}: no sections`);
+  body = replaceOne(body, /<ol data-toc><\/ol>/, `<ol>\n      ${toc.join("\n      ")}\n    </ol>`, "table of contents");
+  for (const [, id] of body.matchAll(/href="#([^"]*)"/g)) if (!ids.has(id)) fail(`${page.src} (${lang}): link to missing #${id}`);
+
+  // content rules
+  const words = visibleText(body);
+  if (/\[[^\]]*\]/.test(words) || /class="confirm"/.test(body)) fail(`${page.src} (${lang}): placeholder text left: ${words.match(/\[[^\]]*\]/)}`);
+  if (page.strict && /tel:|\b786\b|832-?9107/.test(body)) fail(`${page.src} (${lang}): no phone number on this page (email only)`);
+  if (page.noPrices && /\$|\bUSD\b|dollar|d[oó]lar|\b\d+\s+(sessions|sesiones)\b/i.test(words)) fail(`${page.src} (${lang}): no prices, amounts or package sizes on this page`);
+
+  const url = (l) => `${SITE}${page[l]}`;
+  const header = P.header
+    .replace('class="mark" href="#top"', `class="mark" href="${lang === "es" ? "/es/" : "/"}"`)
+    .replace(/href="#([\w-]+)"/g, `href="${lang === "es" ? "/es/" : "/"}#$1"`)
+    .replace(/href="\/" hreflang="en"/, `href="${page.en}" hreflang="en"`)
+    .replace(/href="\/es\/" hreflang="es"/, `href="${page.es}" hreflang="es"`);
+  const wa = P.wa.replace(" is-hidden", "");
+  const fonts = "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap";
+
+  const render = (date) => `<!DOCTYPE html>
+<!-- Generated by scripts/build.js from ${page.src}${lang === "es" ? " + i18n/es.js" : ""} and the shared parts of www/index.html. Edit those, then run \`npm run build\`. -->
+<html lang="${lang}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+${P.gtmHead}
+<title>${title}</title>
+<meta name="description" content="${desc}">
+<link rel="canonical" href="${url(lang)}">
+<link rel="alternate" hreflang="en" href="${url("en")}">
+<link rel="alternate" hreflang="es" href="${url("es")}">
+<link rel="alternate" hreflang="x-default" href="${url("en")}">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Jose Diaz Tutoring">
+<meta property="og:title" content="${title}">
+<meta property="og:description" content="${desc}">
+<meta property="og:locale" content="${lang}_US">
+<meta property="og:locale:alternate" content="${lang === "en" ? "es" : "en"}_US">
+<meta property="og:url" content="${url(lang)}">
+<meta property="og:image" content="${SITE}/og-image.png">
+<meta name="theme-color" content="#1C4C9E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="${fonts}" rel="stylesheet">
+<style>
+  ${P.css}
+${fs.readFileSync(path.join(ROOT, "pages/legal.css"), "utf8").trim()}
+</style>
+</head>
+<body>
+${P.gtmBody}
+${P.skip}
+
+${header}
+
+<main id="main">
+${body.replace(/<time data-build-date><\/time>/, `<time datetime="${date}">${longDate(date, lang)}</time>`)}
+
+${wa}
+</main>
+
+${staticFooter(P.footer, page[lang])}
+
+<script>
+const LANG = "${lang}";
+${P.analytics}
+</script>
+</body>
+</html>
+`;
+  // keep the date unless the page itself changed
+  let date = today;
+  const was = old && old.match(DATE_RE);
+  if (was && old.replace(DATE_RE, "<time>") === render(today).replace(DATE_RE, "<time>")) date = was[1];
+  return { html: render(date), date, sections: toc.length };
+}
+
+const outputs = [];
+const lastmod = {}; // url path -> date
+const readOld = (f) => (fs.existsSync(f) ? fs.readFileSync(f, "utf8") : null);
+// /privacy/ -> www/privacy.html, /es/privacidad/ -> www/es/privacidad.html (app.yaml maps the URL to the file)
+const outFile = (p) => path.join(ROOT, "www", p.replace(/^\/|\/$/g, "") + ".html");
+for (const page of LEGAL) {
+  const built = {};
+  for (const lang of ["en", "es"]) {
+    built[lang] = legalPage(page, lang, readOld(outFile(page[lang])));
+    outputs.push([outFile(page[lang]), built[lang].html]);
+    lastmod[page[lang]] = built[lang].date;
+  }
+  if (built.en.sections !== built.es.sections) fail(`${page.src}: English has ${built.en.sections} sections, Spanish ${built.es.sections}`);
+}
+
+// --- 404 page: the site footer, in both languages -----------------------------------------
+function footer404() {
+  let f = staticFooter(PARTS.en.footer);
+  f = replaceOne(f, /<h2 class="foot-h" data-i18n="footPolicies">Policies<\/h2>/,
+    `<h2 class="foot-h">Policies <span lang="es">· ${ES.footPolicies}</span></h2>`, "404 policies heading");
+  const esLinks = between(PARTS.es.footer, '<ul class="legal-links">', "</ul>", "Spanish policy links", true).replace('<ul class="legal-links">', '<ul class="legal-links" lang="es">');
+  f = replaceOne(f, /(<ul class="legal-links">[\s\S]*?<\/ul>)/, `$1\n      ${esLinks}`, "404 policy links");
+  f = replaceOne(f, /(<span data-i18n="footFine">[\s\S]*?<\/span>)/, `$1 <span lang="es">${ES.footFine}</span>`, "404 fine print");
+  return f;
+}
+let page404 = fs.readFileSync(PAGE404, "utf8");
+page404 = page404.replace(/(<!-- footer:start[^>]*-->\n)[\s\S]*?(<!-- footer:end -->)/, (_, a, b) => `${a}${footer404()}\n${b}`);
+page404 = page404.replace(/(\/\* ---- footer-css:start[^\n]*\n)[\s\S]*?( {2}\/\* ---- footer-css:end ---- \*\/)/, (_, a, b) =>
+  `${a}${PARTS.en.footerCss.replace(/^\/\* ---- footer-css:start[^\n]*\n/, "").replace(/\s*\/\* ---- footer-css:end ---- \*\/$/, "")}\n${b}`);
+if (!page404.includes('<footer class="site-foot">') || !page404.includes(".site-foot{")) fail("www/404.html: footer markers missing");
+
 // --- sitemap --------------------------------------------------------------------------
-const today = new Date().toISOString().slice(0, 10);
-const alt = (indent) =>
-  ["en", "es"].map((l) => `${indent}<xhtml:link rel="alternate" hreflang="${l}" href="${URLS[l]}"/>`).join("\n") +
-  `\n${indent}<xhtml:link rel="alternate" hreflang="x-default" href="${URLS.en}"/>`;
+const oldMap = readOld(SITEMAP) || "";
+const oldLastmod = Object.fromEntries([...oldMap.matchAll(/<loc>([^<]+)<\/loc>\s*<lastmod>([^<]+)<\/lastmod>/g)].map((m) => [m[1], m[2]]));
+const homeChanged = (file, content) => readOld(file) !== content;
+lastmod["/"] = homeChanged(SRC, enHtml) ? today : oldLastmod[URLS.en] || today;
+lastmod["/es/"] = homeChanged(OUT_ES, es) ? today : oldLastmod[URLS.es] || today;
+const pairs = [{ en: "/", es: "/es/" }, ...LEGAL];
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
-${["en", "es"].map((l) => `  <url>
-    <loc>${URLS[l]}</loc>
-    <lastmod>${today}</lastmod>
-${alt("    ")}
-  </url>`).join("\n")}
+${pairs.flatMap((pair) => ["en", "es"].map((l) => `  <url>
+    <loc>${SITE}${pair[l]}</loc>
+    <lastmod>${lastmod[pair[l]]}</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="${SITE}${pair.en}"/>
+    <xhtml:link rel="alternate" hreflang="es" href="${SITE}${pair.es}"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="${SITE}${pair.en}"/>
+  </url>`)).join("\n")}
 </urlset>
 `;
 
 // --- write ----------------------------------------------------------------------------
-const outputs = [
-  [SRC, enHtml],
-  [OUT_ES, es],
-];
-let stale = [];
+outputs.unshift([SRC, enHtml], [OUT_ES, es], [PAGE404, page404]);
+outputs.push([SITEMAP, sitemap]);
+const stale = [];
 for (const [file, content] of outputs) {
-  const old = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : null;
-  if (old === content) continue;
+  if (readOld(file) === content) continue;
   stale.push(path.relative(ROOT, file));
   if (!CHECK) {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, content);
   }
-}
-// the sitemap only changes date when a page changed (or it doesn't exist yet)
-const oldMap = fs.existsSync(SITEMAP) ? fs.readFileSync(SITEMAP, "utf8") : "";
-const mapNeeded = !oldMap.includes("hreflang") || stale.length;
-if (mapNeeded && oldMap !== sitemap) {
-  stale.push("www/sitemap.xml");
-  if (!CHECK) fs.writeFileSync(SITEMAP, sitemap);
 }
 
 if (CHECK) {

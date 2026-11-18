@@ -15,4 +15,46 @@
     <xhtml:link rel="alternate" hreflang="es" href="https://josediaztutoring.com/es/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://josediaztutoring.com/"/>
   </url>
+  <url>
+    <loc>https://josediaztutoring.com/privacy/</loc>
+    <lastmod>2026-11-17</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://josediaztutoring.com/privacy/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://josediaztutoring.com/es/privacidad/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://josediaztutoring.com/privacy/"/>
+  </url>
+  <url>
+    <loc>https://josediaztutoring.com/es/privacidad/</loc>
+    <lastmod>2026-11-17</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://josediaztutoring.com/privacy/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://josediaztutoring.com/es/privacidad/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://josediaztutoring.com/privacy/"/>
+  </url>
+  <url>
+    <loc>https://josediaztutoring.com/terms/</loc>
+    <lastmod>2026-11-17</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://josediaztutoring.com/terms/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://josediaztutoring.com/es/terminos/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://josediaztutoring.com/terms/"/>
+  </url>
+  <url>
+    <loc>https://josediaztutoring.com/es/terminos/</loc>
+    <lastmod>2026-11-17</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://josediaztutoring.com/terms/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://josediaztutoring.com/es/terminos/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://josediaztutoring.com/terms/"/>
+  </url>
+  <url>
+    <loc>https://josediaztutoring.com/accessibility/</loc>
+    <lastmod>2026-11-17</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://josediaztutoring.com/accessibility/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://josediaztutoring.com/es/accesibilidad/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://josediaztutoring.com/accessibility/"/>
+  </url>
+  <url>
+    <loc>https://josediaztutoring.com/es/accesibilidad/</loc>
+    <lastmod>2026-11-17</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://josediaztutoring.com/accessibility/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://josediaztutoring.com/es/accesibilidad/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://josediaztutoring.com/accessibility/"/>
+  </url>
 </urlset>

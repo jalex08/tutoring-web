@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Local checks for routing, the booking form (email stubbed), the Spanish page
- * and the structured data. Run: npm test
+ * Local checks for routing, the booking form (email stubbed), the Spanish page,
+ * the legal pages, links and the structured data. Run: npm test
  */
 "use strict";
 
@@ -38,6 +38,8 @@ srv.listen(0, async () => {
     "/": "text/html", "/es/": "text/html", "/robots.txt": "text/plain", "/sitemap.xml": "application/xml",
     "/llms.txt": "text/plain", "/og-image.png": "image/png", "/favicon.ico": "image/x-icon",
     "/favicon.svg": "image/svg+xml", "/apple-touch-icon.png": "image/png",
+    "/privacy/": "text/html", "/terms/": "text/html", "/accessibility/": "text/html",
+    "/es/privacidad/": "text/html", "/es/terminos/": "text/html", "/es/accesibilidad/": "text/html",
   };
   for (const [p, type] of Object.entries(ok)) {
     await check(`${p} -> 200 ${type}`, async () => {
@@ -47,7 +49,7 @@ srv.listen(0, async () => {
       assert.ok(r.headers.get("strict-transport-security"));
     });
   }
-  for (const p of ["/foo", "/.well-known/ard.json", "/es/foo", "/index.htm", "/api"]) {
+  for (const p of ["/foo", "/.well-known/ard.json", "/es/foo", "/index.htm", "/api", "/privacy/foo", "/es/privacy/", "/privacidad/"]) {
     await check(`${p} -> 404 html, noindex`, async () => {
       const r = await get(p);
       assert.equal(r.status, 404);
@@ -57,6 +59,9 @@ srv.listen(0, async () => {
     });
   }
   const redirects = { "/index.html": "/", "/es": "/es/", "/es/index.html": "/es/", "/index.html?lang=es": "/es/" };
+  for (const p of ["/privacy", "/terms", "/accessibility", "/es/privacidad", "/es/terminos", "/es/accesibilidad"]) {
+    redirects[p] = redirects[`${p}.html`] = redirects[`${p}/index.html`] = `${p}/`;
+  }
   for (const [p, to] of Object.entries(redirects)) {
     await check(`${p} -> 301 ${to}`, async () => {
       const r = await get(p);
@@ -91,6 +96,16 @@ srv.listen(0, async () => {
     assert.equal(sent.length, 1);
     assert.equal(sent[0].length, 2);
     assert.equal(sent[0][1].subject, "Recibí tu solicitud de tutoría");
+    const body = sent[0][1].text;
+    assert.ok(body.includes("Recibes este correo porque enviaste una solicitud en josediaztutoring.com."), "email footer missing");
+    assert.ok(body.includes("https://josediaztutoring.com/es/privacidad/") && body.includes("https://josediaztutoring.com/es/terminos/"));
+  });
+  await check("English confirmation has the English footer", async () => {
+    sent = [];
+    await post({ ...form, email: "student2@example.test", lang: "en" });
+    const body = sent[0][1].text;
+    assert.ok(body.includes("You're receiving this because you sent a request on josediaztutoring.com."));
+    assert.ok(body.includes("Privacy Policy: https://josediaztutoring.com/privacy/") && body.includes("Terms: https://josediaztutoring.com/terms/"));
   });
   await check("honeypot filled -> 200 but nothing sent", async () => {
     sent = [];
@@ -185,10 +200,89 @@ srv.listen(0, async () => {
     assert.match(pages.es, /placeholder="p\. ej\., Calculus II en FIU"/);
     assert.match(pages.es, /aria-label="Escríbele a Jose por WhatsApp"/);
   });
-  await check("sitemap lists / and /es/ with hreflang", async () => {
+  await check("home: honeypot hidden from assistive tech and keyboard, still posted", () => {
+    for (const h of [pages.en, pages.es]) {
+      assert.match(h, /<div class="hp" aria-hidden="true"><label for="f-website">Website<\/label><input id="f-website" name="website" tabindex="-1" autocomplete="off"><\/div>/);
+      assert.match(h, /website: f\.website\.value/);
+    }
+  });
+  await check("home: privacy notice under the form, in the page's language", () => {
+    assert.match(pages.en, /<p class="form-note"[^>]*>By sending this form, you agree to the <a href="\/privacy\/">Privacy Policy<\/a>/);
+    assert.match(pages.es, /<p class="form-note"[^>]*>Al enviar este formulario, aceptas la <a href="\/es\/privacidad\/">Política de privacidad<\/a>/);
+  });
+
+  console.log("legal pages");
+  const LEGAL = [
+    { en: "/privacy/", es: "/es/privacidad/", title: ["Privacy Policy", "Política de privacidad"], strict: true },
+    { en: "/terms/", es: "/es/terminos/", title: ["Terms of Service", "Términos del servicio"], strict: true, noPrices: true },
+    { en: "/accessibility/", es: "/es/accesibilidad/", title: ["Accessibility Statement", "Declaración de accesibilidad"] },
+  ];
+  const main = (h) => h.slice(h.indexOf('<main id="main">'), h.indexOf("</main>"));
+  const sections = (h) => [...h.matchAll(/<section class="sec"[^>]*>\s*<h2 id="[^"]+">/g)].length;
+  const all = { "/": pages.en, "/es/": pages.es };
+  for (const page of LEGAL) {
+    const html = { en: await (await get(page.en)).text(), es: await (await get(page.es)).text() };
+    Object.assign(all, { [page.en]: html.en, [page.es]: html.es });
+    for (const [i, lang] of ["en", "es"].entries()) {
+      const h = html[lang], p = page[lang];
+      await check(`${p}: head, toggle, footer`, () => {
+        assert.match(h, new RegExp(`<html lang="${lang}">`));
+        assert.ok(h.includes(`<title>${page.title[i]} | Jose Diaz Tutoring</title>`));
+        assert.ok(h.includes(`<link rel="canonical" href="https://josediaztutoring.com${p}">`));
+        for (const [hl, u] of [["en", page.en], ["es", page.es], ["x-default", page.en]])
+          assert.ok(h.includes(`<link rel="alternate" hreflang="${hl}" href="https://josediaztutoring.com${u}">`), hl);
+        assert.ok(decode(h.match(/<meta name="description" content="([^"]*)"/)[1]).length <= 155);
+        assert.ok(h.slice(0, h.indexOf("<title>")).includes("'dataLayer','GTM-TG7DX6ZB')"), "GTM missing");
+        assert.ok(h.includes(`<a href="${page.en}" hreflang="en"`) && h.includes(`<a href="${page.es}" hreflang="es"`), "EN/ES toggle");
+        assert.ok(h.includes(`<a href="${p}" aria-current="page"`), "footer aria-current");
+        assert.match(h, /<a class="wa-float wa-link" id="wa-float"[^>]*aria-label="[^"]+"/);
+        assert.match(h, /<nav class="toc"[\s\S]*?<ol>\s*<li><a href="#/);
+        assert.ok(!h.includes("data:image") && !/Kalam/.test(h.slice(0, h.indexOf("</head>")).replace(/--hand:[^;]*;/, "")), "Kalam/base64 on legal page");
+      });
+      await check(`${p}: content rules`, () => {
+        const text = visible(main(h));
+        assert.ok(!/\[[^\]]*\]/.test(text) && !h.includes('class="confirm"'), "placeholder left");
+        // phone: no tel: link and no number in the text (the floating WhatsApp button's wa.me URL is fine)
+        if (page.strict) assert.ok(!/tel:/.test(main(h)) && !/786|832-?9107/.test(text), "phone number on page");
+        if (page.noPrices) assert.ok(!/\$|\d+\s+(sessions|sesiones)\b/.test(text), "price or package size on page");
+      });
+    }
+    await check(`${page.en} and ${page.es}: same sections in the same order`, () => {
+      assert.ok(sections(html.en) > 0);
+      assert.equal(sections(html.en), sections(html.es));
+      const keys = (h) => [...h.matchAll(/<section class="sec" data-i18n="(\w+)"/g)].map((m) => m[1]).join();
+      assert.equal(keys(html.en), keys(html.es));
+    });
+  }
+  await check("404 has the footer with policy links in both languages", async () => {
+    const h = await (await get("/nope")).text();
+    for (const p of ["/privacy/", "/terms/", "/accessibility/", "/es/privacidad/", "/es/terminos/", "/es/accesibilidad/"])
+      assert.ok(h.includes(`<a href="${p}"`), p);
+    assert.ok(h.includes("Independent tutoring service.") && h.includes("Servicio independiente de tutorías."));
+  });
+  await check("every internal link and #anchor resolves", async () => {
+    const seen = new Map();
+    const ids = (h) => new Set([...h.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
+    for (const [from, h] of Object.entries(all)) {
+      for (const [, href] of h.matchAll(/<a\b[^>]*\shref="([^"]*)"/g)) {
+        if (/^(https?:|mailto:|tel:)/.test(href) || href === "#") continue;
+        const [p, hash] = href.split("#");
+        const target = p || from;
+        if (!seen.has(target)) {
+          const r = await get(target);
+          seen.set(target, r.status === 200 ? await r.text() : r.status);
+        }
+        const t = seen.get(target);
+        assert.equal(typeof t, "string", `${from}: ${href} -> ${t}`);
+        if (hash) assert.ok(ids(t).has(hash), `${from}: ${href} -> no #${hash}`);
+      }
+    }
+  });
+  await check("sitemap lists all 8 pages with hreflang", async () => {
     const xml = await (await get("/sitemap.xml")).text();
-    assert.equal((xml.match(/<loc>/g) || []).length, 2);
-    assert.equal((xml.match(/hreflang=/g) || []).length, 6);
+    assert.equal((xml.match(/<loc>/g) || []).length, 8);
+    assert.equal((xml.match(/hreflang=/g) || []).length, 24);
+    assert.ok(xml.includes("<loc>https://josediaztutoring.com/es/terminos/</loc>"));
   });
   await check("robots.txt disallows /api/ and keeps the sitemap", async () => {
     const t = await (await get("/robots.txt")).text();

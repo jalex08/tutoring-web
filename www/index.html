@@ -38,6 +38,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
 <style>
+  /* ==== shared:start: also used by the legal pages (scripts/build.js copies this block) ==== */
   :root{
     --paper:#FBFCFA;      /* page */
     --pad:#E9F2E4;        /* engineering computation pad */
@@ -54,7 +55,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     --wrap:1120px;
   }
   *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
+  html{scroll-behavior:smooth;scroll-padding-top:68px} /* keeps anchors and keyboard focus clear of the sticky header */
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
   body{margin:0;background:var(--paper);color:var(--graphite);font:400 1.0625rem/1.6 var(--body);-webkit-font-smoothing:antialiased}
   img,svg{display:block;max-width:100%}
@@ -104,6 +105,31 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   @media (max-width:560px){.head-cta{display:none}.mark small{display:none}}
   @media (max-width:380px){.mark{font-size:1.08rem}.head-in{gap:14px}}
 
+  /* floating WhatsApp */
+  .wa-float{position:fixed;right:18px;bottom:18px;z-index:30;display:inline-flex;align-items:center;gap:9px;
+    background:#17744A;color:#fff;text-decoration:none;font:700 1rem/1 var(--body);padding:14px 18px 14px 15px;border-radius:999px;
+    box-shadow:0 10px 24px -8px rgba(10,40,25,.55);transition:opacity .2s,transform .2s,visibility .2s}
+  .wa-float:hover{background:#0F5E3A}
+  .wa-float svg{width:22px;height:22px;flex:none}
+  .wa-float.is-hidden{opacity:0;transform:translateY(12px);pointer-events:none;visibility:hidden} /* hidden = not focusable either */
+  @media (prefers-reduced-motion:reduce){.wa-float{transition:none}}
+  @media (max-width:520px){.wa-float{right:14px;bottom:14px}}
+
+  /* ---- footer-css:start (also copied into www/404.html by the build) ---- */
+  .site-foot{border-top:1.5px solid var(--graphite);background:#fff;color:var(--muted);font-size:.95rem}
+  .foot-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:22px 32px;padding-top:30px;padding-bottom:34px}
+  .foot-h{font:700 1.05rem/1.2 var(--display);color:var(--graphite);letter-spacing:-.01em;margin:0 0 8px}
+  .site-foot p{margin:2px 0}
+  .foot-list,.legal-links{list-style:none;margin:0;padding:0}
+  .site-foot a{display:inline-block;min-height:24px;padding:2px 0;font-weight:700}
+  .legal-links{display:flex;flex-wrap:wrap;align-items:center}
+  .legal-links li + li::before{content:"\00B7";color:var(--muted);padding:0 8px}
+  .legal-links a[aria-current="page"]{color:var(--graphite);text-decoration:none;border-bottom:2px solid var(--ink)}
+  .fine{grid-column:1/-1;border-top:1px solid var(--rule);padding-top:12px;font-size:.88rem;display:flex;flex-wrap:wrap;gap:2px 10px}
+  @media (max-width:760px){.foot-grid{grid-template-columns:1fr;padding-bottom:96px}} /* room for the WhatsApp button */
+  /* ---- footer-css:end ---- */
+  /* ==== shared:end ==== */
+
   /* hero */
   .hero{padding:64px 0 72px;border-bottom:1px solid var(--rule)}
   .hero-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:56px;align-items:center}
@@ -147,7 +173,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
   /* sections */
   section{padding:88px 0}
-  section,#top{scroll-margin-top:68px}
   .sec-head{max-width:40em;margin-bottom:44px}
   .sec-head p{margin-top:14px;color:var(--muted);font-size:1.1rem}
 
@@ -253,7 +278,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .rates-more{margin-top:28px}
   @media (max-width:760px){.plan-more dl div{grid-template-columns:1fr auto}.plan-more dl dd:not(.pp){grid-column:1/-1;grid-row:2}.plan-more .pp{grid-row:1;grid-column:2}}
   .rates-note{margin-top:22px;color:var(--muted);max-width:44em}
-  @media (max-width:760px){.rate{grid-template-columns:1fr auto;gap:6px 16px}.rate p{grid-column:1/-1;grid-row:2}.price{grid-row:1;grid-column:2}}
+  @media (max-width:760px){.rate{grid-template-columns:minmax(0,1fr) auto;gap:6px 16px}.price-sm{white-space:normal;max-width:8em}.rate p{grid-column:1/-1;grid-row:2}.price{grid-row:1;grid-column:2}}
 
   /* faq */
   .faq{max-width:46em}
@@ -281,6 +306,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .form-foot small{color:var(--muted);flex:1;min-width:200px}
   .err{color:#A3261B;font-weight:700;margin-bottom:14px;display:none}
   .err.show{display:block}
+  .form-note{margin:12px 0 0;font-size:.92rem;color:var(--muted)}
   .form-status{margin:16px 0 0;font-weight:700;display:none}
   .form-status.show{display:block}
   .form-status.ok{color:#1E6B3A}
@@ -289,20 +315,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   @media (max-width:860px){.contact-grid{grid-template-columns:1fr;gap:32px}}
   @media (max-width:520px){.row2{grid-template-columns:1fr}form{padding:22px}}
 
-  /* floating WhatsApp */
-  .wa-float{position:fixed;right:18px;bottom:18px;z-index:30;display:inline-flex;align-items:center;gap:9px;
-    background:#17744A;color:#fff;text-decoration:none;font:700 1rem/1 var(--body);padding:14px 18px 14px 15px;border-radius:999px;
-    box-shadow:0 10px 24px -8px rgba(10,40,25,.55);transition:opacity .2s,transform .2s}
-  .wa-float:hover{background:#0F5E3A}
-  .wa-float svg{width:22px;height:22px;flex:none}
-  .wa-float.is-hidden{opacity:0;transform:translateY(12px);pointer-events:none}
-  @media (prefers-reduced-motion:reduce){.wa-float{transition:none}}
-  @media (max-width:520px){.wa-float{right:14px;bottom:14px}}
-  footer{border-top:1px solid var(--rule);padding:30px 0 40px;color:var(--muted);font-size:.93rem}
-  footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
-  .foot-contact{list-style:none;margin:14px auto 0;padding-top:14px;border-top:1px solid var(--rule)}
-  .foot-contact.wrap{justify-content:flex-start;gap:6px 22px}
-  .foot-contact a{font-weight:700}
 </style>
 <script type="application/ld+json" id="ld">
 {
@@ -484,7 +496,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       }
      }
     ]
-   }
+   },
+   "email": "jose@josediaztutoring.com"
   },
   {
    "@type": "Person",
@@ -589,11 +602,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 <a class="skip" href="#main" data-i18n="skip">Skip to content</a>
-<a class="wa-float is-hidden wa-link" id="wa-float" href="https://wa.me/17868329107" target="_blank" rel="noopener" aria-label="Message Jose on WhatsApp" data-i18n-attr="aria-label:waLabel">
-  <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 19.5l1.3-3.7A8 8 0 1 1 8.3 18.7z"/></svg>
-  <span>WhatsApp</span>
-</a>
-
 <header class="site-head">
   <div class="wrap head-in">
     <a class="mark" href="#top">Jose Diaz Tutoring<small data-i18n="markSub">Math, physics &amp; engineering tutoring</small></a>
@@ -883,8 +891,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <form id="contact-form" novalidate>
         <p class="err" id="form-err" role="alert" data-i18n="err">Add your name and email so I can reply.</p>
         <div class="row2">
-          <div class="field"><label for="f-name" data-i18n="fName">Name</label><input id="f-name" name="name" autocomplete="name" required></div>
-          <div class="field"><label for="f-email" data-i18n="fEmail">Email</label><input id="f-email" name="email" type="email" autocomplete="email" required></div>
+          <div class="field"><label for="f-name"><span data-i18n="fName">Name</span> <span class="opt" data-i18n="required">(required)</span></label><input id="f-name" name="name" autocomplete="name" required></div>
+          <div class="field"><label for="f-email"><span data-i18n="fEmail">Email</span> <span class="opt" data-i18n="required">(required)</span></label><input id="f-email" name="email" type="email" autocomplete="email" required></div>
         </div>
         <div class="row2">
           <div class="field"><label for="f-phone"><span data-i18n="fPhone">Phone</span> <span class="opt" data-i18n="optional">(optional)</span></label><input id="f-phone" name="phone" type="tel" autocomplete="tel"></div>
@@ -902,25 +910,47 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <button class="btn btn-primary" type="submit" data-i18n="send">Send request</button>
           <small data-i18n="sendNote">You'll get a confirmation email, and I'll reply within one business day.</small>
         </div>
+        <p class="form-note" data-i18n="formNote">By sending this form, you agree to the <a href="/privacy/">Privacy Policy</a>. If the student is under 18, a parent or guardian should send it or be included.</p>
         <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
       </form>
     </div>
   </section>
+
+<a class="wa-float is-hidden wa-link" id="wa-float" href="https://wa.me/17868329107" target="_blank" rel="noopener" aria-label="Message Jose on WhatsApp" data-i18n-attr="aria-label:waLabel">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 19.5l1.3-3.7A8 8 0 1 1 8.3 18.7z"/></svg>
+  <span>WhatsApp</span>
+</a>
+
 </main>
 
-<footer>
-  <div class="wrap">
-    <span>© <span id="yr">2026</span> Jose Diaz Tutoring. <a class="li-link" href="https://www.linkedin.com/in/jalex-diaz/" target="_blank" rel="noopener">LinkedIn</a></span>
-    <span data-i18n="foot">Math, physics and engineering tutoring, online and in South Florida.</span>
+<footer class="site-foot">
+  <div class="wrap foot-grid">
+    <div>
+      <h2 class="foot-h">Jose Diaz Tutoring</h2>
+      <p data-i18n="foot">Math, physics and engineering tutoring, online and in South Florida.</p>
+      <p data-i18n="footArea">Serving Broward &amp; Miami-Dade · Online anywhere</p>
+    </div>
+    <div>
+      <h2 class="foot-h" data-i18n="footContact">Contact</h2>
+      <ul class="foot-list">
+        <li><a href="tel:+17868329107">+1 (786) 832-9107</a></li>
+        <li><a class="wa-link" href="https://wa.me/17868329107" target="_blank" rel="noopener">WhatsApp</a></li>
+        <li><a href="mailto:jose@josediaztutoring.com">jose@josediaztutoring.com</a></li>
+        <li><a class="li-link" href="https://www.linkedin.com/in/jalex-diaz/" target="_blank" rel="noopener">LinkedIn</a></li>
+        <li id="foot-gbp" hidden><a href="#" target="_blank" rel="noopener" data-i18n="footGbp">Google Business Profile</a></li>
+        <li id="foot-review" hidden><a href="#" target="_blank" rel="noopener" data-i18n="footReview">Leave a Google review</a></li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="foot-h" data-i18n="footPolicies">Policies</h2>
+      <ul class="legal-links">
+        <li><a href="/privacy/" data-i18n="footPrivacy">Privacy</a></li>
+        <li><a href="/terms/" data-i18n="footTerms">Terms</a></li>
+        <li><a href="/accessibility/" data-i18n="footA11y">Accessibility</a></li>
+      </ul>
+    </div>
+    <p class="fine"><span>© <span id="yr">2026</span> Jose Diaz Tutoring.</span> <span data-i18n="footFine">Independent tutoring service. Not affiliated with any school named on this site.</span></p>
   </div>
-  <ul class="wrap foot-contact">
-    <li><a href="tel:+17868329107">+1 (786) 832-9107</a></li>
-    <li><a class="wa-link" href="https://wa.me/17868329107" target="_blank" rel="noopener">WhatsApp</a></li>
-    <li id="foot-email" hidden><a href="#"></a></li>
-    <li data-i18n="footArea">Serving Broward &amp; Miami-Dade · Online anywhere</li>
-    <li id="foot-gbp" hidden><a href="#" target="_blank" rel="noopener" data-i18n="footGbp">Google Business Profile</a></li>
-    <li id="foot-review" hidden><a href="#" target="_blank" rel="noopener" data-i18n="footReview">Leave a Google review</a></li>
-  </ul>
 </footer>
 
 <script>
@@ -931,7 +961,7 @@ const CONFIG = {
   whatsapp: "17868329107",                          // country code + number, digits only
   phone: "+1-786-832-9107",                         // shown in the footer and the structured data
   linkedin: "https://www.linkedin.com/in/jalex-diaz/",
-  email: "[public contact email]",                  // footer + structured data
+  email: "jose@josediaztutoring.com",               // structured data; the footer mailto: link is plain HTML (keep in sync)
   googleBusinessProfile: "[Google Business Profile URL]",
   googleReview: "[Google review link]",             // "Leave a Google review" link in the footer
   engineeringDegree: "[exact engineering degree field]", // e.g. "Electrical Engineering"; added to the structured data
@@ -945,10 +975,12 @@ const LANG = document.documentElement.lang === "es" ? "es" : "en";
 const isSet = v => typeof v === "string" && v.trim() !== "" && !/^\[.*\]$/.test(v.trim());
 
 const FORM_MSG = {
-  en:{sending:"Sending…", ok:"Thanks! Your request was sent. Check your inbox for a confirmation email; I'll reply within one business day.",
+  en:{name:"Add your name so I can reply.", email:"Add your email address, for example name@example.com, so I can reply.",
+      sending:"Sending…", ok:"Thanks! Your request was sent. Check your inbox for a confirmation email; I'll reply within one business day.",
       fail:"Sorry, your request couldn't be sent. Please try again in a moment, or message me on WhatsApp.",
       busy:"Too many requests right now. Please try again later, or message me on WhatsApp."},
-  es:{sending:"Enviando…", ok:"¡Gracias! Tu solicitud fue enviada. Revisa tu correo para ver la confirmación; te respondo en un día hábil.",
+  es:{name:"Escribe tu nombre para poder responderte.", email:"Escribe tu correo, por ejemplo nombre@ejemplo.com, para poder responderte.",
+      sending:"Enviando…", ok:"¡Gracias! Tu solicitud fue enviada. Revisa tu correo para ver la confirmación; te respondo en un día hábil.",
       fail:"Lo siento, no se pudo enviar tu solicitud. Inténtalo de nuevo en un momento o escríbeme por WhatsApp.",
       busy:"Demasiadas solicitudes en este momento. Inténtalo más tarde o escríbeme por WhatsApp."}
 };
@@ -958,7 +990,6 @@ document.querySelectorAll(".lang a").forEach(a => a.addEventListener("click", ()
   a.href = a.getAttribute("href").split("#")[0] + location.hash;
 }));
 
-document.getElementById("yr").textContent = new Date().getFullYear();
 const WA_TEXT = {
   en: "Hi Jose, I found your website and I'm interested in tutoring for ",
   es: "Hola Jose, vi tu página web y me interesan tutorías de "
@@ -968,6 +999,7 @@ document.querySelectorAll(".wa-link").forEach(a => a.href = waHref);
 document.querySelectorAll(".li-link").forEach(a => a.href = CONFIG.linkedin);
 
 /* analytics: events for Google Tag Manager (no personal data, only what was clicked) */
+/* analytics:start (the legal pages reuse this block) */
 const track = (event, params) => (window.dataLayer = window.dataLayer || []).push({ event, page_language: LANG, ...params });
 document.addEventListener("click", e => {
   const a = e.target.closest && e.target.closest("a[href]");
@@ -977,13 +1009,13 @@ document.addEventListener("click", e => {
   else if (href.startsWith("tel:")) track("contact_click", { contact_method: "phone", link_location: where });
   else if (href.startsWith("mailto:")) track("contact_click", { contact_method: "email", link_location: where });
 });
+/* analytics:end */
 
 /* footer: links that stay hidden until their CONFIG value is set */
 function showLink(id, href, text){
   const li = document.getElementById(id), a = li.querySelector("a");
   a.href = href; if (text) a.textContent = text; li.hidden = false;
 }
-if (isSet(CONFIG.email)) showLink("foot-email", "mailto:" + CONFIG.email, CONFIG.email);
 if (isSet(CONFIG.googleBusinessProfile)) showLink("foot-gbp", CONFIG.googleBusinessProfile);
 if (isSet(CONFIG.googleReview)) showLink("foot-review", CONFIG.googleReview);
 
@@ -1026,11 +1058,18 @@ document.getElementById("contact-form").addEventListener("submit", async e => {
   const btn = f.querySelector('button[type="submit"]');
   const name = f.name.value.trim(), email = f.email.value.trim();
   st.className = "form-status";
-  if (!name || !/^\S+@\S+\.\S+$/.test(email)) {
-    err.classList.add("show"); (name ? f.email : f.name).focus(); return;
+  const M = FORM_MSG[LANG];
+  /* invalid: say what to fix, mark the field, and move focus to it (the error is its description) */
+  const bad = !name ? f.name : !/^\S+@\S+\.\S+$/.test(email) ? f.email : null;
+  for (const input of [f.name, f.email]) {
+    if (input === bad) { input.setAttribute("aria-invalid", "true"); input.setAttribute("aria-describedby", "form-err"); }
+    else { input.removeAttribute("aria-invalid"); input.removeAttribute("aria-describedby"); }
+  }
+  if (bad) {
+    err.textContent = bad === f.name ? M.name : M.email;
+    err.classList.add("show"); bad.focus(); return;
   }
   err.classList.remove("show");
-  const M = FORM_MSG[LANG];
   btn.disabled = true; st.textContent = M.sending; st.classList.add("show");
   try {
     const res = await fetch("/api/contact", {
