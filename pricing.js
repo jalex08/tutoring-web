@@ -211,7 +211,7 @@ function llmsRateLines(p) {
     `- College, one-on-one: ${money(r.college)} per hour`,
     `- Engineering courses, one-on-one: ${money(r.engineering)} per hour`,
     `- Group exam review: ${money(r.groupPerStudent)} per student, per hour (3–5 students from the same course, 2-hour session before a midterm or final)`,
-    `- High school, monthly plan: ${money(hs.price)} for ${hs.sessions} sessions a month, same day and time each week (${ph(hs)}, save ${money(hs.save)})`,
+    `- High school, monthly plan: ${money(hs.price)} for ${hs.sessions} sessions a month, same days and times each week (${ph(hs)}, save ${money(hs.save)})`,
     `- College, semester plan: ${money(co.price)} for ${co.sessions} one-on-one sessions scheduled around midterms and the final (${ph(co)}, save ${money(co.save)})`,
     `- Engineering, semester plan: ${money(en.price)} for ${en.sessions} one-on-one sessions in an engineering course (${ph(en)}, save ${money(en.save)})`,
     `- Plans save about ${d.badge}% compared with single sessions.`,

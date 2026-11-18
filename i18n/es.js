@@ -116,7 +116,7 @@ module.exports = {
   ratesTitle: "Precios", ratesLede: "Las sesiones son de 60 minutos, en línea o en persona. La llamada inicial siempre es gratis.",
   r1t: "Secundaria, individual", r1p: "Sesiones semanales o preparación de exámenes cuando lo necesites.",
   perHour: "por hora",
-  r2t: '<span lang="en">High school</span>, mensual', r2p: '<span data-price="plan.hs-monthly.sessions">8</span> sesiones al mes, el mismo día y hora cada semana.',
+  r2t: '<span lang="en">High school</span>, mensual', r2p: '<span data-price="plan.hs-monthly.sessions">8</span> sesiones al mes, los mismos días y horas cada semana.',
   r2s: '<span data-price="plan.hs-monthly.perHour">unos $54/hora</span>, ahorras <span data-price="plan.hs-monthly.save">$91</span>',
   r3t: "Universidad, individual", r3p: "Cálculo, ecuaciones diferenciales y física.",
   r4t: "Universidad, semestre", r4p: '<span data-price="plan.college-semester.sessions">12</span> sesiones individuales organizadas alrededor de tus parciales y tu final.',
@@ -127,7 +127,7 @@ module.exports = {
   r7s: '<span data-price="plan.engineering-semester.perHour">unos $92/hora</span>, ahorras <span data-price="plan.engineering-semester.save">$221</span>',
   ratesAside: '¿Dos estudiantes juntos o algo a tu medida? <a href="#contact">Hablemos</a>.',
   guarantee: "<strong>Si tu primera sesión no vale la pena, no la pagas.</strong> Estudiantes nuevos, uno por familia. Avísame en las 24 horas siguientes.",
-  pT: "Planes mensuales y semestrales", pP: "Pagas por adelantado, mantienes un horario fijo cada semana y ahorras.", pPrice: 'Los planes ahorran alrededor de un <span data-price="badge">17%</span>', pMore: "Ver detalles",
+  pT: "Planes mensuales y semestrales", pP: "Pagas por adelantado, mantienes un horario fijo cada semana y ahorras.", pPrice: 'Ahorra alrededor de un <span data-price="badge">17%</span>', pMore: "Ver detalles",
   moreQ: "Tengo más preguntas",
   ratesNote: "Las sesiones en persona en Broward y Miami-Dade tienen el mismo precio. Los planes se pagan al inicio. Planes mensuales: las sesiones que no uses pasan al mes siguiente y luego vencen. Los planes semestrales son válidos durante el semestre en curso.",
   faqTitle: "Preguntas",
@@ -309,6 +309,7 @@ module.exports = {
         <li>Cancela o cambia tu sesión con al menos 24 horas de aviso, sin costo.</li>
         <li>Te ayudo a entender la materia. No hago trabajos que lleven nota.</li>
         <li>Las sesiones prepagadas que no hayas usado se pueden reembolsar.</li>
+        <li>Estudiantes nuevos: si tu primera sesión no vale la pena, no la pagas.</li>
       </ul>
     `,
   tosAbout: `

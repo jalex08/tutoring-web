@@ -221,8 +221,8 @@ srv.listen(0, async () => {
   const rates = (h) => h.slice(h.indexOf('<section id="rates"'), h.indexOf("<!-- FAQ -->"));
   const OLD = /\b(From|Desde) \$|\$480|\$970|\$60\/|\$81|10%/;
   const shown = {
-    en: ["$65", "$90", "$110", "$40", "Plans save about 17%", "$429", "about $54/hour, save $91", "$899", "about $75/hour, save $181", "$1,099", "about $92/hour, save $221"],
-    es: ["$65", "$90", "$110", "$40", "Los planes ahorran alrededor de un 17%", "$429", "unos $54/hora, ahorras $91", "$899", "unos $75/hora, ahorras $181", "$1,099", "unos $92/hora, ahorras $221"],
+    en: ["$65", "$90", "$110", "$40", "Save about 17%", "$429", "about $54/hour, save $91", "$899", "about $75/hour, save $181", "$1,099", "about $92/hour, save $221"],
+    es: ["$65", "$90", "$110", "$40", "Ahorra alrededor de un 17%", "$429", "unos $54/hora, ahorras $91", "$899", "unos $75/hora, ahorras $181", "$1,099", "unos $92/hora, ahorras $221"],
   };
   for (const lang of ["en", "es"]) {
     await check(`${lang}: rates show the computed prices, no "From"/"Desde", no old prices`, () => {
@@ -270,7 +270,7 @@ srv.listen(0, async () => {
       assert.ok(visible(rates(en)).includes("$95") && visible(rates(en)).includes("$1,199"), "new prices not shown");
       assert.ok(visible(rates(en)).includes("about $100/hour, save $121"), "engineering plan per hour/save");
       assert.ok(visible(rates(es)).includes("unos $100/hora, ahorras $121"));
-      assert.ok(visible(rates(en)).includes("Plans save about 16%"), String(visible(rates(en)).match(/Plans save about \d+%/)));
+      assert.ok(visible(rates(en)).includes("Save about 16%"), String(visible(rates(en)).match(/Save about \d+%/)));
       const ld = JSON.parse(en.match(/<script type="application\/ld\+json" id="ld">([\s\S]*?)<\/script>/)[1]);
       const offers = ld["@graph"][1].hasOfferCatalog.itemListElement;
       assert.deepEqual(offers.map((o) => o.price), [65, 95, 110, 40, 429, 899, 1199]);
