@@ -1,3 +1,6 @@
 # Google App Engine generated folder
 appengine-generated/
 node_modules/
+
+# IndexNow: changed pages awaiting submission (written by npm run build)
+seo/pending-indexnow.json
