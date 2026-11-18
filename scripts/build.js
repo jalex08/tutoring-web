@@ -13,11 +13,16 @@
  *                          in place: the JSON-LD block and footer year in www/index.html,
  *                                    the footer in www/404.html
  *                          www/sitemap.xml  (lastmod = date the page last changed)
+ *                          www/llms.txt     its price lines (between the pricing markers)
  *                          seo/pending-indexnow.json  pages whose HTML differs from
  *                                    seo/published-pages.json (for scripts/indexnow.js)
  *
  * The legal pages show a "Last updated" date: the build date (America/New_York) of the
  * last build that changed the page's text, so it is the date of the first deploy with that text.
+ *
+ * Prices: every price on the home pages and in llms.txt comes from pricing.js. The build writes
+ * the built-in fallback values (pricing.FALLBACK) into the files; on App Engine, server.js
+ * fills in the live values from the `site-pricing` secret when it serves them.
  *
  * Run: npm run build      Check only (exit 1 if outputs are stale): npm run build -- --check
  */
@@ -37,6 +42,8 @@ const URLS = { en: `${SITE}/`, es: `${SITE}/es/` };
 const CHECK = process.argv.includes("--check");
 
 const ES = require(path.join(ROOT, "i18n/es.js"));
+const pricing = require(path.join(ROOT, "pricing.js"));
+const LLMS = path.join(ROOT, "www/llms.txt");
 let html = fs.readFileSync(SRC, "utf8");
 // Dates ("Last updated", sitemap lastmod, footer year) are in Florida time, whatever the machine's time zone.
 const TZ = "America/New_York";
@@ -108,14 +115,11 @@ if (isSet(CONFIG.email) && footMail !== CONFIG.email) fail(`footer mailto: link 
 // © year in the footer (static, so the pages need no script for it)
 html = replaceOne(html, /(<span id="yr">)\d{4}(<\/span>)/, `$1${today.slice(0, 4)}$2`, "footer year");
 
-// --- structured data --------------------------------------------------------------
-function price(src, key) {
-  const at = src.indexOf(`data-i18n="${key}"`);
-  const m = at >= 0 && src.slice(at).match(/\$(\d+)/);
-  if (!m) fail(`no price found after ${key}`);
-  return Number(m[1]);
-}
+// prices: the fallback values everywhere (the server swaps in the live ones)
+const fill = (src, fn) => { try { return fn(src, pricing.FALLBACK); } catch (e) { fail(e.message); } };
+html = fill(html, pricing.fillSpans);
 
+// --- structured data --------------------------------------------------------------
 function jsonld(lang, s) {
   const url = URLS[lang];
   const T = (k) => {
@@ -124,19 +128,23 @@ function jsonld(lang, s) {
   };
   const person = `${SITE}/#jose`;
   const business = `${SITE}/#business`;
-  const hourly = { "@type": "UnitPriceSpecification", priceCurrency: "USD", unitCode: "HUR", unitText: "HOUR" };
-  const offer = (nameKey, descKey, spec, extra = {}) => ({
+  // price and priceSpecification are set by pricing.applyLd (the same code the server uses)
+  const offer = (id, nameKey, descKey, extra = {}) => ({
     "@type": "Offer",
+    "@id": `${SITE}/#${id}`,
     name: T(nameKey),
     description: T(descKey),
-    price: price(html, nameKey),
+    price: 0,
     priceCurrency: "USD",
-    priceSpecification: { ...spec, price: price(html, nameKey) },
+    priceSpecification: {},
     itemOffered: { "@type": "Service", name: T(nameKey), provider: { "@id": person } },
     ...extra,
   });
   const subjects = ["hs1", "hs2", "hs3", "hs4", "hs5", "hs6", "u1", "u2", "u3", "u4", "e1", "e2", "e3", "e4"].map(T);
-  const faq = [1, 2, 3, 4, 5, 6].map((i) => ({
+  // the FAQ questions in page order (word for word the same as the page)
+  const faqKeys = [...html.matchAll(/<summary data-i18n="(q\d+)">/g)].map((m) => m[1]);
+  if (!faqKeys.length) fail("no FAQ questions found");
+  const faq = faqKeys.map((q) => q.slice(1)).map((i) => ({
     "@type": "Question",
     name: T(`q${i}`),
     acceptedAnswer: { "@type": "Answer", text: T(`a${i}`) },
@@ -177,7 +185,7 @@ function jsonld(lang, s) {
     telephone: CONFIG.phone,
     image: `${SITE}/og-image.png`,
     logo: `${SITE}/apple-touch-icon.png`,
-    priceRange: "$40–$110",
+    priceRange: "",
     currenciesAccepted: "USD",
     areaServed: [
       { "@type": "AdministrativeArea", name: "Broward County, FL" },
@@ -190,20 +198,21 @@ function jsonld(lang, s) {
       "@type": "OfferCatalog",
       name: T("ratesTitle"),
       itemListElement: [
-        offer("r1t", "r1p", hourly),
-        offer("r3t", "r3p", hourly),
-        offer("r6t", "r6p", hourly),
-        offer("r5t", "r5p", hourly, {
+        offer("rate-highSchool", "r1t", "r1p"),
+        offer("rate-college", "r3t", "r3p"),
+        offer("rate-engineering", "r6t", "r6p"),
+        offer("rate-groupPerStudent", "r5t", "r5p", {
           eligibleQuantity: { "@type": "QuantitativeValue", minValue: 3, maxValue: 5, unitText: lang === "es" ? "estudiantes" : "students" },
         }),
-        offer("r2t", "r2p", { "@type": "UnitPriceSpecification", priceCurrency: "USD", unitCode: "MON", unitText: "MONTH" }),
-        offer("r4t", "r4p", { "@type": "PriceSpecification", priceCurrency: "USD" }),
+        offer("plan-hs-monthly", "r2t", "r2p"),
+        offer("plan-college-semester", "r4t", "r4p"),
+        offer("plan-engineering-semester", "r7t", "r7p"),
       ],
     },
   };
   if (isSet(CONFIG.email)) businessNode.email = CONFIG.email;
 
-  return {
+  const ld = {
     "@context": "https://schema.org",
     "@graph": [
       {
@@ -219,10 +228,10 @@ function jsonld(lang, s) {
       { "@type": "FAQPage", "@id": `${url}#faq`, url, inLanguage: lang, mainEntity: faq },
     ],
   };
+  try { return pricing.applyLd(ld, pricing.FALLBACK); } catch (e) { fail(e.message); }
 }
 
-const ldBlock = (data) =>
-  `<script type="application/ld+json" id="ld">\n${JSON.stringify(data, null, 1).replace(/</g, "\\u003c")}\n</script>`;
+const ldBlock = (data) => `<script type="application/ld+json" id="ld">\n${pricing.ldJson(data)}\n</script>`;
 const LD_RE = /<script type="application\/ld\+json" id="ld">[\s\S]*?<\/script>/;
 
 // --- English page: refresh its JSON-LD block in place -------------------------------
@@ -284,6 +293,7 @@ const head = [
   [/(data-lang="es")>/, '$1 aria-current="page">', "ES link"],
 ];
 for (const [re, to, what] of head) es = replaceOne(es, re, to, what);
+es = fill(es, pricing.fillSpans);
 
 const esStrings = { ...ES };
 for (const el of i18nElements(es)) esStrings[el.key] ??= es.slice(el.start, el.end);
@@ -292,6 +302,12 @@ es = es.replace(
   "<!DOCTYPE html>\n",
   "<!DOCTYPE html>\n<!-- Generated by scripts/build.js from www/index.html + i18n/es.js. Edit those, then run `npm run build`. -->\n"
 );
+
+// the server's fill with the fallback values must change nothing in the built pages
+for (const [name, page] of [["www/index.html", enHtml], ["www/es/index.html", es]]) {
+  if (fill(page, pricing.fillHtml) !== page) fail(`${name}: filling it with the fallback prices changes it (pricing.js and build.js disagree)`);
+}
+const llms = fill(fs.readFileSync(LLMS, "utf8"), pricing.fillLlms);
 
 // --- shared parts, taken from the built home pages ----------------------------------
 /** The text between two marker strings (inclusive of neither unless `keep`), exactly once. */
@@ -517,7 +533,7 @@ ${pairs.flatMap((pair) => ["en", "es"].map((l) => `  <url>
 
 // --- write ----------------------------------------------------------------------------
 outputs.unshift([SRC, enHtml], [OUT_ES, es], [PAGE404, page404]);
-outputs.push([SITEMAP, sitemap]);
+outputs.push([SITEMAP, sitemap], [LLMS, llms]);
 const stale = [];
 for (const [file, content] of outputs) {
   if (readOld(file) === content) continue;

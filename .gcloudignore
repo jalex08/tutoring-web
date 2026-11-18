@@ -2,6 +2,7 @@
 /*
 !/app.yaml
 !/server.js
+!/pricing.js
 !/package.json
 !/package-lock.json
 !/www/

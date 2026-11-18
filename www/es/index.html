@@ -290,8 +290,19 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .rate p{color:var(--muted)}
   .price{font:700 1.5rem/1 var(--display);text-align:right;white-space:nowrap}
   .price small{display:block;font:400 .88rem/1.4 var(--body);color:var(--muted);margin-top:6px}
-  .rate.featured .price span{background:linear-gradient(transparent 55%,var(--hi) 55%);padding:0 3px}
-  .price-sm{font-size:1.15rem}
+  .price-sm{font-size:1.15rem;white-space:normal}
+  .rates-aside{margin-top:12px;color:var(--muted);font-size:.95rem}
+  .rates-aside a{font-weight:700}
+  .rates-plans{margin-top:28px;border-top:1px solid var(--rule)}
+  /* first-session guarantee: a soft-line sheet; its bold line is the rates screen's one highlighter */
+  .guarantee{display:flex;gap:14px;align-items:flex-start;margin-top:28px;background:#fff;border:1px solid var(--line);box-shadow:var(--soft-shadow);border-radius:6px;padding:20px 24px;max-width:46em}
+  .check{flex:none;width:26px;height:26px;color:var(--ink)}
+  .guarantee p{color:var(--muted);font-size:1.02rem}
+  .guarantee strong{display:inline;color:var(--graphite);background:var(--hi);border-radius:3px;padding:1px 4px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+  .form-promise{display:flex;gap:10px;align-items:flex-start;margin:0 0 20px;font-weight:700}
+  .form-promise .check{width:22px;height:22px;margin-top:1px}
+  @media (max-width:520px){.guarantee{padding:16px 16px;gap:12px}}
+  @media (max-width:760px){.rates-plans .price-sm{grid-column:1/-1;grid-row:2;text-align:left;max-width:none}.rates-plans .rate p{grid-row:3}}
   .plan-more{grid-column:1/-1}
   .plan-more summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:8px;color:var(--ink);font-weight:700;padding:4px 0}
   .plan-more summary::-webkit-details-marker{display:none}
@@ -409,6 +420,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     "itemListElement": [
      {
       "@type": "Offer",
+      "@id": "https://josediaztutoring.com/#rate-highSchool",
       "name": "Secundaria, individual",
       "description": "Sesiones semanales o preparación de exámenes cuando lo necesites.",
       "price": 65,
@@ -430,6 +442,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
      },
      {
       "@type": "Offer",
+      "@id": "https://josediaztutoring.com/#rate-college",
       "name": "Universidad, individual",
       "description": "Cálculo, ecuaciones diferenciales y física.",
       "price": 90,
@@ -451,6 +464,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
      },
      {
       "@type": "Offer",
+      "@id": "https://josediaztutoring.com/#rate-engineering",
       "name": "Cursos de ingeniería, individual",
       "description": "Circuitos, lógica digital, programación y sistemas embebidos.",
       "price": 110,
@@ -472,6 +486,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
      },
      {
       "@type": "Offer",
+      "@id": "https://josediaztutoring.com/#rate-groupPerStudent",
       "name": "Repaso en grupo para exámenes",
       "description": "De 3 a 5 estudiantes del mismo curso, sesión de 2 horas antes de un parcial o final.",
       "price": 40,
@@ -499,20 +514,21 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
      },
      {
       "@type": "Offer",
-      "name": "Secundaria, plan mensual",
+      "@id": "https://josediaztutoring.com/#plan-hs-monthly",
+      "name": "High school, mensual",
       "description": "8 sesiones al mes, el mismo día y hora cada semana.",
-      "price": 480,
+      "price": 429,
       "priceCurrency": "USD",
       "priceSpecification": {
        "@type": "UnitPriceSpecification",
        "priceCurrency": "USD",
        "unitCode": "MON",
        "unitText": "MONTH",
-       "price": 480
+       "price": 429
       },
       "itemOffered": {
        "@type": "Service",
-       "name": "Secundaria, plan mensual",
+       "name": "High school, mensual",
        "provider": {
         "@id": "https://josediaztutoring.com/#jose"
        }
@@ -520,18 +536,39 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
      },
      {
       "@type": "Offer",
-      "name": "Universidad, paquete semestral",
+      "@id": "https://josediaztutoring.com/#plan-college-semester",
+      "name": "Universidad, semestre",
       "description": "12 sesiones individuales organizadas alrededor de tus parciales y tu final.",
-      "price": 970,
+      "price": 899,
       "priceCurrency": "USD",
       "priceSpecification": {
        "@type": "PriceSpecification",
        "priceCurrency": "USD",
-       "price": 970
+       "price": 899
       },
       "itemOffered": {
        "@type": "Service",
-       "name": "Universidad, paquete semestral",
+       "name": "Universidad, semestre",
+       "provider": {
+        "@id": "https://josediaztutoring.com/#jose"
+       }
+      }
+     },
+     {
+      "@type": "Offer",
+      "@id": "https://josediaztutoring.com/#plan-engineering-semester",
+      "name": "Ingeniería, semestre",
+      "description": "12 sesiones individuales de tu curso de ingeniería, organizadas alrededor de tus parciales y tu final.",
+      "price": 1099,
+      "priceCurrency": "USD",
+      "priceSpecification": {
+       "@type": "PriceSpecification",
+       "priceCurrency": "USD",
+       "price": 1099
+      },
+      "itemOffered": {
+       "@type": "Service",
+       "name": "Ingeniería, semestre",
        "provider": {
         "@id": "https://josediaztutoring.com/#jose"
        }
@@ -622,6 +659,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
      "acceptedAnswer": {
       "@type": "Answer",
       "text": "Puedes reprogramar gratis con al menos 24 horas de aviso. Las sesiones canceladas con menos aviso se cobran completas."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "¿Y si la primera sesión no te sirve?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Avísame en las 24 horas siguientes y te devuelvo el pago completo, sin tener que explicar por qué. Es para estudiantes nuevos, uno por familia. Si compraste un plan, te devuelvo el plan completo."
      }
     },
     {
@@ -1120,37 +1165,45 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="rate" role="listitem">
           <h3 data-i18n="r1t">Secundaria, individual</h3>
           <p data-i18n="r1p">Sesiones semanales o preparación de exámenes cuando lo necesites.</p>
-          <div class="price">$65<small data-i18n="perHour">por hora</small></div>
+          <div class="price"><span data-price="rate.highSchool">$65</span><small data-i18n="perHour">por hora</small></div>
         </div>
         <div class="rate" role="listitem">
           <h3 data-i18n="r3t">Universidad, individual</h3>
           <p data-i18n="r3p">Cálculo, ecuaciones diferenciales y física.</p>
-          <div class="price">$90<small data-i18n="perHour">por hora</small></div>
+          <div class="price"><span data-price="rate.college">$90</span><small data-i18n="perHour">por hora</small></div>
         </div>
         <div class="rate" role="listitem">
           <h3 data-i18n="r6t">Cursos de ingeniería, individual</h3>
           <p data-i18n="r6p">Circuitos, lógica digital, programación y sistemas embebidos.</p>
-          <div class="price">$110<small data-i18n="perHour">por hora</small></div>
+          <div class="price"><span data-price="rate.engineering">$110</span><small data-i18n="perHour">por hora</small></div>
         </div>
         <div class="rate" role="listitem">
           <h3 data-i18n="r5t">Repaso en grupo para exámenes</h3>
           <p data-i18n="r5p">De 3 a 5 estudiantes del mismo curso, sesión de 2 horas antes de un parcial o final.</p>
-          <div class="price">$40<small data-i18n="r5s">por estudiante, por hora</small></div>
+          <div class="price"><span data-price="rate.groupPerStudent">$40</span><small data-i18n="r5s">por estudiante, por hora</small></div>
         </div>
+      </div>
+      <p class="rates-aside" data-i18n="ratesAside">¿Dos estudiantes juntos o algo a tu medida? <a href="#contact">Hablemos</a>.</p>
+      <div class="guarantee">
+        <svg class="check" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7.2 12.4l3.2 3.2 6.4-7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <p data-i18n="guarantee"><strong>Si tu primera sesión no vale la pena, no la pagas.</strong> Estudiantes nuevos, uno por familia. Avísame en las 24 horas siguientes.</p>
+      </div>
+      <div class="rates rates-plans" role="list">
         <div class="rate featured" role="listitem">
           <h3 data-i18n="pT">Planes mensuales y semestrales</h3>
           <p data-i18n="pP">Pagas por adelantado, mantienes un horario fijo cada semana y ahorras.</p>
-          <div class="price price-sm"><span data-i18n="pPrice">Ahorra hasta un 10%</span></div>
+          <div class="price price-sm"><span data-i18n="pPrice">Los planes ahorran alrededor de un <span data-price="badge">17%</span></span></div>
           <details class="plan-more">
             <summary data-i18n="pMore">Ver detalles</summary>
             <dl>
-              <div><dt data-i18n="r2t">Secundaria, plan mensual</dt><dd data-i18n="r2p">8 sesiones al mes, el mismo día y hora cada semana.</dd><dd class="pp">$480<small data-i18n="r2s">$60/hora, ahorras $40</small></dd></div>
-              <div><dt data-i18n="r4t">Universidad, paquete semestral</dt><dd data-i18n="r4p">12 sesiones individuales organizadas alrededor de tus parciales y tu final.</dd><dd class="pp">$970<small data-i18n="r4s">unos $81/hora, ahorras $110</small></dd></div>
+              <div><dt data-i18n="r2t"><span lang="en">High school</span>, mensual</dt><dd data-i18n="r2p"><span data-price="plan.hs-monthly.sessions">8</span> sesiones al mes, el mismo día y hora cada semana.</dd><dd class="pp"><span data-price="plan.hs-monthly.price">$429</span><small data-i18n="r2s"><span data-price="plan.hs-monthly.perHour">unos $54/hora</span>, ahorras <span data-price="plan.hs-monthly.save">$91</span></small></dd></div>
+              <div><dt data-i18n="r4t">Universidad, semestre</dt><dd data-i18n="r4p"><span data-price="plan.college-semester.sessions">12</span> sesiones individuales organizadas alrededor de tus parciales y tu final.</dd><dd class="pp"><span data-price="plan.college-semester.price">$899</span><small data-i18n="r4s"><span data-price="plan.college-semester.perHour">unos $75/hora</span>, ahorras <span data-price="plan.college-semester.save">$181</span></small></dd></div>
+              <div><dt data-i18n="r7t">Ingeniería, semestre</dt><dd data-i18n="r7p"><span data-price="plan.engineering-semester.sessions">12</span> sesiones individuales de tu curso de ingeniería, organizadas alrededor de tus parciales y tu final.</dd><dd class="pp"><span data-price="plan.engineering-semester.price">$1,099</span><small data-i18n="r7s"><span data-price="plan.engineering-semester.perHour">unos $92/hora</span>, ahorras <span data-price="plan.engineering-semester.save">$221</span></small></dd></div>
             </dl>
           </details>
         </div>
       </div>
-      <p class="rates-note" data-i18n="ratesNote">Las sesiones en persona en Broward y Miami-Dade tienen el mismo precio. Los paquetes se pagan al inicio y son válidos durante el semestre en curso.</p>
+      <p class="rates-note" data-i18n="ratesNote">Las sesiones en persona en Broward y Miami-Dade tienen el mismo precio. Los planes se pagan al inicio. Planes mensuales: las sesiones que no uses pasan al mes siguiente y luego vencen. Los planes semestrales son válidos durante el semestre en curso.</p>
       <div class="rates-more"><a class="btn btn-ghost" href="#contact" data-i18n="moreQ">Tengo más preguntas</a></div>
     </div>
   </section>
@@ -1170,6 +1223,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <p data-i18n="a4">No. Te ayudo a entender cómo resolver problemas parecidos para que hagas tú mismo los trabajos evaluados. Eso es también lo que te prepara para el examen.</p></details>
         <details><summary data-i18n="q5">¿Y si necesito cancelar?</summary>
           <p data-i18n="a5">Puedes reprogramar gratis con al menos 24 horas de aviso. Las sesiones canceladas con menos aviso se cobran completas.</p></details>
+        <details><summary data-i18n="q7">¿Y si la primera sesión no te sirve?</summary>
+          <p data-i18n="a7">Avísame en las 24 horas siguientes y te devuelvo el pago completo, sin tener que explicar por qué. Es para estudiantes nuevos, uno por familia. Si compraste un plan, te devuelvo el plan completo.</p></details>
         <details><summary data-i18n="q6">Mi examen es la semana que viene. ¿Es muy tarde?</summary>
           <p data-i18n="a6">No, pero reserva pronto. Las semanas de exámenes se llenan primero. Un repaso enfocado en los temas que van a evaluar todavía puede marcar una gran diferencia.</p></details>
       </div>
@@ -1203,6 +1258,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <a class="btn btn-ghost wa wa-link" id="wa-link" href="https://wa.me/17868329107" target="_blank" rel="noopener" data-i18n="wa">Escríbeme por WhatsApp</a>
       </div>
       <form id="contact-form" novalidate>
+        <p class="form-promise"><svg class="check" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7.2 12.4l3.2 3.2 6.4-7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="formPromise">Intro gratis de 20 minutos. Y si tu primera sesión no vale la pena, no la pagas.</span></p>
         <p class="err" id="form-err" role="alert" data-i18n="err">Escribe tu nombre y tu correo para poder responderte.</p>
         <div class="row2">
           <div class="field"><label for="f-name"><span data-i18n="fName">Nombre</span> <span class="opt" data-i18n="required">(obligatorio)</span></label><input id="f-name" name="name" autocomplete="name" required></div>

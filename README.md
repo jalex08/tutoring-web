@@ -66,7 +66,7 @@ www/
    (`scripts/` isn't uploaded). Don't remove it.
 3. Check locally (optional): `npm test` runs the checks; `npm run dev` serves the
    site at http://localhost:8080 the way App Engine does, with email stubbed.
-4. Update `www/llms.txt` by hand if you changed rates, subjects or credentials.
+4. Update `www/llms.txt` by hand if you changed subjects or credentials (its price lines come from `pricing.js`).
 5. Deploy (always check the project first; it must be `jalex-hub`):
 
    ```bash
@@ -226,6 +226,55 @@ restart or redeploy.
 Edit the email wording in `CONFIRM` and `LABELS` in `server.js`. The client
 confirmation ends with a short footer (business, service area, why they got it,
 links to the Privacy Policy and Terms) in the visitor's language.
+
+## Prices
+
+Every price on `/`, `/es/` and `/llms.txt` comes from one JSON secret,
+`site-pricing` (project `jalex-hub`). **Changing it needs no rebuild and no
+redeploy**: the server re-reads it every 10 minutes and the pages are cached
+10 minutes in browsers, so everyone sees a change within ~20 minutes.
+
+```json
+{
+  "currency": "USD",
+  "rates": { "highSchool": 65, "college": 90, "engineering": 110, "groupPerStudent": 40 },
+  "plans": [
+    { "id": "hs-monthly", "level": "highSchool", "sessions": 8, "price": 429, "period": "month" },
+    { "id": "college-semester", "level": "college", "sessions": 12, "price": 899, "period": "semester" },
+    { "id": "engineering-semester", "level": "engineering", "sessions": 12, "price": 1099, "period": "semester" }
+  ]
+}
+```
+
+Change prices (validates first, refuses an invalid file, then pings IndexNow):
+
+```bash
+scripts/set-pricing.sh pricing.json
+```
+
+- Whole dollars only; the three plan ids, levels and periods are fixed (the page
+  has a row for each); a plan must cost less than its sessions at the single rate.
+  Unknown keys (e.g. `from`) are rejected. Check a file without sending it:
+  `node pricing.js pricing.json` (prints what the page will show).
+- Derived, never typed: per hour = price / sessions ("about $N/hour" unless whole),
+  save = sessions × rate − price, badge = rounded average plan saving %, JSON-LD
+  `priceRange` = lowest–highest rate. All in `pricing.js`.
+- If the secret is missing or invalid, the server uses the built-in fallback
+  (`pricing.js` → `FALLBACK`) and logs `Pricing: ...` warnings. The built HTML
+  always holds the fallback values, so the page is right even if filling fails.
+  **Keep `FALLBACK` equal to the live secret** (edit it, `npm run build`, deploy)
+  when a price change is meant to last.
+- In the HTML, prices are `<span data-price="...">` (see `pricing.js`); never
+  type a `$` amount in the rates section (`npm test` checks).
+- Try prices locally: `PRICING_FILE=pricing.json npm run dev`.
+
+Create the secret (once) and let the app read it:
+
+```bash
+gcloud secrets create site-pricing --data-file=pricing.json --replication-policy=automatic --project=jalex-hub
+gcloud secrets add-iam-policy-binding site-pricing --project=jalex-hub \
+  --member=serviceAccount:jalex-hub@appspot.gserviceaccount.com --role=roles/secretmanager.secretAccessor
+```
 
 ## Analytics (Google Tag Manager)
 

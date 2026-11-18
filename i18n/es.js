@@ -116,20 +116,27 @@ module.exports = {
   ratesTitle: "Precios", ratesLede: "Las sesiones son de 60 minutos, en línea o en persona. La llamada inicial siempre es gratis.",
   r1t: "Secundaria, individual", r1p: "Sesiones semanales o preparación de exámenes cuando lo necesites.",
   perHour: "por hora",
-  r2t: "Secundaria, plan mensual", r2p: "8 sesiones al mes, el mismo día y hora cada semana.", r2s: "$60/hora, ahorras $40",
+  r2t: '<span lang="en">High school</span>, mensual', r2p: '<span data-price="plan.hs-monthly.sessions">8</span> sesiones al mes, el mismo día y hora cada semana.',
+  r2s: '<span data-price="plan.hs-monthly.perHour">unos $54/hora</span>, ahorras <span data-price="plan.hs-monthly.save">$91</span>',
   r3t: "Universidad, individual", r3p: "Cálculo, ecuaciones diferenciales y física.",
-  r4t: "Universidad, paquete semestral", r4p: "12 sesiones individuales organizadas alrededor de tus parciales y tu final.", r4s: "unos $81/hora, ahorras $110",
+  r4t: "Universidad, semestre", r4p: '<span data-price="plan.college-semester.sessions">12</span> sesiones individuales organizadas alrededor de tus parciales y tu final.',
+  r4s: '<span data-price="plan.college-semester.perHour">unos $75/hora</span>, ahorras <span data-price="plan.college-semester.save">$181</span>',
   r5t: "Repaso en grupo para exámenes", r5p: "De 3 a 5 estudiantes del mismo curso, sesión de 2 horas antes de un parcial o final.", r5s: "por estudiante, por hora",
   r6t: "Cursos de ingeniería, individual", r6p: "Circuitos, lógica digital, programación y sistemas embebidos.",
-  pT: "Planes mensuales y semestrales", pP: "Pagas por adelantado, mantienes un horario fijo cada semana y ahorras.", pPrice: "Ahorra hasta un 10%", pMore: "Ver detalles",
+  r7t: "Ingeniería, semestre", r7p: '<span data-price="plan.engineering-semester.sessions">12</span> sesiones individuales de tu curso de ingeniería, organizadas alrededor de tus parciales y tu final.',
+  r7s: '<span data-price="plan.engineering-semester.perHour">unos $92/hora</span>, ahorras <span data-price="plan.engineering-semester.save">$221</span>',
+  ratesAside: '¿Dos estudiantes juntos o algo a tu medida? <a href="#contact">Hablemos</a>.',
+  guarantee: "<strong>Si tu primera sesión no vale la pena, no la pagas.</strong> Estudiantes nuevos, uno por familia. Avísame en las 24 horas siguientes.",
+  pT: "Planes mensuales y semestrales", pP: "Pagas por adelantado, mantienes un horario fijo cada semana y ahorras.", pPrice: 'Los planes ahorran alrededor de un <span data-price="badge">17%</span>', pMore: "Ver detalles",
   moreQ: "Tengo más preguntas",
-  ratesNote: "Las sesiones en persona en Broward y Miami-Dade tienen el mismo precio. Los paquetes se pagan al inicio y son válidos durante el semestre en curso.",
+  ratesNote: "Las sesiones en persona en Broward y Miami-Dade tienen el mismo precio. Los planes se pagan al inicio. Planes mensuales: las sesiones que no uses pasan al mes siguiente y luego vencen. Los planes semestrales son válidos durante el semestre en curso.",
   faqTitle: "Preguntas",
   q1: "¿Das tutorías en línea o en persona?", a1: "Ambas. Las sesiones en línea funcionan desde cualquier lugar con una laptop o tablet. Las presenciales son en Broward y Miami-Dade, en tu casa, una biblioteca o el campus.",
   q2: "¿Las sesiones son en español o en inglés?", a2: "En el idioma que te ayude a aprender. Muchos estudiantes mezclan ambos, y como los exámenes son en inglés, practicamos también el vocabulario.",
   q3: "¿Los padres pueden recibir reportes de progreso?", a3: "Sí. Para estudiantes de secundaria puedo enviar a los padres un resumen breve después de cada sesión: qué vimos y qué practicar.",
   q4: "¿Me haces la tarea o los trabajos evaluados?", a4: "No. Te ayudo a entender cómo resolver problemas parecidos para que hagas tú mismo los trabajos evaluados. Eso es también lo que te prepara para el examen.",
   q5: "¿Y si necesito cancelar?", a5: "Puedes reprogramar gratis con al menos 24 horas de aviso. Las sesiones canceladas con menos aviso se cobran completas.",
+  q7: "¿Y si la primera sesión no te sirve?", a7: "Avísame en las 24 horas siguientes y te devuelvo el pago completo, sin tener que explicar por qué. Es para estudiantes nuevos, uno por familia. Si compraste un plan, te devuelvo el plan completo.",
   q6: "Mi examen es la semana que viene. ¿Es muy tarde?", a6: "No, pero reserva pronto. Las semanas de exámenes se llenan primero. Un repaso enfocado en los temas que van a evaluar todavía puede marcar una gran diferencia.",
   shareT1: "¿No es para ti?", shareT2: "Quizás sí para alguien que conoces.",
   shareP: "Un amigo con Cálculo II, un primo con el EOC encima, alguien de tu clase de Circuitos.",
@@ -141,6 +148,7 @@ module.exports = {
   contactTitle: "Agenda tu llamada gratis",
   contactLede: "Cuéntame el curso y en qué te atascas. Te respondo en un día hábil para coordinar una llamada de 20 minutos.",
   wa: "Escríbeme por WhatsApp",
+  formPromise: "Intro gratis de 20 minutos. Y si tu primera sesión no vale la pena, no la pagas.",
   err: "Escribe tu nombre y tu correo para poder responderte.",
   fName: "Nombre", fEmail: "Correo electrónico", fPhone: "Teléfono", optional: "(opcional)", fLevel: "Nivel",
   oHs: "Secundaria (high school)", oU: "Universidad", oE: "Universidad, curso de ingeniería",
@@ -332,8 +340,9 @@ module.exports = {
     `,
   tosPlans: `
       <h2>Planes y reembolsos</h2>
+      <p>Garantía de la primera sesión: si eres estudiante nuevo y tu primera sesión individual no valió la pena para ti, avísame en las 24 horas siguientes y te devuelvo el pago completo, sin necesidad de explicar por qué. Una por familia. Si compraste un plan, te devuelvo el plan completo.</p>
       <ul>
-        <li>Cada plan vale por el período que se indica al comprarlo.</li>
+        <li>Planes mensuales: las sesiones que no uses pasan al mes siguiente y luego vencen. Los planes semestrales son válidos durante el semestre en curso.</li>
         <li>Puedes pedir el reembolso de las sesiones que no hayas usado en cualquier momento antes de que venza el plan. Las sesiones que ya usaste se cobran a la tarifa normal de sesión suelta vigente cuando compraste el plan, y te devuelvo el resto.</li>
         <li>Las sesiones que no uses antes de que venza el plan no se reembolsan.</li>
       </ul>
