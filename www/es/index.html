@@ -4,6 +4,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Google Tag Manager -->
+<script>window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-TG7DX6ZB');</script>
+<!-- End Google Tag Manager -->
 <title>Tutor de matemáticas, física e ingeniería en Miami y Broward</title>
 <meta name="description" content="Tutorías de matemáticas, física e ingeniería para secundaria y universidad. En línea o en persona en Miami-Dade y Broward, en español o inglés.">
 <link rel="canonical" href="https://josediaztutoring.com/es/">
@@ -575,6 +584,10 @@
 </script>
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TG7DX6ZB"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
 <a class="skip" href="#main" data-i18n="skip">Saltar al contenido</a>
 <a class="wa-float is-hidden wa-link" id="wa-float" href="https://wa.me/17868329107" target="_blank" rel="noopener" aria-label="Escríbele a Jose por WhatsApp" data-i18n-attr="aria-label:waLabel">
   <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 19.5l1.3-3.7A8 8 0 1 1 8.3 18.7z"/></svg>
@@ -954,6 +967,17 @@ const waHref = "https://wa.me/" + CONFIG.whatsapp + "?text=" + encodeURIComponen
 document.querySelectorAll(".wa-link").forEach(a => a.href = waHref);
 document.querySelectorAll(".li-link").forEach(a => a.href = CONFIG.linkedin);
 
+/* analytics: events for Google Tag Manager (no personal data, only what was clicked) */
+const track = (event, params) => (window.dataLayer = window.dataLayer || []).push({ event, page_language: LANG, ...params });
+document.addEventListener("click", e => {
+  const a = e.target.closest && e.target.closest("a[href]");
+  if (!a) return;
+  const href = a.getAttribute("href"), where = a.id === "wa-float" ? "floating_button" : (a.closest("footer") ? "footer" : "page");
+  if (a.classList.contains("wa-link")) track("contact_click", { contact_method: "whatsapp", link_location: where });
+  else if (href.startsWith("tel:")) track("contact_click", { contact_method: "phone", link_location: where });
+  else if (href.startsWith("mailto:")) track("contact_click", { contact_method: "email", link_location: where });
+});
+
 /* footer: links that stay hidden until their CONFIG value is set */
 function showLink(id, href, text){
   const li = document.getElementById(id), a = li.querySelector("a");
@@ -1019,6 +1043,7 @@ document.getElementById("contact-form").addEventListener("submit", async e => {
       })
     });
     if (!res.ok) throw res.status;
+    track("generate_lead", { form_name: "booking", student_level: f.level.value || "unspecified" });
     st.textContent = M.ok; st.classList.add("ok"); f.reset();
   } catch (status) {
     st.textContent = status === 429 ? M.busy : M.fail; st.classList.add("bad");

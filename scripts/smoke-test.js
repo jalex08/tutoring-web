@@ -122,6 +122,13 @@ srv.listen(0, async () => {
       assert.equal((html.match(/<a [^>]*aria-current="page"/g) || []).length, 1);
       assert.match(html, new RegExp(`data-lang="${lang}"[^>]*aria-current="page"`));
     });
+    await check(`${lang}: Google Tag Manager in <head> and right after <body>`, () => {
+      const head = html.slice(0, html.indexOf("</head>"));
+      assert.ok(head.includes("'dataLayer','GTM-TG7DX6ZB')"), "GTM head snippet missing");
+      assert.ok(head.indexOf("GTM-TG7DX6ZB") < head.indexOf("<title>"), "GTM snippet should be high in <head>");
+      assert.match(html, /<body>\n<!-- Google Tag Manager \(noscript\) -->\n<noscript><iframe src="https:\/\/www\.googletagmanager\.com\/ns\.html\?id=GTM-TG7DX6ZB"/);
+      assert.ok(html.includes('track("generate_lead"'), "booking-form lead event missing");
+    });
     await check(`${lang}: title and description`, () => {
       const title = decode(html.match(/<title>([^<]*)<\/title>/)[1]);
       const desc = decode(html.match(/<meta name="description" content="([^"]*)"/)[1]);
