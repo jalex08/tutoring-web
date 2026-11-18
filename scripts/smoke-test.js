@@ -60,7 +60,7 @@ srv.listen(0, async () => {
   }
   const redirects = { "/index.html": "/", "/es": "/es/", "/es/index.html": "/es/", "/index.html?lang=es": "/es/" };
   for (const p of ["/privacy", "/terms", "/accessibility", "/es/privacidad", "/es/terminos", "/es/accesibilidad"]) {
-    redirects[p] = redirects[`${p}/index.html`] = `${p}/`;
+    redirects[p] = redirects[`${p}.html`] = redirects[`${p}/index.html`] = `${p}/`;
   }
   for (const [p, to] of Object.entries(redirects)) {
     await check(`${p} -> 301 ${to}`, async () => {

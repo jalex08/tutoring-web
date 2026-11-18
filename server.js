@@ -354,9 +354,9 @@ const SECURITY_HEADERS = {
   "Referrer-Policy": "strict-origin-when-cross-origin",
 };
 const REDIRECTS = { "/index.html": "/", "/es": "/es/", "/es/index.html": "/es/" };
-// legal pages: /privacy and /privacy/index.html -> /privacy/ (the slash URLs are static, see app.yaml)
+// legal pages: /privacy, /privacy.html and /privacy/index.html -> /privacy/ (the slash URLs are static, see app.yaml)
 for (const p of ["/privacy", "/terms", "/accessibility", "/es/privacidad", "/es/terminos", "/es/accesibilidad"]) {
-  REDIRECTS[p] = REDIRECTS[`${p}/index.html`] = `${p}/`;
+  REDIRECTS[p] = REDIRECTS[`${p}.html`] = REDIRECTS[`${p}/index.html`] = `${p}/`;
 }
 let page404 = null;
 

@@ -8,8 +8,8 @@
  *                          pages/legal.css  their extra CSS
  *                          i18n/es.js       Spanish text, keyed by data-i18n
  *   Outputs (generated):   www/es/index.html
- *                          www/{privacy,terms,accessibility}/index.html
- *                          www/es/{privacidad,terminos,accesibilidad}/index.html
+ *                          www/privacy.html, www/terms.html, www/accessibility.html
+ *                          www/es/privacidad.html, www/es/terminos.html, www/es/accesibilidad.html
  *                          in place: the JSON-LD block and footer year in www/index.html,
  *                                    the footer in www/404.html
  *                          www/sitemap.xml  (lastmod = date the page last changed)
@@ -435,7 +435,8 @@ ${P.analytics}
 const outputs = [];
 const lastmod = {}; // url path -> date
 const readOld = (f) => (fs.existsSync(f) ? fs.readFileSync(f, "utf8") : null);
-const outFile = (p) => path.join(ROOT, "www", p, "index.html");
+// /privacy/ -> www/privacy.html, /es/privacidad/ -> www/es/privacidad.html (app.yaml maps the URL to the file)
+const outFile = (p) => path.join(ROOT, "www", p.replace(/^\/|\/$/g, "") + ".html");
 for (const page of LEGAL) {
   const built = {};
   for (const lang of ["en", "es"]) {
