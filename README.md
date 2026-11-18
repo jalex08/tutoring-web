@@ -83,8 +83,9 @@ each section is one entry). The build wraps them in the site's real header,
 footer, `<head>` (GTM included) and CSS, both taken from `www/index.html`, and
 writes the table of contents as static HTML. Change both languages together.
 
-- **"Last updated" / "Last reviewed"** is the date of the build that last changed
-  that page's text, so run `npm run build` on the day you deploy a change.
+- **"Last updated" / "Last reviewed"** is the date (America/New_York) of the build
+  that last changed that page's text, so run `npm run build` on the day you deploy a change.
+  The sitemap `lastmod` dates and the footer © year use the same time zone.
 - The build stops if a legal page has leftover `[placeholder]` text, if the
   Terms page has a price, amount or package size (rates live only on the home
   page), if the Privacy or Terms page has a phone number (email only there), if

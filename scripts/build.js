@@ -14,8 +14,8 @@
  *                                    the footer in www/404.html
  *                          www/sitemap.xml  (lastmod = date the page last changed)
  *
- * The legal pages show a "Last updated" date: the build date of the last build that
- * changed the page's text, so it is the date of the first deploy with that text.
+ * The legal pages show a "Last updated" date: the build date (America/New_York) of the
+ * last build that changed the page's text, so it is the date of the first deploy with that text.
  *
  * Run: npm run build      Check only (exit 1 if outputs are stale): npm run build -- --check
  */
@@ -36,9 +36,9 @@ const CHECK = process.argv.includes("--check");
 
 const ES = require(path.join(ROOT, "i18n/es.js"));
 let html = fs.readFileSync(SRC, "utf8");
-const pad2 = (n) => String(n).padStart(2, "0");
-const now = new Date();
-const today = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`; // local date
+// Dates ("Last updated", sitemap lastmod, footer year) are in Florida time, whatever the machine's time zone.
+const TZ = "America/New_York";
+const today = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()); // YYYY-MM-DD
 
 // Legal pages: English source, URL in each language. `strict`: no prices, no phone.
 const LEGAL = [
@@ -104,7 +104,7 @@ if (telDigits !== String(CONFIG.phone).replace(/\D/g, "")) fail(`footer tel: lin
 const footMail = (html.match(/<footer[\s\S]*?href="mailto:([^"]+)"/) || [])[1];
 if (isSet(CONFIG.email) && footMail !== CONFIG.email) fail(`footer mailto: link (${footMail}) doesn't match CONFIG.email (${CONFIG.email})`);
 // © year in the footer (static, so the pages need no script for it)
-html = replaceOne(html, /(<span id="yr">)\d{4}(<\/span>)/, `$1${now.getFullYear()}$2`, "footer year");
+html = replaceOne(html, /(<span id="yr">)\d{4}(<\/span>)/, `$1${today.slice(0, 4)}$2`, "footer year");
 
 // --- structured data --------------------------------------------------------------
 function price(src, key) {

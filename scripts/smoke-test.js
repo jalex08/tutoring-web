@@ -200,6 +200,12 @@ srv.listen(0, async () => {
     assert.match(pages.es, /placeholder="p\. ej\., Calculus II en FIU"/);
     assert.match(pages.es, /aria-label="Escríbele a Jose por WhatsApp"/);
   });
+  await check("home: honeypot hidden from assistive tech and keyboard, still posted", () => {
+    for (const h of [pages.en, pages.es]) {
+      assert.match(h, /<div class="hp" aria-hidden="true"><label for="f-website">Website<\/label><input id="f-website" name="website" tabindex="-1" autocomplete="off"><\/div>/);
+      assert.match(h, /website: f\.website\.value/);
+    }
+  });
   await check("home: privacy notice under the form, in the page's language", () => {
     assert.match(pages.en, /<p class="form-note"[^>]*>By sending this form, you agree to the <a href="\/privacy\/">Privacy Policy<\/a>/);
     assert.match(pages.es, /<p class="form-note"[^>]*>Al enviar este formulario, aceptas la <a href="\/es\/privacidad\/">Política de privacidad<\/a>/);
