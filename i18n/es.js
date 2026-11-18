@@ -59,7 +59,8 @@ module.exports = {
   geoNote: "Geometría honors y Precálculo →",
   geoCap: "Dos ángulos de elevación, 40° y 58°, medidos a 50 m de distancia dan una altura de unos 88.2 m.",
   calcTitle: "Volumen de un sólido de revolución",
-  calcGiven: "Datos: y = √x, 0 ≤ x ≤ 4, gira alrededor del eje x",
+  // √ is drawn (Kalam has no glyph): the <use> sits in the gap left by dx, positioned for this text's width
+  calcGiven: '<text class="hand-g" x="54" y="64" font-size="17">Datos: y = <tspan dx="12">x, 0 ≤ x ≤ 4, gira alrededor del eje x</tspan></text><use class="rad" href="#rad" x="139.2" y="64"/>',
   calcNote1: "← discos",
   calcAns: "V = 8π ≈ 25.1 unidades³",
   calcNote: "como en AP Calc BC y Cálculo II",
