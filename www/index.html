@@ -130,6 +130,13 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   /* ---- footer-css:end ---- */
   /* ==== shared:end ==== */
 
+  /* soft-line sheets (home page only): same values as pages/legal.css, kept separate on purpose */
+  :root{
+    --line:#D3DCD8;
+    --soft-shadow:0 1px 2px rgba(35,42,42,.04),0 6px 18px rgba(35,42,42,.06);
+  }
+  .sheet::before,.note-sheet::before{content:"";position:absolute;top:0;bottom:0;left:var(--margin-x,16px);width:1px;background:#E7A3A3;opacity:.45} /* notebook margin line */
+
   /* hero */
   .hero{padding:64px 0 72px;border-bottom:1px solid var(--rule)}
   .hero-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:56px;align-items:center}
@@ -141,8 +148,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .facts li::before{content:"";width:8px;height:8px;border:2px solid var(--ink);border-radius:50%}
   .facts strong{color:var(--graphite)}
 
-  .sheet{position:relative;border-radius:4px;box-shadow:0 1px 0 #b9cfb1,0 18px 40px -22px rgba(30,60,30,.45);transform:rotate(1.2deg);padding:18px 18px 12px}
-  .sheet::before{content:"";position:absolute;left:52px;top:0;bottom:0;width:1.5px;background:#E7A3A3;opacity:.8} /* margin line */
+  .sheet{--margin-x:52px;position:relative;border:1px solid var(--line);border-radius:6px;box-shadow:var(--soft-shadow);transform:rotate(1.2deg);padding:18px 18px 12px}
   .sheet svg{width:100%;height:auto;overflow:visible}
   .hand{font-family:var(--hand);fill:var(--ink)}
   .hand-g{font-family:var(--hand);fill:var(--graphite)}
@@ -177,27 +183,27 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .sec-head p{margin-top:14px;color:var(--muted);font-size:1.1rem}
 
   /* subjects: two columns on one sheet */
-  .levels{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--graphite);border-radius:6px;background:#fff;overflow:hidden}
+  .levels{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);box-shadow:var(--soft-shadow);border-radius:6px;background:#fff;overflow:hidden}
   .level{padding:34px 36px 38px}
-  .level + .level{border-left:1.5px solid var(--graphite)}
+  .level + .level{border-left:1px solid var(--line)}
   .level p{color:var(--muted);margin-top:8px;max-width:30em}
   .level ul{margin:22px 0 0;padding:0;list-style:none}
   .level li{padding:11px 0;border-top:1px solid var(--rule);display:flex;justify-content:space-between;gap:16px}
   .level li:last-child{border-bottom:1px solid var(--rule)}
   .level li span{color:var(--muted);font-size:.92rem;text-align:right}
-  .level-eng{grid-column:1/-1;border-top:1.5px solid var(--graphite);background:var(--pad);display:grid;grid-template-columns:1fr 1.25fr;gap:8px 40px;align-items:start}
+  .level-eng{grid-column:1/-1;border-top:1px solid var(--line);background:var(--pad);display:grid;grid-template-columns:1fr 1.25fr;gap:8px 40px;align-items:start}
   .level + .level.level-eng{border-left:0}
   .level-eng ul{margin:4px 0 0}
   .level-eng .eng-note{margin-top:14px;color:var(--graphite);font-weight:700}
   @media (max-width:760px){.level-eng{grid-template-columns:1fr}}
   @media (max-width:520px){.level li{flex-direction:column;gap:2px}.level li span{text-align:left}}
-  @media (max-width:760px){.levels{grid-template-columns:1fr}.level + .level{border-left:0;border-top:1.5px solid var(--graphite)}.level{padding:28px 22px}}
+  @media (max-width:760px){.levels{grid-template-columns:1fr}.level + .level{border-left:0;border-top:1px solid var(--line)}.level{padding:28px 22px}}
 
   /* schools */
   .schools{margin-top:40px}
   .schools > p{font-weight:700;margin-bottom:14px}
   .schools ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-  .school{display:flex;align-items:center;gap:14px;background:#fff;border:1.5px solid var(--graphite);border-radius:6px;padding:14px 16px}
+  .school{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--line);box-shadow:var(--soft-shadow);border-radius:6px;padding:14px 16px}
   .school .ico{flex:none;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--grid);
     background-color:var(--pad);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:8px 8px}
   .school .ico svg{width:28px;height:28px}
@@ -231,7 +237,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
   /* about */
   .about-grid{display:grid;grid-template-columns:280px 1fr;gap:56px;align-items:start}
-  .portrait{aspect-ratio:4/5;border-radius:6px;display:grid;place-items:center;border:1.5px solid var(--graphite)}
+  .portrait{aspect-ratio:4/5;border-radius:6px;display:grid;place-items:center;border:1px solid var(--line);box-shadow:var(--soft-shadow)}
   img.portrait{width:100%;height:auto;object-fit:cover;background:var(--pad)}
   .about-body p{max-width:36em}
   .about-body p + p{margin-top:18px}
@@ -281,6 +287,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   @media (max-width:760px){.rate{grid-template-columns:minmax(0,1fr) auto;gap:6px 16px}.price-sm{white-space:normal;max-width:8em}.rate p{grid-column:1/-1;grid-row:2}.price{grid-row:1;grid-column:2}}
 
   /* faq */
+  #faq{border-bottom:1.5px solid var(--graphite)} /* divider into #contact */
   .faq{max-width:46em}
   .faq details{border-bottom:1px solid var(--rule)}
   .faq details:first-child{border-top:1px solid var(--rule)}
@@ -290,11 +297,23 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .faq details[open] summary::after{content:"\2212"}
   .faq details p{padding:0 0 22px;color:var(--muted);max-width:40em}
 
+  /* share sheet: the FAQ's closing note, same column as the questions */
+  .note-sheet{position:relative;max-width:46em;margin-top:32px;background:#fff;border:1px solid var(--line);box-shadow:var(--soft-shadow);border-radius:6px;padding:28px 32px 28px 44px}
+  .share h3{font-weight:800;font-size:clamp(1.35rem,2.4vw,1.8rem)}
+  .share h3 span{display:block}
+  .share h3 span + span{color:var(--ink)}
+  .share-lede{margin-top:12px;font-size:1.1rem;max-width:36em}
+  .share-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
+  .share-actions [hidden]{display:none}
+  .share-actions svg{width:18px;height:18px;flex:none}
+  .share-status{align-self:center;font-weight:700;color:var(--ink)} /* in the button row: no reserved space while empty */
+  @media (max-width:520px){.note-sheet{margin-top:24px;padding:20px 18px 20px 30px}}
+
   /* contact */
   .contact-grid{display:grid;grid-template-columns:1fr 1.15fr;gap:56px;align-items:start}
   .contact-side p{margin-top:16px;color:var(--muted);max-width:28em}
   .contact-side .wa{margin-top:26px}
-  form{background:#fff;border:1.5px solid var(--graphite);border-radius:6px;padding:30px}
+  form{background:#fff;border:1px solid var(--line);box-shadow:var(--soft-shadow);border-radius:6px;padding:30px}
   .field{display:grid;gap:7px;margin-bottom:18px}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   label{font-weight:700;font-size:.95rem}
@@ -877,6 +896,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <details><summary data-i18n="q6">My exam is next week. Is it too late?</summary>
           <p data-i18n="a6">No, but book soon. Exam weeks fill up first. A focused review on the topics that will be tested can still make a real difference.</p></details>
       </div>
+      <!-- share: the FAQ's closing note (not a question: stays out of the FAQPage structured data) -->
+      <div id="share" class="note-sheet share"
+        data-share-text="Found a math, physics &amp; engineering tutor in South Florida. He's an engineer, teaches in English and Spanish, and the 20-min intro is free:"
+        data-share-url="https://josediaztutoring.com/?src=share"
+        data-share-copied="Link copied"
+        data-i18n-attr="data-share-text:shareText;data-share-url:shareUrl;data-share-copied:shareCopied">
+        <h3 id="share-title"><span data-i18n="shareT1">Not for you?</span> <span data-i18n="shareT2">It might be for someone you know.</span></h3>
+        <p class="share-lede" data-i18n="shareP">A friend stuck in Calc II, a cousin with the EOC coming up, a classmate in Circuits.</p>
+        <div class="share-actions">
+          <button class="btn btn-primary" type="button" id="share-native" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>
+            <span data-i18n="shareBtn">Share with a friend</span>
+          </button>
+          <a class="btn btn-ghost" id="share-wa" href="https://wa.me/?text=Found%20a%20math%2C%20physics%20%26%20engineering%20tutor%20in%20South%20Florida.%20He's%20an%20engineer%2C%20teaches%20in%20English%20and%20Spanish%2C%20and%20the%2020-min%20intro%20is%20free%3A%20https%3A%2F%2Fjosediaztutoring.com%2F%3Fsrc%3Dshare" target="_blank" rel="noopener" data-i18n-attr="href:shareWaHref" data-i18n="shareWa">Send on WhatsApp</a>
+          <button class="btn btn-ghost" type="button" id="share-copy" hidden data-i18n="shareCopy">Copy link</button>
+          <p class="share-status" id="share-status" role="status" aria-live="polite"></p>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1051,6 +1088,44 @@ if ("IntersectionObserver" in window) {
   new IntersectionObserver(es => { es.forEach(e => { seen.contact = e.isIntersecting; }); sync(); }, { threshold: 0.15 })
     .observe(document.getElementById("contact"));
 } else { waFloat.classList.remove("is-hidden"); }
+
+/* share band: native share sheet on touch devices, WhatsApp + copy link elsewhere.
+   Without JS only the WhatsApp link shows (its href is built into the page). */
+(function(){
+  const box = document.getElementById("share");
+  const text = box.dataset.shareText, url = box.dataset.shareUrl;
+  const native = document.getElementById("share-native"), wa = document.getElementById("share-wa");
+  const copy = document.getElementById("share-copy"), status = document.getElementById("share-status");
+  wa.href = "https://wa.me/?text=" + encodeURIComponent(text + " " + url);
+  const fallbacks = () => { wa.hidden = false; copy.hidden = false; };
+
+  if (navigator.share && matchMedia("(pointer: coarse)").matches) {
+    native.hidden = false; wa.hidden = true;
+    native.addEventListener("click", async () => {
+      try { await navigator.share({ title: "Jose Diaz Tutoring", text, url }); }
+      catch (e) { if (!e || e.name !== "AbortError") fallbacks(); }
+    });
+  } else {
+    fallbacks();
+  }
+
+  function legacyCopy(){
+    const ta = document.createElement("textarea");
+    ta.value = url; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand("copy"); } catch (_) {}
+    ta.remove(); copy.focus();
+    return ok;
+  }
+  let timer;
+  copy.addEventListener("click", async () => {
+    let ok = false;
+    try { await navigator.clipboard.writeText(url); ok = true; } catch (_) { ok = legacyCopy(); }
+    if (!ok) return;
+    status.textContent = box.dataset.shareCopied;
+    clearTimeout(timer); timer = setTimeout(() => { status.textContent = ""; }, 2000);
+  });
+})();
 
 document.getElementById("contact-form").addEventListener("submit", async e => {
   e.preventDefault();
