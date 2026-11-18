@@ -152,67 +152,84 @@ All mail settings are secrets in Secret Manager (project `jalex-hub`), never in
 this repo. The server re-reads them every 5 minutes, so **changing a secret
 takes effect within ~5 minutes, no redeploy needed.**
 
+The mail server is one JSON secret, `smtp-config`:
+
+```json
+{
+  "user": "jose@example.com",
+  "password": "your-app-password",
+  "host": "smtp.gmail.com",
+  "port": 465,
+  "secure": true,
+  "from": "Jose Diaz Tutoring <jose@example.com>",
+  "ownerEmail": "jose@example.com"
+}
+```
+
+| Key | Required | Default | Value |
+|---|---|---|---|
+| `user` | yes | | the SMTP login (for Gmail: the address that sends the mail) |
+| `password` | yes | | the SMTP password, App Password or API key |
+| `host` | no | `smtp.gmail.com` | SMTP server |
+| `port` | no | `465` | `465` (implicit TLS) or `587` (STARTTLS) |
+| `secure` | no | `true` on 465, else `false` | `false` = STARTTLS; TLS is still required, the password is never sent in clear text |
+| `from` | no (yes if `user` isn't an email) | `user` | the From address, when the login isn't an email address (SendGrid's `apikey`, Amazon SES keys) |
+| `ownerEmail` | no | the From address | where requests are sent |
+
+Leave an optional key out to use its default. Any other key is rejected, so a
+typo (`"Host"`) fails loudly instead of being ignored.
+
+The booking limits are separate secrets (plain numbers):
+
 | Secret | Required | Default | Value |
 |---|---|---|---|
-| `smtp-user` | yes | | the SMTP login (for Gmail: the address that sends the mail) |
-| `smtp-password` | yes | | the SMTP password, App Password or API key |
-| `smtp-host` | no | `smtp.gmail.com` | SMTP server |
-| `smtp-port` | no | `465` | `465` (implicit TLS) or `587` (STARTTLS) |
-| `smtp-secure` | no | `true` on 465, else `false` | `false` = STARTTLS; TLS is still required, the password is never sent in clear text |
-| `smtp-from` | no | `smtp-user` | the From address, when the login isn't an email address (SendGrid's `apikey`, Amazon SES keys) |
-| `owner-email` | no | the From address | where requests are sent |
 | `mail-ip-hourly-limit` | no | `20` | form submissions per IP address per hour (a school or university shares one IP) |
 | `mail-email-hourly-limit` | no | `3` | form submissions per client email address per hour |
 | `mail-daily-limit` | no | `40` | form submissions per day in total (2 emails each); keep it under your provider's limit |
 
-`smtp-from` and `owner-email` take a bare address (`jose@example.com`) or a
+`from` and `ownerEmail` take a bare address (`jose@example.com`) or a
 name and address (`Jose Diaz Tutoring <jose@example.com>`); without a name the
 mail shows "Jose Diaz Tutoring". The From address must be one the provider lets you send as (a verified
 sender/domain), or mail will be rejected or land in spam.
 
 Common providers:
 
-| Provider | `smtp-host` | `smtp-port` | `smtp-user` | `smtp-password` |
+| Provider | `host` | `port` | `user` | `password` |
 |---|---|---|---|---|
 | Gmail / Google Workspace | `smtp.gmail.com` | `465` | the address | App Password |
 | Microsoft 365 / Outlook | `smtp.office365.com` | `587` | the address | account password (SMTP AUTH must be enabled for the mailbox) |
 | Zoho Mail | `smtp.zoho.com` | `465` | the address | app-specific password |
-| SendGrid | `smtp.sendgrid.net` | `465` | `apikey` | API key (+ `smtp-from`) |
+| SendGrid | `smtp.sendgrid.net` | `465` | `apikey` | API key (+ `from`) |
 | Mailgun | `smtp.mailgun.org` | `587` | SMTP login from Mailgun | its SMTP password |
-| Amazon SES | `email-smtp.<region>.amazonaws.com` | `465` | SMTP username | SMTP password (+ `smtp-from`) |
+| Amazon SES | `email-smtp.<region>.amazonaws.com` | `465` | SMTP username | SMTP password (+ `from`) |
 
-Change an existing secret (e.g. a new App Password):
-
-```bash
-printf '%s' 'NEW-VALUE' | gcloud secrets versions add smtp-password --data-file=- --project=jalex-hub
-```
-
-Create an optional secret the first time (e.g. switching to Microsoft 365):
+Create the secret (once) from a local file, let the app read it, then delete the file:
 
 ```bash
-printf '%s' 'smtp.office365.com' | gcloud secrets create smtp-host --data-file=- --project=jalex-hub
-printf '%s' '587' | gcloud secrets create smtp-port --data-file=- --project=jalex-hub
-```
-
-If the app's service account gets access per secret rather than project-wide,
-grant it on each new secret too, or the app treats the secret as not set:
-
-```bash
-gcloud secrets add-iam-policy-binding smtp-host --project=jalex-hub \
+gcloud secrets create smtp-config --data-file=smtp-config.json --replication-policy=automatic --project=jalex-hub
+gcloud secrets add-iam-policy-binding smtp-config --project=jalex-hub \
   --member=serviceAccount:jalex-hub@appspot.gserviceaccount.com --role=roles/secretmanager.secretAccessor
+rm smtp-config.json
 ```
+
+Change it (e.g. a new App Password): add a new version with the **whole** JSON,
+since each version replaces the previous one entirely:
+
+```bash
+gcloud secrets versions add smtp-config --data-file=smtp-config.json --project=jalex-hub
+```
+
+See the current value: `gcloud secrets versions access latest --secret=smtp-config --project=jalex-hub`.
 
 **Mail still goes through Gmail after changing settings?** Check the logs (Logs
 Explorer): on startup and on every send the app logs `SMTP server:` /
-`Sending via host:port`. A `Secret smtp-host: permission denied (HTTP 403)`
-line means the secret exists but the app may not read it, so the default is
-used: run the `add-iam-policy-binding` command above for that secret. No such
+`Sending via host:port`. A `secret smtp-config: HTTP 403` error means the app
+may not read the secret: run the `add-iam-policy-binding` command above. No such
 lines at all means the running version predates these settings: deploy again.
 
-To go back to a default, delete the optional secret
-(`gcloud secrets delete smtp-port --project=jalex-hub`). An invalid value (e.g.
-`smtp-port` = `abc`) makes sending fail with a clear message in the logs; if a
-refresh from Secret Manager fails, the last good value keeps being used.
+A missing `smtp-config`, invalid JSON, a missing `user`/`password` or an invalid
+value (e.g. `"port": "abc"`) makes sending fail with a clear message in the
+logs; if a refresh from Secret Manager fails, the last good value keeps being used.
 
 Abuse protection: a hidden honeypot field, and per hour at most
 `mail-ip-hourly-limit` (20) requests per IP address and `mail-email-hourly-limit`

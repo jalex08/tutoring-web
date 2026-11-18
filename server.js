@@ -15,17 +15,21 @@
  *
  * Everything about the mail server lives in Secret Manager (never in this
  * repo), so it can be changed without a redeploy: values are re-read every
- * SECRET_TTL (5 minutes). Required:
- *   smtp-user      the SMTP login (for Gmail, the address that sends the mail)
- *   smtp-password  the SMTP password / App Password / API key
- * Optional (default in brackets):
- *   smtp-host      SMTP server [smtp.gmail.com]
- *   smtp-port      465 = implicit TLS, 587 = STARTTLS [465]
- *   smtp-secure    "true" = implicit TLS, "false" = STARTTLS (TLS still
- *                  required) [true on port 465, false otherwise]
- *   smtp-from      the From address, if the login isn't an email address
- *                  (e.g. SendGrid's "apikey") [smtp-user]
- *   owner-email    where requests go [the From address]
+ * SECRET_TTL (5 minutes). The mail server is one JSON secret, `smtp-config`:
+ *   {"user": "...", "password": "...", "host": "smtp.gmail.com", "port": 465,
+ *    "secure": true, "from": "...", "ownerEmail": "..."}
+ * Required keys:
+ *   user        the SMTP login (for Gmail, the address that sends the mail)
+ *   password    the SMTP password / App Password / API key
+ * Optional keys (default in brackets):
+ *   host        SMTP server [smtp.gmail.com]
+ *   port        465 = implicit TLS, 587 = STARTTLS [465]
+ *   secure      true = implicit TLS, false = STARTTLS (TLS still required)
+ *               [true on port 465, false otherwise]
+ *   from        the From address, if the login isn't an email address
+ *               (e.g. SendGrid's "apikey") [user]
+ *   ownerEmail  where requests go [the From address]
+ * Other optional secrets (default in brackets):
  *   mail-ip-hourly-limit     form submissions per IP address per hour [20]
  *   mail-email-hourly-limit  form submissions per client email per hour [3]
  *   mail-daily-limit         form submissions per day in total [40]
@@ -115,12 +119,58 @@ function parseBool(name, raw, def) {
   throw new Error(`${name} must be true or false, got "${raw}"`);
 }
 
+/**
+ * Parses an email address setting: "addr@x.com" or "Name <addr@x.com>" (the
+ * name becomes the display name; default SITE_NAME). Returns { name, address },
+ * or null when empty.
+ */
+function parseAddress(name, raw) {
+  if (!raw) return null;
+  const m = raw.match(/^\s*"?([^"<]*?)"?\s*<([^<>]+)>\s*$/);
+  const address = (m ? m[2] : raw).trim();
+  if (!EMAIL_RE.test(address) || /\s/.test(address)) {
+    throw new Error(`${name} must be an email address like jose@example.com or "Name <jose@example.com>", got "${raw}"`);
+  }
+  return { name: (m && m[1].trim()) || SITE_NAME, address };
+}
+
+/**
+ * The mail server settings, from the JSON secret `smtp-config` (see the top of
+ * this file). Throws with a clear message if the secret is missing or invalid.
+ */
+const SMTP_KEYS = ["user", "password", "host", "port", "secure", "from", "ownerEmail"];
 async function smtpConfig() {
-  const port = parseInt_("smtp-port", await secret("smtp-port", false), 465, 1, 65535);
+  const raw = await secret("smtp-config");
+  let c;
+  try {
+    c = JSON.parse(raw);
+  } catch {
+    throw new Error("secret smtp-config must be a JSON object (see README), and isn't valid JSON");
+  }
+  if (!c || typeof c !== "object" || Array.isArray(c)) throw new Error("secret smtp-config must be a JSON object");
+  const unknown = Object.keys(c).filter((k) => !SMTP_KEYS.includes(k));
+  if (unknown.length) throw new Error(`smtp-config: unknown key(s) ${unknown.join(", ")}; allowed: ${SMTP_KEYS.join(", ")}`);
+  const str = (k) => {
+    const v = c[k];
+    if (v === undefined || v === null) return "";
+    if (typeof v === "string") return v.trim();
+    if (typeof v === "number" || typeof v === "boolean") return String(v);
+    throw new Error(`smtp-config.${k} must be a string`);
+  };
+  for (const k of ["user", "password"]) if (!str(k)) throw new Error(`smtp-config.${k} is required`);
+  const port = parseInt_("smtp-config.port", str("port"), 465, 1, 65535);
+  if (!str("from") && !EMAIL_RE.test(str("user"))) {
+    throw new Error(`smtp-config.from is required: user "${str("user")}" isn't an email address`);
+  }
+  const from = parseAddress("smtp-config.from", str("from")) || parseAddress("smtp-config.user", str("user"));
   return {
-    host: (await secret("smtp-host", false)) || "smtp.gmail.com",
+    host: str("host") || "smtp.gmail.com",
     port,
-    secure: parseBool("smtp-secure", await secret("smtp-secure", false), port === 465),
+    secure: parseBool("smtp-config.secure", str("secure"), port === 465),
+    user: str("user"),
+    password: String(c.password), // untrimmed: a password may legitimately have spaces at the ends
+    from,
+    owner: parseAddress("smtp-config.ownerEmail", str("ownerEmail")) || from,
   };
 }
 
@@ -219,27 +269,10 @@ const CONFIRM = {
   },
 };
 
-/**
- * Reads a secret holding an email address. Accepts "addr@x.com" or
- * "Name <addr@x.com>" (the name becomes the display name; default SITE_NAME).
- * Returns { name, address }, or null for an empty optional secret.
- */
-async function addressSecret(name, required = false) {
-  const raw = await secret(name, required);
-  if (!raw) return null;
-  const m = raw.match(/^\s*"?([^"<]*?)"?\s*<([^<>]+)>\s*$/);
-  const address = (m ? m[2] : raw).trim();
-  if (!EMAIL_RE.test(address) || /\s/.test(address)) {
-    throw new Error(`secret ${name} must be an email address like jose@example.com or "Name <jose@example.com>", got "${raw}"`);
-  }
-  return { name: (m && m[1].trim()) || SITE_NAME, address };
-}
-
 const oneLine = (s) => s.split(/\s+/).filter(Boolean).join(" ");
 
 async function buildMessages(d, lang) {
-  const from = await addressSecret("smtp-from") || await addressSecret("smtp-user", true);
-  const owner = (await addressSecret("owner-email")) || from;
+  const { from, owner } = await smtpConfig();
   const L = LABELS[lang];
 
   // To Jose: everything the client typed. Reply goes straight to the client.
@@ -281,7 +314,7 @@ async function send(messages) {
     port: smtp.port,
     secure: smtp.secure,
     requireTLS: !smtp.secure, // STARTTLS is mandatory: never send the password in clear text
-    auth: { user: await secret("smtp-user"), pass: await secret("smtp-password") },
+    auth: { user: smtp.user, pass: smtp.password },
     connectionTimeout: 20000,
   });
   try {
