@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preview: legal pages | Jose Diaz Tutoring</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1C4C9E; --ink-dark:#143A7A; --hl:#F6E15A; --pad:#E9F2E4; --grid:#C7DDBE;
+    --graphite:#232A2A; --muted:#55605E; --paper:#FBFCFA; --rule:#D5DED2; --margin:#E7A3A3;
+  }
+  *{box-sizing:border-box}
+  html{scroll-padding-top:120px}
+  body{margin:0;background:var(--paper);color:var(--graphite);
+    font:400 1.0625rem/1.6 "Atkinson Hyperlegible",system-ui,sans-serif}
+  h1,h2,h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;letter-spacing:-.015em;line-height:1.2;margin:0}
+  a{color:var(--ink);text-underline-offset:2px}
+  a:hover{color:var(--ink-dark)}
+  :focus-visible{outline:3px solid var(--ink);outline-offset:2px;border-radius:3px}
+  .skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 14px;z-index:100}
+  .skip:focus{left:12px;top:12px}
+
+  /* ---------- Preview bar (not part of the site) ---------- */
+  .preview-bar{position:sticky;top:0;z-index:50;background:var(--graphite);color:#fff;
+    display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:8px 16px;font-size:.9rem}
+  .preview-bar strong{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;margin-right:4px}
+  .preview-bar .tabs{display:flex;flex-wrap:wrap;gap:6px}
+  .preview-bar button{font:inherit;cursor:pointer;border:1px solid #6b7676;background:transparent;color:#fff;
+    padding:5px 11px;border-radius:999px;min-height:32px}
+  .preview-bar button[aria-pressed="true"]{background:#fff;color:var(--graphite);border-color:#fff;font-weight:700}
+  .preview-bar .url{margin-left:auto;font-family:ui-monospace,Menlo,monospace;font-size:.82rem;
+    background:#3a4444;padding:4px 10px;border-radius:6px;color:#dfe8e5}
+
+  /* ---------- Site header ---------- */
+  .site-header{background:#fff;border-bottom:1px solid var(--rule)}
+  .site-header .wrap{max-width:1120px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--graphite)}
+  .brand svg{flex:none}
+  .brand b{font:800 1.3rem/1 "Bricolage Grotesque",sans-serif;letter-spacing:-.02em;display:block}
+  .brand small{display:block;color:var(--muted);font-size:.78rem;margin-top:3px}
+  .site-nav{display:flex;gap:18px;margin-left:auto;align-items:center;flex-wrap:wrap}
+  .site-nav a{color:var(--graphite);text-decoration:none;font-weight:700;font-size:.95rem;padding:6px 2px}
+  .site-nav a:hover{color:var(--ink)}
+  .lang-toggle{display:inline-flex;border:2px solid var(--ink);border-radius:8px;overflow:hidden}
+  .lang-toggle button{font:700 .85rem "Atkinson Hyperlegible",sans-serif;border:0;background:#fff;color:var(--ink);
+    padding:6px 10px;cursor:pointer;min-width:40px;min-height:32px}
+  .lang-toggle button[aria-pressed="true"]{background:var(--ink);color:#fff}
+  .btn{display:inline-block;background:var(--ink);color:#fff !important;text-decoration:none;font-weight:700;
+    padding:10px 16px;border-radius:8px}
+  .btn:hover{background:var(--ink-dark)}
+
+  /* ---------- Page hero on pad paper ---------- */
+  .pad-hero{background-color:var(--pad);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:22px 22px;border-bottom:1.5px solid var(--graphite)}
+  .pad-hero .wrap{max-width:1120px;margin:0 auto;padding:34px 20px 30px}
+  .crumbs{font-size:.9rem;color:var(--muted);margin-bottom:10px}
+  .crumbs a{color:var(--muted)}
+  .pad-hero h1{font-weight:800;font-size:clamp(2.2rem,5vw,3.1rem)}
+  .updated{margin:10px 0 0;color:var(--muted);font-size:.95rem}
+
+  /* ---------- Layout ---------- */
+  main .layout{max-width:1120px;margin:0 auto;padding:30px 20px 60px;display:grid;
+    grid-template-columns:240px minmax(0,1fr);gap:32px;align-items:start}
+  .toc{position:sticky;top:110px;background:#fff;border:1.5px solid var(--graphite);border-radius:6px;padding:14px 16px}
+  .toc h2{font-size:1rem;margin-bottom:8px}
+  .toc ol{margin:0;padding-left:1.2em;font-size:.92rem;line-height:1.45}
+  .toc li{margin:5px 0}
+  .toc a{color:var(--graphite);text-decoration:none}
+  .toc a:hover{color:var(--ink);text-decoration:underline}
+  .sheet{background:#fff;border:1.5px solid var(--graphite);border-radius:6px;padding:28px 34px 34px;
+    position:relative;max-width:820px}
+  .sheet::before{content:"";position:absolute;top:0;bottom:0;left:16px;width:1px;background:var(--margin);opacity:.8}
+  .sheet > *{max-width:75ch}
+  .sheet h2{font-size:clamp(1.35rem,2.4vw,1.65rem);margin:34px 0 10px;padding-top:6px}
+  .sheet h2:first-of-type{margin-top:8px}
+  .sheet h3{font-size:1.15rem;margin:22px 0 6px}
+  .sheet p{margin:0 0 12px}
+  .sheet ul{margin:0 0 14px;padding-left:1.25em}
+  .sheet li{margin:4px 0}
+  .lead{font-size:1.2rem}
+  .summary{background:var(--pad);border:1.5px solid var(--graphite);border-radius:6px;padding:14px 18px 6px;margin:0 0 6px}
+  .summary h2{font-size:1.15rem;margin:0 0 6px !important;padding:0}
+  table{width:100%;border-collapse:collapse;margin:6px 0 16px;font-size:.98rem}
+  th,td{text-align:left;vertical-align:top;padding:9px 10px 9px 0;border-bottom:1px solid var(--rule)}
+  th{font-weight:700;border-bottom:1.5px solid var(--graphite)}
+  td.num,th.num{text-align:right;font-family:"Bricolage Grotesque",sans-serif;font-weight:700;white-space:nowrap}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:.88em;background:var(--pad);padding:1px 5px;border-radius:4px}
+  .example{border-left:3px solid var(--ink);padding:6px 0 6px 14px;margin:6px 0 14px;color:var(--graphite)}
+  .contact-card{border:1.5px solid var(--graphite);border-radius:6px;padding:14px 18px;margin-top:26px;background:var(--paper)}
+  .contact-card p{margin:2px 0}
+  /* Open decisions from Part A (would not ship) */
+  .confirm{font-family:ui-monospace,Menlo,monospace;font-size:.82em;background:#FFF3F3;border:1.5px dashed #C0504D;
+    color:#8A2B28;padding:1px 6px;border-radius:4px;white-space:normal}
+
+  /* ---------- Footer ---------- */
+  .site-footer{border-top:1.5px solid var(--graphite);background:#fff}
+  .site-footer .wrap{max-width:1120px;margin:0 auto;padding:26px 20px 30px;display:grid;gap:16px;
+    grid-template-columns:1.2fr 1fr 1fr}
+  .site-footer h2{font-size:1.05rem;margin-bottom:6px}
+  .site-footer p{margin:2px 0;font-size:.95rem}
+  .legal-links{display:flex;flex-wrap:wrap;gap:4px 0;align-items:center;margin:0;padding:0;list-style:none}
+  .legal-links li{display:flex;align-items:center}
+  .legal-links li + li::before{content:"·";color:var(--muted);padding:0 8px}
+  .legal-links a{display:inline-block;padding:4px 0;min-height:24px;font-weight:700}
+  .legal-links a[aria-current="page"]{color:var(--graphite);text-decoration:none;border-bottom:2px solid var(--ink)}
+  .fine{grid-column:1/-1;border-top:1px solid var(--rule);padding-top:12px;color:var(--muted);font-size:.88rem}
+  .wa-float{position:fixed;right:18px;bottom:18px;background:#17744A;color:#fff;text-decoration:none;font-weight:700;
+    padding:12px 18px;border-radius:999px;box-shadow:0 4px 14px rgba(0,0,0,.18);display:flex;gap:8px;align-items:center;z-index:40}
+
+  /* ---------- Site-wide components tab ---------- */
+  .demo-label{font:700 .8rem "Atkinson Hyperlegible",sans-serif;text-transform:none;color:var(--muted);
+    border-bottom:1px solid var(--rule);padding-bottom:4px;margin:26px 0 12px}
+  .form-demo{border:1.5px solid var(--graphite);border-radius:6px;padding:18px;background:var(--paper)}
+  .form-demo .fake-field{border:1.5px solid var(--graphite);border-radius:6px;background:#fff;height:42px;margin:4px 0 12px}
+  .form-demo label{font-weight:700;font-size:.95rem}
+  .form-note{font-size:.92rem;color:var(--muted);margin:10px 0 0}
+  .email-demo{background:#EEF1EF;border-radius:6px;padding:18px}
+  .email-demo .mail{background:#fff;max-width:560px;margin:0 auto;border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+  .email-demo .mail-body{padding:18px 22px}
+  .email-demo .mail-foot{border-top:1px solid var(--rule);padding:12px 22px 16px;font-size:.82rem;color:var(--muted);background:var(--paper)}
+  .email-demo .mail-foot a{color:var(--ink)}
+  .footer-demo{border:1.5px solid var(--graphite);border-radius:6px;overflow:hidden}
+  .footer-demo .site-footer{border-top:0}
+  .footer-demo .site-footer .wrap{grid-template-columns:1fr}
+
+  @media (max-width:860px){
+    main .layout{grid-template-columns:1fr}
+    .toc{position:static}
+    .sheet{padding:22px 20px 26px 30px}
+    .site-footer .wrap{grid-template-columns:1fr}
+    .site-nav .hide-sm{display:none}
+    .preview-bar .url{margin-left:0}
+  }
+  @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto !important;transition:none !important}}
+  @media print{
+    .preview-bar,.site-nav,.toc,.wa-float,.skip{display:none !important}
+    main .layout{display:block;padding:0}
+    .sheet{border:0;padding:0}
+    .sheet::before{display:none}
+    .pad-hero{background:none;border:0}
+    a{color:inherit}
+  }
+  [hidden]{display:none !important}
+</style>
+</head>
+<body>
+
+<a class="skip" href="#content" data-en="Skip to content" data-es="Saltar al contenido">Skip to content</a>
+
+<!-- PREVIEW CONTROLS: not part of the real site -->
+<div class="preview-bar" role="region" aria-label="Preview controls">
+  <strong>Preview, not part of the site</strong>
+  <div class="tabs" role="group" aria-label="Page to preview">
+    <button type="button" data-page-btn="privacy" aria-pressed="true">Privacy</button>
+    <button type="button" data-page-btn="terms" aria-pressed="false">Terms</button>
+    <button type="button" data-page-btn="accessibility" aria-pressed="false">Accessibility</button>
+    <button type="button" data-page-btn="sitewide" aria-pressed="false">Footer, form &amp; email</button>
+  </div>
+  <span class="url" id="fake-url">josediaztutoring.com/privacy/</span>
+</div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="#" aria-label="Jose Diaz Tutoring, home">
+      <svg width="38" height="38" viewBox="0 0 38 38" aria-hidden="true">
+        <rect width="38" height="38" rx="8" fill="#1C4C9E"/>
+        <path d="M7 29 Q17 4 31 27" fill="none" stroke="#F6E15A" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="31" cy="27" r="3" fill="#fff"/>
+      </svg>
+      <span><b>Jose Diaz</b><small data-en="Math, physics &amp; engineering tutoring" data-es="Tutorías de matemáticas, física e ingeniería">Math, physics &amp; engineering tutoring</small></span>
+    </a>
+    <nav class="site-nav" aria-label="Main" data-en-label="Main" data-es-label="Principal">
+      <a class="hide-sm" href="#" data-en="Subjects" data-es="Materias">Subjects</a>
+      <a class="hide-sm" href="#" data-en="Rates" data-es="Tarifas">Rates</a>
+      <a class="hide-sm" href="#" data-en="FAQ" data-es="Preguntas">FAQ</a>
+      <a class="btn" href="#" data-en="Book a free intro" data-es="Reserva una intro gratis">Book a free intro</a>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <button type="button" data-lang-btn="en" aria-pressed="true" lang="en">EN</button>
+        <button type="button" data-lang-btn="es" aria-pressed="false" lang="es">ES</button>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main id="content" tabindex="-1">
+
+<!-- =====================================================================
+     PRIVACY — ENGLISH
+     ===================================================================== -->
+<article data-page="privacy" data-lang="en" lang="en">
+  <div class="pad-hero"><div class="wrap">
+    <p class="crumbs"><a href="#">Home</a> / Privacy Policy</p>
+    <h1>Privacy Policy</h1>
+    <p class="updated">Last updated: <span class="confirm">[deploy date]</span></p>
+  </div></div>
+  <div class="layout">
+    <nav class="toc" aria-label="On this page"><h2>On this page</h2><ol></ol></nav>
+    <div class="sheet">
+      <section class="summary" aria-label="The short version">
+        <h2>The short version</h2>
+        <ul>
+          <li>I collect only what you send me, plus basic statistics about visits to the site.</li>
+          <li>I use it to answer you and run your sessions. I never sell it or use it for ads.</li>
+          <li>You can ask me to see, correct or delete your information at any time: <a href="mailto:jose@josediaztutoring.com">jose@josediaztutoring.com</a>.</li>
+        </ul>
+      </section>
+
+      <h2>Who I am</h2>
+      <p>Jose Diaz Tutoring is operated by Jose Alexis Diaz, a sole proprietor in Florida. In this policy, "I" and "me" mean me, the tutor.</p>
+      <p>This policy covers josediaztutoring.com, its Spanish version, and the information I handle when you contact me or take sessions with me.</p>
+
+      <h2>What I collect</h2>
+      <table>
+        <thead><tr><th scope="col">Where it comes from</th><th scope="col">What</th></tr></thead>
+        <tbody>
+          <tr><td>The booking form</td><td>Your name, email, phone number, the student's level, the course, and what you need help with. <span class="confirm">[verify against the form fields]</span></td></tr>
+          <tr><td>Email and WhatsApp</td><td>Whatever you choose to send me.</td></tr>
+          <tr><td>If you become a student</td><td>Session dates, courses, progress notes and payment records (amount, date and method). I don't store card numbers.</td></tr>
+          <tr><td>Automatically, when you visit</td><td>Your IP address, browser and device type, the pages you visit, the page that sent you here, and which of the site's buttons you use. See <a href="#cookies-and-analytics">Cookies and analytics</a>.</td></tr>
+        </tbody>
+      </table>
+
+      <h2>How I use it</h2>
+      <ul>
+        <li>To reply to your request and set up your intro call.</li>
+        <li>To schedule and teach your sessions, and to send confirmations, reminders and schedule changes.</li>
+        <li>To take payments and keep tax records.</li>
+        <li>To keep the site secure and block spam.</li>
+        <li>To see, in totals only, which pages and buttons are useful, so I can improve the site.</li>
+      </ul>
+      <p>I don't sell your personal information, and I don't use it for targeted advertising.</p>
+
+      <h2>Who I share it with</h2>
+      <p>Only with the services that run my business, and only what each one needs:</p>
+      <table>
+        <thead><tr><th scope="col">Provider</th><th scope="col">What it does</th><th scope="col">What it receives</th></tr></thead>
+        <tbody>
+          <tr><td>Google Cloud (App Engine)</td><td>Hosts the site</td><td>Technical data about each visit</td></tr>
+          <tr><td>Google Analytics (through Google Tag Manager)</td><td>Counts visits</td><td>A cookie ID, pages and button clicks, and an approximate location. Never your name, email or phone.</td></tr>
+          <tr><td>Google Fonts</td><td>Loads the site's fonts</td><td>Your IP address and browser type</td></tr>
+          <tr><td>SMTP2GO</td><td>Delivers my emails</td><td>Your name, email address and the message</td></tr>
+          <tr><td>Amazon Web Services</td><td>Runs my email server</td><td>Emails you send me</td></tr>
+          <tr><td>WhatsApp (Meta)</td><td>Messaging, only if you write to me there</td><td>What you send, under WhatsApp's own terms</td></tr>
+        </tbody>
+      </table>
+      <p>I also share information when the law requires it, for example because of a subpoena or a court order. I don't share personal information with other companies for their own marketing.</p>
+
+      <h2 id="cookies-and-analytics">Cookies and analytics</h2>
+      <p>I use Google Analytics, loaded through Google Tag Manager, to count visits and see which pages and buttons get used.</p>
+      <ul>
+        <li>It sets two cookies on this site, <code>_ga</code> and <code>_ga_6LBR6F7XLD</code>. They last up to 2 years and identify your browser, not you.</li>
+        <li>Google uses your IP address to estimate your approximate location (city level). Google Analytics doesn't log or store IP addresses.</li>
+        <li>Google signals and all advertising features are turned off. I never send your name, email or phone number to Analytics.</li>
+        <li>If you visit from the EEA, the UK or Switzerland, Analytics runs without cookies.</li>
+        <li>The site uses no other cookies, ad pixels or social-media trackers.</li>
+      </ul>
+      <p><strong>Your choices:</strong> you can block or delete cookies in your browser settings, or install Google's <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener">Analytics opt-out add-on</a>. The site works the same either way. To learn more, see <a href="https://policies.google.com/technologies/partner-sites" rel="noopener">how Google uses information from sites that use its services</a>.</p>
+      <h3>Do Not Track</h3>
+      <p>Analytics measures visits over time on this site only. The site doesn't track you across other websites or show you ads, and I don't let other companies collect information here to follow you across other sites. For that reason, the site doesn't respond differently to Do Not Track signals.</p>
+
+      <h2>Children and students under 18</h2>
+      <ul>
+        <li>My services are for high school students, college students and their parents. The site isn't directed to children under 13, and I don't knowingly collect information from them.</li>
+        <li>If the student is under 18, a parent or guardian should send the form or be copied on it.</li>
+        <li>If I learn that I collected information from a child under 13 without a parent's consent, I'll delete it.</li>
+        <li>Rules for in-person sessions and recordings are in the <a href="#" data-goto="terms">Terms of Service</a>.</li>
+      </ul>
+
+      <h2>AI tools</h2>
+      <p>I don't put students' names or contact details into AI tools. When I use AI to prepare practice material, I remove anything that identifies the student.</p>
+
+      <h2>How long I keep it</h2>
+      <table>
+        <thead><tr><th scope="col">Information</th><th scope="col">Kept for</th></tr></thead>
+        <tbody>
+          <tr><td>Inquiries that don't lead to sessions</td><td>12 months</td></tr>
+          <tr><td>Session notes</td><td>2 years after the last session</td></tr>
+          <tr><td>Payment and tax records</td><td>7 years</td></tr>
+          <tr><td>Analytics data</td><td>14 months</td></tr>
+          <tr><td>Hosting logs</td><td>30 days <span class="confirm">[verify in Step 1]</span></td></tr>
+        </tbody>
+      </table>
+
+      <h2>How I protect it</h2>
+      <p>Every page uses HTTPS (with HSTS). Only I can access your information, and I chose my providers for their security. No system is perfectly secure; if a breach ever affects your information, I'll tell you, as the law requires.</p>
+
+      <h2>Your choices and requests</h2>
+      <p>Email me to:</p>
+      <ul>
+        <li>see the information I have about you;</li>
+        <li>correct it;</li>
+        <li>delete it (except records I must keep for taxes);</li>
+        <li>stop any messages that aren't about your sessions.</li>
+      </ul>
+      <p>I reply within 30 days, and I may first ask you to confirm who you are. Making a request never changes the price or quality of your sessions.</p>
+
+      <h2>Links to other sites</h2>
+      <p>This site links to WhatsApp, LinkedIn and Google. Their own privacy policies apply on their sites.</p>
+
+      <h2>Changes to this policy</h2>
+      <p>When I update this policy, I change the "Last updated" date at the top. If the change is important, such as a new kind of information or a new provider, I'll also post a notice on the home page for 30 days.</p>
+
+      <h2>Language</h2>
+      <p>This policy is available in English and Spanish, and both versions say the same thing. If they ever conflict, the English version controls.</p>
+
+      <div class="contact-card">
+        <p><strong>Questions or requests</strong></p>
+        <p>Jose Alexis Diaz, Jose Diaz Tutoring</p>
+        <p><a href="mailto:jose@josediaztutoring.com">jose@josediaztutoring.com</a></p>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- =====================================================================
+     PRIVACIDAD — ESPAÑOL
+     ===================================================================== -->
+<article data-page="privacy" data-lang="es" lang="es" hidden>
+  <div class="pad-hero"><div class="wrap">
+    <p class="crumbs"><a href="#">Inicio</a> / Política de privacidad</p>
+    <h1>Política de privacidad</h1>
+    <p class="updated">Última actualización: <span class="confirm">[fecha de publicación]</span></p>
+  </div></div>
+  <div class="layout">
+    <nav class="toc" aria-label="En esta página"><h2>En esta página</h2><ol></ol></nav>
+    <div class="sheet">
+      <section class="summary" aria-label="En resumen">
+        <h2>En resumen</h2>
+        <ul>
+          <li>Solo recojo lo que tú me envías y estadísticas básicas de las visitas al sitio.</li>
+          <li>Lo uso para responderte y organizar tus sesiones. Nunca lo vendo ni lo uso para publicidad.</li>
+          <li>Puedes pedirme en cualquier momento ver, corregir o borrar tu información: <a href="mailto:jose@josediaztutoring.com">jose@josediaztutoring.com</a>.</li>
+        </ul>
+      </section>
+
+      <h2>Quién soy</h2>
+      <p>Jose Diaz Tutoring es un negocio de Jose Alexis Diaz, que trabaja por cuenta propia (<i lang="en">sole proprietor</i>) en Florida. En esta política, "yo" soy yo, el tutor.</p>
+      <p>Esta política cubre josediaztutoring.com, su versión en español y la información que manejo cuando me contactas o tomas sesiones conmigo.</p>
+
+      <h2>Qué información recojo</h2>
+      <table>
+        <thead><tr><th scope="col">De dónde viene</th><th scope="col">Qué es</th></tr></thead>
+        <tbody>
+          <tr><td>El formulario de reserva</td><td>Tu nombre, correo, teléfono, el nivel del estudiante, la materia y en qué necesitas ayuda. <span class="confirm">[verificar con los campos del formulario]</span></td></tr>
+          <tr><td>Correo y WhatsApp</td><td>Lo que decidas enviarme.</td></tr>
+          <tr><td>Si empiezas a tomar sesiones</td><td>Fechas de las sesiones, materias, notas de progreso y registros de pago (monto, fecha y método). No guardo números de tarjeta.</td></tr>
+          <tr><td>Automáticamente, al visitar el sitio</td><td>Tu dirección IP, el tipo de navegador y de dispositivo, las páginas que visitas, desde qué página llegaste y qué botones del sitio usas. Mira <a href="#cookies-y-analitica">Cookies y analítica</a>.</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Para qué la uso</h2>
+      <ul>
+        <li>Para responder tu solicitud y coordinar tu llamada de introducción.</li>
+        <li>Para programar y dar tus sesiones, y enviarte confirmaciones, recordatorios y cambios de horario.</li>
+        <li>Para cobrar y llevar mis registros de impuestos.</li>
+        <li>Para mantener el sitio seguro y bloquear el spam.</li>
+        <li>Para ver, solo en números totales, qué páginas y botones son útiles, y así mejorar el sitio.</li>
+      </ul>
+      <p>No vendo tu información personal ni la uso para publicidad dirigida.</p>
+
+      <h2>Con quién la comparto</h2>
+      <p>Solo con los servicios que hacen funcionar mi negocio, y solo lo que cada uno necesita:</p>
+      <table>
+        <thead><tr><th scope="col">Proveedor</th><th scope="col">Para qué sirve</th><th scope="col">Qué recibe</th></tr></thead>
+        <tbody>
+          <tr><td>Google Cloud (App Engine)</td><td>Aloja el sitio</td><td>Datos técnicos de cada visita</td></tr>
+          <tr><td>Google Analytics (mediante Google Tag Manager)</td><td>Cuenta las visitas</td><td>Un identificador de cookie, las páginas y los clics en botones, y una ubicación aproximada. Nunca tu nombre, correo ni teléfono.</td></tr>
+          <tr><td>Google Fonts</td><td>Carga las fuentes del sitio</td><td>Tu dirección IP y tu tipo de navegador</td></tr>
+          <tr><td>SMTP2GO</td><td>Entrega mis correos</td><td>Tu nombre, tu correo y el mensaje</td></tr>
+          <tr><td>Amazon Web Services</td><td>Hace funcionar mi servidor de correo</td><td>Los correos que me envías</td></tr>
+          <tr><td>WhatsApp (Meta)</td><td>Mensajería, solo si me escribes por ahí</td><td>Lo que envíes, según los términos de WhatsApp</td></tr>
+        </tbody>
+      </table>
+      <p>También comparto información cuando la ley lo exige, por ejemplo ante una citación o una orden judicial. No comparto información personal con otras empresas para su propio marketing.</p>
+
+      <h2 id="cookies-y-analitica">Cookies y analítica</h2>
+      <p>Uso Google Analytics, que se carga mediante Google Tag Manager, para contar las visitas y ver qué páginas y botones se usan.</p>
+      <ul>
+        <li>Crea dos cookies de este sitio, <code>_ga</code> y <code>_ga_6LBR6F7XLD</code>. Duran hasta 2 años e identifican tu navegador, no a ti.</li>
+        <li>Google usa tu dirección IP para estimar tu ubicación aproximada (la ciudad). Google Analytics no registra ni guarda direcciones IP.</li>
+        <li>Google Signals y todas las funciones de publicidad están desactivadas. Nunca envío tu nombre, correo ni teléfono a Analytics.</li>
+        <li>Si visitas el sitio desde el Espacio Económico Europeo, el Reino Unido o Suiza, Analytics funciona sin cookies.</li>
+        <li>El sitio no usa otras cookies, píxeles de publicidad ni rastreadores de redes sociales.</li>
+      </ul>
+      <p><strong>Tus opciones:</strong> puedes bloquear o borrar las cookies en la configuración de tu navegador, o instalar el <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener">complemento de Google para no ser medido por Analytics</a>. El sitio funciona igual en ambos casos. Para saber más, lee <a href="https://policies.google.com/technologies/partner-sites?hl=es" rel="noopener">cómo usa Google la información de los sitios que usan sus servicios</a>.</p>
+      <h3>"No rastrear" (<span lang="en">Do Not Track</span>)</h3>
+      <p>Analytics mide las visitas a lo largo del tiempo solo en este sitio. El sitio no te rastrea en otros sitios web ni te muestra anuncios, y no permito que otras empresas recojan información aquí para seguirte en otros sitios. Por eso, el sitio no responde de forma distinta a las señales de "No rastrear".</p>
+
+      <h2>Menores de edad</h2>
+      <ul>
+        <li>Mis servicios son para estudiantes de <i lang="en">high school</i>, estudiantes universitarios y sus padres. El sitio no está dirigido a niños menores de 13 años, y no recojo información de ellos a sabiendas.</li>
+        <li>Si el estudiante es menor de 18 años, su padre, madre o tutor legal debe enviar el formulario o estar en copia.</li>
+        <li>Si me entero de que recogí información de un niño menor de 13 años sin el consentimiento de sus padres, la borro.</li>
+        <li>Las reglas sobre sesiones presenciales y grabaciones están en los <a href="#" data-goto="terms">Términos del servicio</a>.</li>
+      </ul>
+
+      <h2>Herramientas de IA</h2>
+      <p>No pongo nombres ni datos de contacto de los estudiantes en herramientas de IA. Cuando uso IA para preparar material de práctica, quito todo lo que pueda identificar al estudiante.</p>
+
+      <h2>Cuánto tiempo la guardo</h2>
+      <table>
+        <thead><tr><th scope="col">Información</th><th scope="col">Tiempo</th></tr></thead>
+        <tbody>
+          <tr><td>Consultas que no terminan en sesiones</td><td>12 meses</td></tr>
+          <tr><td>Notas de las sesiones</td><td>2 años después de la última sesión</td></tr>
+          <tr><td>Registros de pagos e impuestos</td><td>7 años</td></tr>
+          <tr><td>Datos de analítica</td><td>14 meses</td></tr>
+          <tr><td>Registros del servidor</td><td>30 días <span class="confirm">[verificar en el paso 1]</span></td></tr>
+        </tbody>
+      </table>
+
+      <h2>Cómo la protejo</h2>
+      <p>Todas las páginas usan HTTPS (con HSTS). Solo yo tengo acceso a tu información, y elegí mis proveedores por su seguridad. Ningún sistema es perfectamente seguro; si alguna vez una filtración afecta tu información, te avisaré, como exige la ley.</p>
+
+      <h2>Tus opciones y solicitudes</h2>
+      <p>Escríbeme para:</p>
+      <ul>
+        <li>ver la información que tengo sobre ti;</li>
+        <li>corregirla;</li>
+        <li>borrarla (salvo los registros que debo guardar por impuestos);</li>
+        <li>dejar de recibir mensajes que no tengan que ver con tus sesiones.</li>
+      </ul>
+      <p>Te respondo en un plazo de 30 días, y puede que antes te pida confirmar quién eres. Hacer una solicitud nunca cambia el precio ni la calidad de tus sesiones.</p>
+
+      <h2>Enlaces a otros sitios</h2>
+      <p>Este sitio enlaza a WhatsApp, LinkedIn y Google. En sus sitios se aplican sus propias políticas de privacidad.</p>
+
+      <h2>Cambios en esta política</h2>
+      <p>Cuando actualizo esta política, cambio la fecha de "Última actualización". Si el cambio es importante, como un nuevo tipo de información o un nuevo proveedor, también lo anuncio en la página principal durante 30 días.</p>
+
+      <h2>Idioma</h2>
+      <p>Esta política está en inglés y en español, y las dos versiones dicen lo mismo. Si alguna vez no coinciden, prevalece la versión en inglés.</p>
+
+      <div class="contact-card">
+        <p><strong>Preguntas o solicitudes</strong></p>
+        <p>Jose Alexis Diaz, Jose Diaz Tutoring</p>
+        <p><a href="mailto:jose@josediaztutoring.com">jose@josediaztutoring.com</a></p>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- =====================================================================
+     TERMS — ENGLISH
+     ===================================================================== -->
+<article data-page="terms" data-lang="en" lang="en" hidden>
+  <div class="pad-hero"><div class="wrap">
+    <p class="crumbs"><a href="#">Home</a> / Terms of Service</p>
+    <h1>Terms of Service</h1>
+    <p class="updated">Last updated: <span class="confirm">[deploy date]</span></p>
+  </div></div>
+  <div class="layout">
+    <nav class="toc" aria-label="On this page"><h2>On this page</h2><ol></ol></nav>
+    <div class="sheet">
+      <section class="summary" aria-label="The short version">
+        <h2>The short version</h2>
+        <ul>
+          <li>Cancel or reschedule at least 24 hours ahead, at no cost.</li>
+          <li>I help you understand the material. I don't do graded work.</li>
+          <li>Unused prepaid sessions can be refunded.</li>
+        </ul>
+      </section>
+
+      <h2>About the service</h2>
+      <p>Jose Diaz Tutoring offers one-on-one and small-group tutoring in math, physics and engineering: online anywhere, and in person in Broward and Miami-Dade, in English or Spanish. The free 20-minute intro call doesn't commit you to anything. By booking a session, you agree to these terms.</p>
+
+      <h2>An independent service</h2>
+      <p>Jose Diaz Tutoring is an independent tutoring service. It isn't affiliated with or endorsed by any school, college or university named on this site; their names are used only to describe the courses I tutor.</p>
+      <p>AP and SAT are trademarks registered by the College Board. ACT is a registered trademark of its owner. Neither is affiliated with or endorses this site.</p>
+
+      <h2>Rates and payment</h2>
+      <ul>
+        <li>Current rates are on the home page and can change at any time. The rate that applies is the one in effect when you book or pay.</li>
+        <li>Single sessions are paid before the session. Plans and group reviews are paid in full upfront.</li>
+        <li>I accept Zelle, card through a payment link, and cash for in-person sessions.</li>
+        <li>A rate change never affects sessions or plans you've already paid for.</li>
+      </ul>
+
+      <h2>Cancellations and rescheduling</h2>
+      <ul>
+        <li>Cancel or reschedule at least 24 hours before a session, at no cost.</li>
+        <li>Cancellations with less than 24 hours' notice, and missed sessions, are charged in full.</li>
+        <li>If you arrive late, the session still ends at the scheduled time.</li>
+        <li>If I have to cancel, you choose: reschedule, or a full refund for that session.</li>
+      </ul>
+
+      <h2>Plans and refunds</h2>
+      <ul>
+        <li>Each plan is valid for the period stated when you buy it.</li>
+        <li>You can ask for a refund of unused sessions at any time before the plan expires. Sessions you've already used are charged at the regular single-session rate in effect when you bought the plan, and I refund the rest.</li>
+        <li>Sessions not used before the plan expires can't be refunded.</li>
+      </ul>
+
+      <h2>Group exam reviews</h2>
+      <ul>
+        <li>Group reviews are small groups, paid upfront.</li>
+        <li>If you cancel your spot at least 24 hours before, you get a full refund.</li>
+        <li>If not enough students are confirmed 24 hours before the review, I'll reschedule it or refund everyone in full.</li>
+      </ul>
+
+      <h2>Academic integrity</h2>
+      <p>I help students understand the material and learn to do it on their own. I don't:</p>
+      <ul>
+        <li>do homework, labs or projects that will be graded;</li>
+        <li>take quizzes, tests or exams, or help during one;</li>
+        <li>write anything that will be submitted for a grade.</li>
+      </ul>
+      <p>I'm glad to help you prepare for those, go over your work after it's graded, and work through similar problems. If I'm asked to do graded work, I may end the service; unused prepaid sessions are then refunded as described in <a href="#plans-and-refunds">Plans and refunds</a>.</p>
+      <p>AI is a tool I teach students to use well. It can explain any topic at 2 a.m. It can't take your exam for you.</p>
+
+      <h2>No guaranteed grades</h2>
+      <p>I bring full preparation and effort to every session. Grades also depend on attendance, practice and the course itself, so I can't guarantee a specific grade or score. My motto, "I don't just teach. I make sure you learn.", describes my commitment, not a promised result.</p>
+
+      <h2>Students under 18</h2>
+      <ul>
+        <li>A parent or guardian accepts these terms for the student and is responsible for payment.</li>
+        <li>For in-person sessions, a parent, guardian or an adult they choose must be at home during the session, or we meet in a public place such as a library.</li>
+        <li>Parents are welcome to sit in on any online session.</li>
+      </ul>
+
+      <h2>Recording sessions</h2>
+      <p>Sessions aren't recorded by default. I record a session only if everyone in it agrees beforehand, and for students under 18, a parent agrees too. Florida law requires everyone's consent to record a conversation.</p>
+
+      <h2>Messages about your sessions</h2>
+      <p>When you book, you agree to receive messages about your sessions, such as confirmations, reminders and schedule changes, by email or WhatsApp. These messages aren't marketing.</p>
+
+      <h2>Materials</h2>
+      <p>Worksheets, solutions and notes I give you are for your own study. Please don't resell them or post them publicly.</p>
+
+      <h2>Ending the service</h2>
+      <p>Either of us can stop at any time. Unused prepaid sessions are refunded as described in <a href="#plans-and-refunds">Plans and refunds</a>.</p>
+
+      <h2>Limitation of liability</h2>
+      <p>Tutoring is educational support. To the extent the law allows, my total liability for any claim about my services is limited to the amount you paid for the sessions involved. I make no warranty of specific academic results.</p>
+
+      <h2>Disputes and governing law</h2>
+      <p>If something goes wrong, please contact me first, and we'll try to solve it directly. These terms are governed by Florida law.</p>
+
+      <h2>Changes and language</h2>
+      <p>I may update these terms; the "Last updated" date shows when. Changes don't affect sessions you've already paid for. These terms are available in English and Spanish; if the versions ever conflict, the English version controls.</p>
+
+      <div class="contact-card">
+        <p><strong>Questions about these terms</strong></p>
+        <p><a href="mailto:jose@josediaztutoring.com">jose@josediaztutoring.com</a></p>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- =====================================================================
+     TÉRMINOS — ESPAÑOL
+     ===================================================================== -->
+<article data-page="terms" data-lang="es" lang="es" hidden>
+  <div class="pad-hero"><div class="wrap">
+    <p class="crumbs"><a href="#">Inicio</a> / Términos del servicio</p>
+    <h1>Términos del servicio</h1>
+    <p class="updated">Última actualización: <span class="confirm">[fecha de publicación]</span></p>
+  </div></div>
+  <div class="layout">
+    <nav class="toc" aria-label="En esta página"><h2>En esta página</h2><ol></ol></nav>
+    <div class="sheet">
+      <section class="summary" aria-label="En resumen">
+        <h2>En resumen</h2>
+        <ul>
+          <li>Cancela o cambia tu sesión con al menos 24 horas de aviso, sin costo.</li>
+          <li>Te ayudo a entender la materia. No hago trabajos que lleven nota.</li>
+          <li>Las sesiones prepagadas que no hayas usado se pueden reembolsar.</li>
+        </ul>
+      </section>
+
+      <h2>Sobre el servicio</h2>
+      <p>Jose Diaz Tutoring ofrece tutorías individuales y en grupos pequeños de matemáticas, física e ingeniería: en línea desde cualquier lugar, y en persona en Broward y Miami-Dade, en inglés o en español. La llamada de introducción gratis de 20 minutos no te compromete a nada. Al reservar una sesión, aceptas estos términos.</p>
+
+      <h2>Un servicio independiente</h2>
+      <p>Jose Diaz Tutoring es un servicio de tutorías independiente. No tiene relación con ninguna escuela, <i lang="en">college</i> ni universidad mencionada en este sitio, ni cuenta con su aval; sus nombres se usan solo para describir los cursos en los que doy tutorías.</p>
+      <p>AP y SAT son marcas registradas del College Board. ACT es una marca registrada de su titular. Ninguno de ellos tiene relación con este sitio ni lo avala.</p>
+
+      <h2>Tarifas y pagos</h2>
+      <ul>
+        <li>Las tarifas actuales están en la página principal y pueden cambiar en cualquier momento. Se aplica la tarifa vigente cuando reservas o pagas.</li>
+        <li>Las sesiones sueltas se pagan antes de la sesión. Los planes y los repasos grupales se pagan completos por adelantado.</li>
+        <li>Acepto Zelle, tarjeta mediante un enlace de pago y efectivo en las sesiones presenciales.</li>
+        <li>Un cambio de tarifas nunca afecta las sesiones ni los planes que ya pagaste.</li>
+      </ul>
+
+      <h2>Cancelaciones y cambios de horario</h2>
+      <ul>
+        <li>Cancela o cambia tu sesión con al menos 24 horas de aviso, sin costo.</li>
+        <li>Las cancelaciones con menos de 24 horas de aviso y las sesiones a las que no te conectes o no llegues se cobran completas.</li>
+        <li>Si llegas tarde, la sesión termina a la hora prevista.</li>
+        <li>Si soy yo quien cancela, tú eliges: cambiar la sesión de día o recibir el reembolso completo de esa sesión.</li>
+      </ul>
+
+      <h2 id="planes-y-reembolsos">Planes y reembolsos</h2>
+      <ul>
+        <li>Cada plan vale por el período que se indica al comprarlo.</li>
+        <li>Puedes pedir el reembolso de las sesiones que no hayas usado en cualquier momento antes de que venza el plan. Las sesiones que ya usaste se cobran a la tarifa normal de sesión suelta vigente cuando compraste el plan, y te devuelvo el resto.</li>
+        <li>Las sesiones que no uses antes de que venza el plan no se reembolsan.</li>
+      </ul>
+
+      <h2>Repasos grupales para exámenes</h2>
+      <ul>
+        <li>Los repasos son en grupos pequeños y se pagan por adelantado.</li>
+        <li>Si cancelas tu lugar con al menos 24 horas de aviso, te devuelvo el pago completo.</li>
+        <li>Si 24 horas antes del repaso no hay suficientes estudiantes confirmados, lo cambio de fecha o le devuelvo el pago completo a todos.</li>
+      </ul>
+
+      <h2>Integridad académica</h2>
+      <p>Ayudo a los estudiantes a entender la materia y a aprender a resolverla por su cuenta. No:</p>
+      <ul>
+        <li>hago tareas, laboratorios ni proyectos que lleven nota;</li>
+        <li>hago pruebas, exámenes ni <i lang="en">quizzes</i>, ni ayudo durante ellos;</li>
+        <li>escribo nada que se vaya a entregar para una nota.</li>
+      </ul>
+      <p>Con gusto te ayudo a prepararte para todo eso, a revisar tu trabajo después de que lo califiquen y a practicar con problemas parecidos. Si me piden hacer trabajos con nota, puedo terminar el servicio; en ese caso, las sesiones prepagadas que no hayas usado se reembolsan como explico en <a href="#planes-y-reembolsos">Planes y reembolsos</a>.</p>
+      <p>La IA es una herramienta que enseño a usar bien. Te explica cualquier tema a las 2 de la mañana. Pero no puede hacer el examen por ti.</p>
+
+      <h2>No garantizo notas</h2>
+      <p>Llego a cada sesión preparado y doy lo mejor de mí. Pero las notas también dependen de la asistencia, la práctica y el propio curso, así que no puedo garantizar una nota ni un puntaje específico. Mi lema, "Mi meta no es enseñarte. Es que aprendas.", describe mi compromiso, no un resultado prometido.</p>
+
+      <h2>Estudiantes menores de 18 años</h2>
+      <ul>
+        <li>El padre, la madre o el tutor legal acepta estos términos en nombre del estudiante y se hace cargo del pago.</li>
+        <li>En las sesiones presenciales, el padre, la madre, el tutor legal o un adulto de su confianza debe estar en casa durante la sesión, o nos vemos en un lugar público, como una biblioteca.</li>
+        <li>Los padres pueden acompañar cualquier sesión en línea.</li>
+      </ul>
+
+      <h2>Grabación de sesiones</h2>
+      <p>Las sesiones no se graban. Solo grabo una sesión si todos los que participan están de acuerdo antes, y si el estudiante es menor de 18 años, también uno de sus padres. La ley de Florida exige el consentimiento de todos para grabar una conversación.</p>
+
+      <h2>Mensajes sobre tus sesiones</h2>
+      <p>Al reservar, aceptas recibir mensajes sobre tus sesiones, como confirmaciones, recordatorios y cambios de horario, por correo o WhatsApp. Estos mensajes no son publicidad.</p>
+
+      <h2>Materiales</h2>
+      <p>Las hojas de ejercicios, las soluciones y los apuntes que te doy son para tu estudio personal. Por favor, no los revendas ni los publiques.</p>
+
+      <h2>Fin del servicio</h2>
+      <p>Cualquiera de los dos puede terminar el servicio en cualquier momento. Las sesiones prepagadas que no hayas usado se reembolsan como explico en <a href="#planes-y-reembolsos">Planes y reembolsos</a>.</p>
+
+      <h2>Límite de responsabilidad</h2>
+      <p>Las tutorías son un apoyo educativo. En la medida en que la ley lo permita, mi responsabilidad total por cualquier reclamo sobre mis servicios se limita a lo que pagaste por las sesiones en cuestión. No garantizo resultados académicos específicos.</p>
+
+      <h2>Desacuerdos y ley aplicable</h2>
+      <p>Si algo sale mal, escríbeme primero y buscamos una solución directamente. Estos términos se rigen por las leyes de Florida.</p>
+
+      <h2>Cambios e idioma</h2>
+      <p>Puedo actualizar estos términos; la fecha de "Última actualización" indica cuándo. Los cambios no afectan las sesiones que ya pagaste. Estos términos están en inglés y en español; si alguna vez no coinciden, prevalece la versión en inglés.</p>
+
+      <div class="contact-card">
+        <p><strong>Preguntas sobre estos términos</strong></p>
+        <p><a href="mailto:jose@josediaztutoring.com">jose@josediaztutoring.com</a></p>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- =====================================================================
+     ACCESSIBILITY — ENGLISH
+     ===================================================================== -->
+<article data-page="accessibility" data-lang="en" lang="en" hidden>
+  <div class="pad-hero"><div class="wrap">
+    <p class="crumbs"><a href="#">Home</a> / Accessibility</p>
+    <h1>Accessibility statement</h1>
+    <p class="updated">Last reviewed: <span class="confirm">[date of the Step 4 review]</span></p>
+  </div></div>
+  <div class="layout">
+    <nav class="toc" aria-label="On this page"><h2>On this page</h2><ol></ol></nav>
+    <div class="sheet">
+      <p class="lead">I want everyone to be able to use this site, including people who use a screen reader, a keyboard, magnification or other assistive technology.</p>
+
+      <h2>My goal</h2>
+      <p>This site aims to meet the Web Content Accessibility Guidelines (WCAG) 2.2, Level AA. I check it with automated tools and by hand, and I fix problems as I find them.</p>
+
+      <h2>What I've done</h2>
+      <ul>
+        <li>Clear headings and page structure, in English and Spanish, each marked with its language.</li>
+        <li>Full keyboard navigation, with a visible focus outline and a "Skip to content" link.</li>
+        <li>Text descriptions for images, including the worked physics problem at the top of the home page.</li>
+        <li>Color contrast that meets Level AA.</li>
+        <li>An animation that stops if your device is set to reduce motion.</li>
+        <li>Text that zooms to 200% without breaking the layout.</li>
+        <li>Buttons and links large enough to tap.</li>
+        <li>Form fields with visible labels, and error messages that say how to fix the problem.</li>
+      </ul>
+
+      <h2>Known limitations</h2>
+      <ul>
+        <li>Pages run by other companies, such as WhatsApp, LinkedIn and Google, aren't under my control.</li>
+        <li><span class="confirm">[Any issue still open after Claude Code's Step 4 review]</span></li>
+      </ul>
+
+      <h2>Need help?</h2>
+      <p>If any part of this site doesn't work for you, or you need its content in another format, contact me. Tell me which page and what happened, and I'll reply within 2 business days.</p>
+
+      <div class="contact-card">
+        <p><a href="mailto:jose@josediaztutoring.com">jose@josediaztutoring.com</a></p>
+        <p><a href="tel:+17868329107">786-832-9107</a> (call or WhatsApp)</p>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- =====================================================================
+     ACCESIBILIDAD — ESPAÑOL
+     ===================================================================== -->
+<article data-page="accessibility" data-lang="es" lang="es" hidden>
+  <div class="pad-hero"><div class="wrap">
+    <p class="crumbs"><a href="#">Inicio</a> / Accesibilidad</p>
+    <h1>Declaración de accesibilidad</h1>
+    <p class="updated">Última revisión: <span class="confirm">[fecha de la revisión del paso 4]</span></p>
+  </div></div>
+  <div class="layout">
+    <nav class="toc" aria-label="En esta página"><h2>En esta página</h2><ol></ol></nav>
+    <div class="sheet">
+      <p class="lead">Quiero que todo el mundo pueda usar este sitio, incluidas las personas que usan un lector de pantalla, el teclado, un magnificador u otra tecnología de apoyo.</p>
+
+      <h2>Mi objetivo</h2>
+      <p>Este sitio busca cumplir las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Lo reviso con herramientas automáticas y a mano, y corrijo los problemas a medida que los encuentro.</p>
+
+      <h2>Lo que he hecho</h2>
+      <ul>
+        <li>Títulos y estructura claros en inglés y en español, cada página marcada con su idioma.</li>
+        <li>Navegación completa con el teclado, con un contorno de foco visible y un enlace para "Saltar al contenido".</li>
+        <li>Descripciones de texto para las imágenes, incluido el problema de física resuelto al inicio de la página principal.</li>
+        <li>Contraste de colores que cumple el nivel AA.</li>
+        <li>Una animación que se detiene si tu dispositivo está configurado para reducir el movimiento.</li>
+        <li>Texto que se puede ampliar al 200 % sin que se rompa el diseño.</li>
+        <li>Botones y enlaces lo bastante grandes para tocarlos con el dedo.</li>
+        <li>Campos del formulario con etiquetas visibles y mensajes de error que explican cómo corregir el problema.</li>
+      </ul>
+
+      <h2>Limitaciones conocidas</h2>
+      <ul>
+        <li>Las páginas de otras empresas, como WhatsApp, LinkedIn y Google, no dependen de mí.</li>
+        <li><span class="confirm">[Cualquier problema pendiente tras la revisión del paso 4]</span></li>
+      </ul>
+
+      <h2>¿Necesitas ayuda?</h2>
+      <p>Si alguna parte del sitio no te funciona, o necesitas el contenido en otro formato, escríbeme. Dime en qué página y qué pasó, y te respondo en un plazo de 2 días hábiles.</p>
+
+      <div class="contact-card">
+        <p><a href="mailto:jose@josediaztutoring.com">jose@josediaztutoring.com</a></p>
+        <p><a href="tel:+17868329107">786-832-9107</a> (llamada o WhatsApp)</p>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- =====================================================================
+     SITE-WIDE COMPONENTS (both languages via toggle)
+     ===================================================================== -->
+<article data-page="sitewide" data-lang="en" lang="en" hidden>
+  <div class="pad-hero"><div class="wrap">
+    <p class="crumbs">Site-wide changes</p>
+    <h1>Footer, form &amp; email</h1>
+    <p class="updated">What changes on every page, under the booking form, and in the confirmation email.</p>
+  </div></div>
+  <div class="layout" style="grid-template-columns:1fr">
+    <div class="sheet" style="max-width:none">
+      <p class="demo-label">Under the booking form's Send button (home page)</p>
+      <div class="form-demo">
+        <label>Email</label><div class="fake-field" aria-hidden="true"></div>
+        <a class="btn" href="#" role="button">Send request</a>
+        <p class="form-note">By sending this form, you agree to the <a href="#" data-goto="privacy">Privacy Policy</a>. If the student is under 18, a parent or guardian should send it or be included.</p>
+      </div>
+
+      <p class="demo-label">Bottom of the confirmation email from /api/contact</p>
+      <div class="email-demo">
+        <div class="mail">
+          <div class="mail-body"><p style="margin:0">Hi [name], thanks for reaching out. I got your request and I'll reply within one business day.</p><p style="margin:10px 0 0">Jose</p></div>
+          <div class="mail-foot">Jose Diaz Tutoring · Broward &amp; Miami-Dade · Online anywhere<br>You're receiving this because you sent a request on josediaztutoring.com.<br><a href="#" data-goto="privacy">Privacy Policy</a> · <a href="#" data-goto="terms">Terms</a></div>
+        </div>
+      </div>
+
+      <p class="demo-label">Footer on every page (home, /es/, legal pages, 404). The live footer is shown at the bottom of this preview.</p>
+      <p>The three legal links, the copyright line, and the "independent service" notice are added to the existing footer. The privacy link stays visible on the home page.</p>
+    </div>
+  </div>
+</article>
+<article data-page="sitewide" data-lang="es" lang="es" hidden>
+  <div class="pad-hero"><div class="wrap">
+    <p class="crumbs">Cambios en todo el sitio</p>
+    <h1>Pie de página, formulario y correo</h1>
+    <p class="updated">Lo que cambia en todas las páginas, debajo del formulario de reserva y en el correo de confirmación.</p>
+  </div></div>
+  <div class="layout" style="grid-template-columns:1fr">
+    <div class="sheet" style="max-width:none">
+      <p class="demo-label">Debajo del botón Enviar del formulario (página principal)</p>
+      <div class="form-demo">
+        <label>Correo</label><div class="fake-field" aria-hidden="true"></div>
+        <a class="btn" href="#" role="button">Enviar solicitud</a>
+        <p class="form-note">Al enviar este formulario, aceptas la <a href="#" data-goto="privacy">Política de privacidad</a>. Si el estudiante es menor de 18 años, lo debe enviar su padre, madre o tutor legal, o estar incluido.</p>
+      </div>
+
+      <p class="demo-label">Final del correo de confirmación de /api/contact</p>
+      <div class="email-demo">
+        <div class="mail">
+          <div class="mail-body"><p style="margin:0">Hola, [nombre]: gracias por escribirme. Recibí tu solicitud y te respondo en un día hábil.</p><p style="margin:10px 0 0">Jose</p></div>
+          <div class="mail-foot">Jose Diaz Tutoring · Broward y Miami-Dade · En línea desde cualquier lugar<br>Recibes este correo porque enviaste una solicitud en josediaztutoring.com.<br><a href="#" data-goto="privacy">Política de privacidad</a> · <a href="#" data-goto="terms">Términos</a></div>
+        </div>
+      </div>
+
+      <p class="demo-label">Pie de página en todas las páginas (inicio, /es/, páginas legales, 404). El pie real aparece al final de esta vista previa.</p>
+      <p>Al pie actual se le añaden los tres enlaces legales, la línea de derechos de autor y el aviso de "servicio independiente". El enlace a la privacidad sigue visible en la página principal.</p>
+    </div>
+  </div>
+</article>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div>
+      <h2>Jose Diaz Tutoring</h2>
+      <p data-en="Math, physics &amp; engineering tutoring" data-es="Tutorías de matemáticas, física e ingeniería">Math, physics &amp; engineering tutoring</p>
+      <p data-en="Serving Broward &amp; Miami-Dade · Online anywhere" data-es="Broward y Miami-Dade · En línea desde cualquier lugar">Serving Broward &amp; Miami-Dade · Online anywhere</p>
+    </div>
+    <div>
+      <h2 data-en="Contact" data-es="Contacto">Contact</h2>
+      <p><a href="tel:+17868329107">786-832-9107</a></p>
+      <p><a href="#">WhatsApp</a></p>
+      <p><a href="mailto:jose@josediaztutoring.com">jose@josediaztutoring.com</a></p>
+    </div>
+    <div>
+      <h2 data-en="Policies" data-es="Políticas">Policies</h2>
+      <ul class="legal-links">
+        <li><a href="#" data-goto="privacy" data-en="Privacy" data-es="Privacidad">Privacy</a></li>
+        <li><a href="#" data-goto="terms" data-en="Terms" data-es="Términos">Terms</a></li>
+        <li><a href="#" data-goto="accessibility" data-en="Accessibility" data-es="Accesibilidad">Accessibility</a></li>
+      </ul>
+    </div>
+    <p class="fine">
+      <span>© <span class="year"></span> Jose Diaz Tutoring.</span>
+      <span data-en="Independent tutoring service. Not affiliated with any school named on this site." data-es="Servicio independiente de tutorías. Sin afiliación con las instituciones mencionadas en este sitio.">Independent tutoring service. Not affiliated with any school named on this site.</span>
+    </p>
+  </div>
+</footer>
+
+<a class="wa-float" href="#" aria-label="Message me on WhatsApp" data-en-label="Message me on WhatsApp" data-es-label="Escríbeme por WhatsApp">
+  <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2c0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.2-.2-.4-.3Z"/></svg>
+  <span>WhatsApp</span>
+</a>
+
+<script>
+(function(){
+  var state = {page:'privacy', lang:'en'};
+  var urls = {
+    en:{privacy:'/privacy/', terms:'/terms/', accessibility:'/accessibility/', sitewide:'/ (footer, form, email)'},
+    es:{privacy:'/es/privacidad/', terms:'/es/terminos/', accessibility:'/es/accesibilidad/', sitewide:'/es/ (pie, formulario, correo)'}
+  };
+
+  function slug(t){
+    return t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+      .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  }
+
+  // Build each table of contents from its page's h2 headings.
+  document.querySelectorAll('article').forEach(function(art){
+    var list = art.querySelector('.toc ol');
+    art.querySelectorAll('.sheet > h2').forEach(function(h){
+      if(!h.id) h.id = slug(h.textContent);
+      if(list){
+        var li = document.createElement('li'), a = document.createElement('a');
+        a.href = '#' + h.id; a.textContent = h.textContent;
+        li.appendChild(a); list.appendChild(li);
+      }
+    });
+  });
+
+  function render(){
+    document.documentElement.lang = state.lang;
+    document.querySelectorAll('article').forEach(function(a){
+      a.hidden = !(a.dataset.page === state.page && a.dataset.lang === state.lang);
+    });
+    document.querySelectorAll('[data-page-btn]').forEach(function(b){
+      b.setAttribute('aria-pressed', String(b.dataset.pageBtn === state.page));
+    });
+    document.querySelectorAll('[data-lang-btn]').forEach(function(b){
+      b.setAttribute('aria-pressed', String(b.dataset.langBtn === state.lang));
+    });
+    document.querySelectorAll('[data-en]').forEach(function(el){
+      el.innerHTML = el.dataset[state.lang];
+    });
+    document.querySelectorAll('[data-en-label]').forEach(function(el){
+      el.setAttribute('aria-label', el.dataset[state.lang + 'Label']);
+    });
+    document.querySelectorAll('.legal-links a').forEach(function(a){
+      if(a.dataset.goto === state.page) a.setAttribute('aria-current','page');
+      else a.removeAttribute('aria-current');
+    });
+    document.getElementById('fake-url').textContent = 'josediaztutoring.com' + urls[state.lang][state.page];
+    var titles = {
+      en:{privacy:'Privacy Policy', terms:'Terms of Service', accessibility:'Accessibility', sitewide:'Footer, form & email'},
+      es:{privacy:'Política de privacidad', terms:'Términos del servicio', accessibility:'Accesibilidad', sitewide:'Pie, formulario y correo'}
+    };
+    document.title = titles[state.lang][state.page] + ' | Jose Diaz Tutoring';
+  }
+
+  document.querySelectorAll('[data-page-btn]').forEach(function(b){
+    b.addEventListener('click', function(){ state.page = b.dataset.pageBtn; render(); window.scrollTo(0,0); });
+  });
+  document.querySelectorAll('[data-lang-btn]').forEach(function(b){
+    b.addEventListener('click', function(){ state.lang = b.dataset.langBtn; render(); });
+  });
+  document.addEventListener('click', function(e){
+    var a = e.target.closest('[data-goto]');
+    if(a){ e.preventDefault(); state.page = a.dataset.goto; render(); window.scrollTo(0,0); }
+  });
+
+  document.querySelector('.year').textContent = new Date().getFullYear();
+  render();
+})();
+</script>
+</body>
+</html>
