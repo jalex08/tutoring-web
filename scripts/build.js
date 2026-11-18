@@ -13,6 +13,8 @@
  *                          in place: the JSON-LD block and footer year in www/index.html,
  *                                    the footer in www/404.html
  *                          www/sitemap.xml  (lastmod = date the page last changed)
+ *                          seo/pending-indexnow.json  pages whose HTML differs from
+ *                                    seo/published-pages.json (for scripts/indexnow.js)
  *
  * The legal pages show a "Last updated" date: the build date (America/New_York) of the
  * last build that changed the page's text, so it is the date of the first deploy with that text.
@@ -463,13 +465,43 @@ page404 = page404.replace(/(\/\* ---- footer-css:start[^\n]*\n)[\s\S]*?( {2}\/\*
   `${a}${PARTS.en.footerCss.replace(/^\/\* ---- footer-css:start[^\n]*\n/, "").replace(/\s*\/\* ---- footer-css:end ---- \*\/$/, "")}\n${b}`);
 if (!page404.includes('<footer class="site-foot">') || !page404.includes(".site-foot{")) fail("www/404.html: footer markers missing");
 
-// --- sitemap --------------------------------------------------------------------------
-const oldMap = readOld(SITEMAP) || "";
-const oldLastmod = Object.fromEntries([...oldMap.matchAll(/<loc>([^<]+)<\/loc>\s*<lastmod>([^<]+)<\/lastmod>/g)].map((m) => [m[1], m[2]]));
-const homeChanged = (file, content) => readOld(file) !== content;
-lastmod["/"] = homeChanged(SRC, enHtml) ? today : oldLastmod[URLS.en] || today;
-lastmod["/es/"] = homeChanged(OUT_ES, es) ? today : oldLastmod[URLS.es] || today;
+// --- change detection (IndexNow) + sitemap lastmod ------------------------------------
+// seo/published-pages.json: { url: { hash, lastmod } } as of the last successful IndexNow
+// submission (written only by scripts/indexnow.js). A page whose built HTML hashes differently
+// is "pending": lastmod = today, listed in seo/pending-indexnow.json (gitignored) for the ping.
+const PUBLISHED = path.join(ROOT, "seo/published-pages.json");
+const PENDING = path.join(ROOT, "seo/pending-indexnow.json");
+const readJson = (f, dflt) => (fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, "utf8")) : dflt);
+// The footer © year changes every Jan 1 on every page; that isn't a content change.
+const pageHash = (h) => require("node:crypto").createHash("sha256").update(h.replace(/(<span id="yr">)\d{4}(<\/span>)/g, "$1$2")).digest("hex");
+const pageHtml = { "/": enHtml, "/es/": es };
+for (const [file, content] of outputs) pageHtml["/" + path.relative(path.join(ROOT, "www"), file).replace(/\.html$/, "/")] = content;
 const pairs = [{ en: "/", es: "/es/" }, ...LEGAL];
+const pagePaths = pairs.flatMap((p) => [p.en, p.es]);
+const published = readJson(PUBLISHED, null);
+const oldPending = Object.fromEntries(readJson(PENDING, []).map((p) => [p.url, p]));
+
+/** First run only: Florida date of the last commit that changed the page's built HTML (committed,
+ *  so this is when its content last changed; a shared-source edit that didn't change it doesn't count). */
+function gitDate(p) {
+  const file = p === "/" ? "www/index.html" : p === "/es/" ? "www/es/index.html" : path.relative(ROOT, outFile(p));
+  try {
+    const iso = require("node:child_process").execFileSync("git", ["log", "-1", "--format=%cI", "--", file], { cwd: ROOT, encoding: "utf8" }).trim();
+    return iso ? new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso)) : null;
+  } catch { return null; }
+}
+
+const pending = [];
+for (const p of pagePaths) {
+  if (!pageHtml[p]) fail(`no built HTML for ${p}`);
+  const url = SITE + p, hash = pageHash(pageHtml[p]);
+  const pub = published && published[url];
+  if (pub && pub.hash === hash) { lastmod[p] = pub.lastmod; continue; }
+  // changed (or never submitted): keep the date from an earlier build of this same HTML
+  const prev = oldPending[url] && oldPending[url].hash === hash ? oldPending[url].lastmod : null;
+  lastmod[p] = prev || (published ? today : gitDate(p) || today);
+  pending.push({ url, hash, lastmod: lastmod[p] });
+}
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
@@ -501,4 +533,7 @@ if (CHECK) {
   console.log("build: up to date");
 } else {
   console.log(stale.length ? `build: wrote ${stale.join(", ")}` : "build: nothing changed");
+  fs.mkdirSync(path.dirname(PENDING), { recursive: true });
+  fs.writeFileSync(PENDING, JSON.stringify(pending, null, 2) + "\n");
+  console.log(`build: IndexNow pending: ${pending.length ? pending.map((p) => p.url.slice(SITE.length)).join(" ") : "none"}`);
 }

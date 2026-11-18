@@ -141,6 +141,20 @@ handlers:
     X-Content-Type-Options: "nosniff"
     Referrer-Policy: "strict-origin-when-cross-origin"
 
+# IndexNow key file (public by design; scripts/indexnow.js checks it before each ping).
+# Body is exactly the key, no newline. Not in the sitemap or llms.txt.
+- url: /0d95e31492514b3c9a3e7edb5eb12be5\.txt
+  static_files: www/0d95e31492514b3c9a3e7edb5eb12be5.txt
+  upload: www/0d95e31492514b3c9a3e7edb5eb12be5\.txt
+  mime_type: "text/plain; charset=utf-8"
+  secure: always
+  redirect_http_response_code: 301
+  http_headers:
+    Strict-Transport-Security: "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options: "nosniff"
+    Referrer-Policy: "strict-origin-when-cross-origin"
+    X-Robots-Tag: "noindex"
+
 # Everything else goes to server.js:
 #   /api/contact            booking form (POST only)
 #   /index.html -> /,  /es and /es/index.html -> /es/   (301)
