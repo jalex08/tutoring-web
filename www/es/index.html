@@ -148,22 +148,45 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .facts li::before{content:"";width:8px;height:8px;border:2px solid var(--ink);border-radius:50%}
   .facts strong{color:var(--graphite)}
 
-  .sheet{--margin-x:52px;position:relative;border:1px solid var(--line);border-radius:6px;box-shadow:var(--soft-shadow);transform:rotate(1.2deg);padding:18px 18px 12px}
-  .sheet svg{width:100%;height:auto;overflow:visible}
+  .sheet{--margin-x:calc(18px + (100% - 36px) * .075);position:relative;border:1px solid var(--line);border-radius:6px;box-shadow:var(--soft-shadow);transform:rotate(1.2deg);padding:18px 18px 12px}
+  .sheet svg{width:100%;height:auto;overflow:visible} /* margin line: 18px padding + 39 of the 520 viewBox units, left of the text at any width */
   .hand{font-family:var(--hand);fill:var(--ink)}
   .hand-g{font-family:var(--hand);fill:var(--graphite)}
   .traj{fill:none;stroke:var(--ink);stroke-width:3;stroke-linecap:round}
   .axis{stroke:var(--graphite);stroke-width:1.6}
   .dash{stroke:var(--graphite);stroke-width:1.2;stroke-dasharray:4 4;opacity:.6}
   .answer-hi{fill:var(--hi)}
+  .curve{fill:none;stroke:var(--ink);stroke-width:3;stroke-linecap:round} /* same stroke as .traj */
+  .rad{fill:none;stroke:var(--graphite);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round} /* hand-drawn square root (Kalam has no glyph) */
+  .rad-ink{stroke:var(--ink)}
+  .lbl{font:400 13px var(--body);fill:var(--graphite)}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+
+  /* class picker */
+  .picker-label{font-size:.9rem;font-weight:700;color:var(--muted);margin:0 0 8px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}
+  .chip{font:700 .92rem/1.2 var(--body);color:var(--ink);background:#fff;border:2px solid var(--ink);border-radius:999px;padding:6px 14px;min-height:44px;cursor:pointer}
+  .chip[aria-selected="true"]{background:var(--ink);color:#fff}
+  .picker figure{margin:0}
+  .courses{display:grid;margin-top:16px} /* all lines share one cell: the height never changes */
+  .course{grid-area:1/1;font-size:.9rem;color:var(--muted)}
+  .course[hidden]{display:block;visibility:hidden}
+  /* motion: a pen drawing the solution, on the hero sheet only. The script adds .play to the visible
+     sheet's svg on first load and when another class is picked. Without .play (no JS, reduced motion)
+     everything shows its final state. Text never animates. */
   @media (prefers-reduced-motion:no-preference){
-    .traj{stroke-dasharray:420;stroke-dashoffset:420;animation:draw 1.5s .5s cubic-bezier(.4,0,.2,1) forwards}
-    .ball{opacity:0;animation:pop .2s 1.95s forwards}
-    .answer-hi{transform-origin:left center;transform:scaleX(0);transform-box:fill-box;animation:swipe .45s 2.15s ease-out forwards}
+    .play .anim-draw{stroke-dasharray:1;stroke-dashoffset:1;animation:jd-draw 1s cubic-bezier(.4,0,.2,1) .1s forwards}
+    .play .anim-fade{opacity:0;animation:jd-fade .5s ease-out .75s forwards}
+    .play .anim-pop{opacity:0;transform-box:fill-box;transform-origin:center;animation:jd-pop .28s cubic-bezier(.3,1.6,.6,1) 1.05s forwards}
+    .play .anim-fill{animation:jd-fill .3s ease-out 1s both}
+    .play .anim-wipe{transform-box:fill-box;transform-origin:left center;transform:scaleX(0);animation:jd-wipe .4s cubic-bezier(.4,0,.2,1) 1.15s forwards}
+    .chip{transition:background-color .15s,color .15s}
   }
-  @keyframes draw{to{stroke-dashoffset:0}}
-  @keyframes pop{to{opacity:1}}
-  @keyframes swipe{to{transform:scaleX(1)}}
+  @keyframes jd-draw{to{stroke-dashoffset:0}}
+  @keyframes jd-fade{to{opacity:1}}
+  @keyframes jd-pop{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:scale(1)}}
+  @keyframes jd-fill{from{fill:#fff}to{fill:#1C4C9E}}
+  @keyframes jd-wipe{to{transform:scaleX(1)}}
   @media (max-width:880px){.hero-grid{grid-template-columns:1fr;gap:40px}.sheet{transform:none;max-width:560px}}
 
   /* motto band */
@@ -657,23 +680,35 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </ul>
       </div>
 
-      <!-- worked problem on engineering pad paper -->
-      <figure class="sheet pad" aria-labelledby="sheet-cap" style="margin:0">
+      <!-- class picker: one worked problem per class, on engineering pad paper. All six sheets are in the
+           page (same viewBox, so switching never changes the height); the script below shows one. -->
+      <div class="picker" id="picker">
+      <p class="picker-label" id="pick-lbl" data-i18n="pickLabel">Elige tu materia:</p>
+      <div class="chips" role="tablist" aria-labelledby="pick-lbl">
+        <button class="chip" type="button" role="tab" id="tab-physics" aria-controls="prob-physics" aria-selected="true" tabindex="0" data-i18n="tabPhysics">Física</button>
+        <button class="chip" type="button" role="tab" id="tab-algebra" aria-controls="prob-algebra" aria-selected="false" tabindex="-1" data-i18n="tabAlgebra">Álgebra</button>
+        <button class="chip" type="button" role="tab" id="tab-geometry" aria-controls="prob-geometry" aria-selected="false" tabindex="-1" data-i18n="tabGeometry">Geometría y trigonometría</button>
+        <button class="chip" type="button" role="tab" id="tab-calculus" aria-controls="prob-calculus" aria-selected="false" tabindex="-1" data-i18n="tabCalculus">Cálculo</button>
+        <button class="chip" type="button" role="tab" id="tab-circuits" aria-controls="prob-circuits" aria-selected="false" tabindex="-1" data-i18n="tabCircuits">Circuitos</button>
+        <button class="chip" type="button" role="tab" id="tab-c" aria-controls="prob-c" aria-selected="false" tabindex="-1" data-i18n="tabC">C y microcontroladores</button>
+      </div>
+
+      <figure class="sheet pad" id="prob-physics" role="tabpanel" aria-labelledby="tab-physics" style="margin:0">
         <svg viewBox="0 0 520 400" role="img" aria-labelledby="sheet-cap">
           <text class="hand-g" x="54" y="34" font-size="19" font-weight="700" data-i18n="svgTitle">Proyectil: halla el alcance R</text>
           <text class="hand-g" x="54" y="66" font-size="17" data-i18n="svgGiven">Datos: v₀ = 20 m/s, θ = 30°, g = 9.8 m/s²</text>
           <text class="hand-g" x="54" y="96" font-size="17">vₓ = v₀ cos θ = 17.3 m/s</text>
           <text class="hand-g" x="54" y="124" font-size="17">v<tspan font-size="12" dy="4">y</tspan><tspan dy="-4"> = v₀ sin θ = 10.0 m/s</tspan></text>
           <text class="hand-g" x="54" y="152" font-size="17">t = 2v<tspan font-size="12" dy="4">y</tspan><tspan dy="-4"> / g = 2.04 s</tspan></text>
-          <rect class="answer-hi" x="48" y="166" width="196" height="32" rx="3"/>
+          <rect class="answer-hi anim-wipe" x="48" y="166" width="196" height="32" rx="3"/>
           <text class="hand-g" x="54" y="189" font-size="19" font-weight="700">R = vₓ · t ≈ 35.3 m</text>
 
           <!-- graph -->
           <line class="axis" x1="70" y1="352" x2="470" y2="352"/>
           <line class="axis" x1="80" y1="362" x2="80" y2="232"/>
           <line class="dash" x1="230" y1="352" x2="230" y2="276"/>
-          <path class="traj" d="M80 352 Q230 200 380 352"/>
-          <circle class="ball" cx="380" cy="352" r="6" fill="#1C4C9E"/>
+          <path class="traj anim-draw" pathLength="1" d="M80 352 Q230 200 380 352"/>
+          <circle class="anim-pop" cx="380" cy="352" r="6" fill="#1C4C9E"/>
           <path d="M80 334 A18 18 0 0 1 96 344" fill="none" stroke="#1C4C9E" stroke-width="1.6"/>
           <text class="hand" x="102" y="349" font-size="15">30°</text>
           <text class="hand" x="238" y="330" font-size="15">h = 5.1 m</text>
@@ -684,6 +719,248 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </svg>
         <figcaption id="sheet-cap" class="sr-only" data-i18n="svgCap">Un problema resuelto de tiro parabólico: lanzado a 20 m/s y 30 grados, recorre unos 35.3 metros.</figcaption>
       </figure>
+
+      <figure class="sheet pad" id="prob-algebra" role="tabpanel" aria-labelledby="tab-algebra" hidden>
+        <svg viewBox="0 0 520 400" role="img" aria-labelledby="cap-algebra">
+          <text class="hand-g" x="54" y="34" font-size="19" font-weight="700" data-i18n="algTitle">Interés: ¿cuándo llegan $2,000 a $5,000?</text>
+          <text class="hand-g" x="54" y="64" font-size="17" data-i18n="algGiven">Datos: 6 % anual, compuesto mensualmente</text>
+          <text class="hand-g" x="54" y="92" font-size="17">2000 (1 + 0.06/12)<tspan font-size="12" dy="-8">12t</tspan><tspan dy="8"> = 5000</tspan></text>
+          <text class="hand-g" x="54" y="120" font-size="17">(1.005)<tspan font-size="12" dy="-8">12t</tspan><tspan dy="8"> = 2.5</tspan></text>
+          <text class="hand-g" x="54" y="148" font-size="17">12t · ln 1.005 = ln 2.5</text>
+          <text class="hand" x="276" y="148" font-size="15" data-i18n="algNote1">← saco ln a ambos lados</text>
+          <text class="hand-g" x="54" y="176" font-size="17">t = ln 2.5 / (12 ln 1.005)</text>
+          <rect class="answer-hi anim-wipe" x="48" y="189" width="130" height="32" rx="3"/>
+          <text class="hand-g" x="54" y="212" font-size="19" font-weight="700" data-i18n="algAns">t ≈ 15.3 años</text>
+
+          <line class="axis" x1="70" y1="352" x2="470" y2="352"/>
+          <line class="axis" x1="80" y1="362" x2="80" y2="232"/>
+          <line class="dash" x1="80" y1="266.3" x2="450" y2="266.3"/>
+          <line class="dash" x1="355.6" y1="266.3" x2="355.6" y2="352"/>
+          <path class="curve anim-draw" pathLength="1" d="M80 317.7 L125 312.2 L170 305.8 L215 298.3 L260 289.6 L305 279.6 L350 267.9 L395 254.3 L440 238.5"/>
+          <circle class="anim-pop" cx="355.6" cy="266.3" r="6" fill="#1C4C9E"/>
+          <text class="hand" x="88" y="258" font-size="15">$5,000</text>
+          <text class="hand" x="88" y="338" font-size="15">$2,000</text>
+          <text class="hand" x="326" y="374" font-size="16">t ≈ 15.3</text>
+          <text class="hand" x="476" y="357" font-size="15">t</text>
+          <text class="hand" x="262" y="213" font-size="16" data-i18n="algNote">← como en Álgebra 2 y Precálculo</text>
+        </svg>
+        <figcaption id="cap-algebra" class="sr-only" data-i18n="algCap">$2,000 invertidos al 6 % compuesto mensualmente llegan a $5,000 en unos 15.3 años.</figcaption>
+      </figure>
+
+      <figure class="sheet pad" id="prob-geometry" role="tabpanel" aria-labelledby="tab-geometry" hidden>
+        <svg viewBox="0 0 520 400" role="img" aria-labelledby="cap-geometry">
+          <text class="hand-g" x="54" y="34" font-size="19" font-weight="700" data-i18n="geoTitle">Dos ángulos: ¿qué altura tiene el edificio?</text>
+          <text class="hand-g" x="54" y="64" font-size="17" data-i18n="geoGiven">Datos: 40°, y 58° tras acercarte 50 m</text>
+          <text class="hand-g" x="54" y="92" font-size="17">tan 58° = h/d ,   tan 40° = h/(d + 50)</text>
+          <text class="hand-g" x="54" y="120" font-size="17">d tan 58° = (d + 50) tan 40°</text>
+          <text class="hand" x="300" y="120" font-size="15" data-i18n="geoNote1">← la misma h</text>
+          <text class="hand-g" x="54" y="148" font-size="17">d = 50 tan 40° / (tan 58° − tan 40°) ≈ 55.1 m</text>
+          <text class="hand-g" x="54" y="176" font-size="17">h = d tan 58° ≈ 55.1 × 1.600</text>
+          <rect class="answer-hi anim-wipe" x="48" y="189" width="111" height="32" rx="3"/>
+          <text class="hand-g" x="54" y="212" font-size="19" font-weight="700">h ≈ 88.2 m</text>
+
+          <line class="axis" x1="60" y1="366" x2="480" y2="366"/>
+          <rect x="420" y="222" width="22" height="144" fill="#fff" stroke="#232A2A" stroke-width="1.6"/>
+          <path class="anim-draw" pathLength="1" d="M248.4 366 L420 222" fill="none" stroke="#1C4C9E" stroke-width="2.2"/>
+          <line class="anim-fade" x1="330" y1="366" x2="420" y2="222" stroke="#1C4C9E" stroke-width="2.2" stroke-dasharray="6 4"/>
+          <path d="M410 366 V356 H420" fill="none" stroke="#232A2A" stroke-width="1.4"/>
+          <path d="M274.4 366 A26 26 0 0 0 268.3 349.3" fill="none" stroke="#1C4C9E" stroke-width="1.6"/>
+          <path d="M352 366 A22 22 0 0 0 341.7 347.3" fill="none" stroke="#1C4C9E" stroke-width="1.6"/>
+          <circle cx="248.4" cy="366" r="5" fill="#1C4C9E"/>
+          <circle cx="330" cy="366" r="5" fill="#1C4C9E"/>
+          <text class="hand" x="278" y="360" font-size="15">40°</text>
+          <text class="hand" x="356" y="360" font-size="15">58°</text>
+          <path d="M252 382 L326 382" stroke="#1C4C9E" stroke-width="1.6" marker-start="url(#a-geo)" marker-end="url(#a-geo)"/>
+          <path d="M334 382 L416 382" stroke="#232A2A" stroke-width="1.2" stroke-dasharray="3 3"/>
+          <text class="hand" x="270" y="398" font-size="16">50 m</text>
+          <text class="hand" x="370" y="398" font-size="16">d</text>
+          <text class="hand" x="450" y="300" font-size="16">h = ?</text>
+          <text class="hand" x="60" y="300" font-size="16" data-i18n="geoNote">Geometría honors y Precálculo →</text>
+          <defs><marker id="a-geo" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#1C4C9E"/></marker></defs>
+        </svg>
+        <figcaption id="cap-geometry" class="sr-only" data-i18n="geoCap">Dos ángulos de elevación, 40° y 58°, medidos a 50 m de distancia dan una altura de unos 88.2 m.</figcaption>
+      </figure>
+
+      <figure class="sheet pad" id="prob-calculus" role="tabpanel" aria-labelledby="tab-calculus" hidden>
+        <svg viewBox="0 0 520 400" role="img" aria-labelledby="cap-calculus">
+          <text class="hand-g" x="54" y="34" font-size="19" font-weight="700" data-i18n="calcTitle">Volumen de un sólido de revolución</text>
+          <g data-i18n="calcGiven"><text class="hand-g" x="54" y="64" font-size="17">Datos: y = <tspan dx="12">x, 0 ≤ x ≤ 4, gira alrededor del eje x</tspan></text><use class="rad" href="#rad" x="139.2" y="64"/></g>
+          <text class="hand-g" x="54" y="92" font-size="17">V = ∫ π r² dx ,   r = <tspan dx="12">x</tspan></text><use class="rad" href="#rad" x="196.5" y="92"/>
+          <text class="hand" x="270" y="92" font-size="15" data-i18n="calcNote1">← discos</text>
+          <text class="hand-g" x="54" y="120" font-size="17">V = π ∫<tspan font-size="12" dx="2" dy="-8">4</tspan><tspan font-size="12" dx="-7.6" dy="13">0</tspan><tspan dy="-5"> x dx</tspan></text>
+          <text class="hand-g" x="54" y="148" font-size="17">= π [x²/2]<tspan font-size="12" dx="2" dy="-8">4</tspan><tspan font-size="12" dx="-7.6" dy="13">0</tspan><tspan dy="-5"> = π (16/2)</tspan></text>
+          <rect class="answer-hi anim-wipe" x="48" y="161" width="217" height="32" rx="3"/>
+          <text class="hand-g" x="54" y="184" font-size="19" font-weight="700" data-i18n="calcAns">V = 8π ≈ 25.1 unidades³</text>
+
+          <path class="anim-fade" d="M80 300 L88 288 L100 281 L120 273.1 L160 262 L200 253.5 L240 246.3 L280 239.9 L320 234.2 L360 228.9 L400 224 L400 300 Z" fill="#1C4C9E" fill-opacity=".14"/>
+          <path class="curve anim-draw" pathLength="1" d="M80 300 L88 288 L100 281 L120 273.1 L160 262 L200 253.5 L240 246.3 L280 239.9 L320 234.2 L360 228.9 L400 224"/>
+          <path class="anim-fade" d="M80 300 L88 312 L100 319 L120 326.9 L160 338 L200 346.5 L240 353.7 L280 360.1 L320 365.8 L360 371.1 L400 376" fill="none" stroke="#1C4C9E" stroke-width="1.6" stroke-dasharray="6 4"/>
+          <ellipse class="anim-fade" cx="400" cy="300" rx="14" ry="76" fill="none" stroke="#1C4C9E" stroke-width="1.6" stroke-dasharray="6 4"/>
+          <ellipse class="anim-fade" cx="240" cy="300" rx="8" ry="53.7" fill="#fff" fill-opacity=".55" stroke="#232A2A" stroke-width="1.6"/>
+          <line class="dash" x1="240" y1="300" x2="240" y2="246.3"/>
+          <line class="axis" x1="60" y1="300" x2="470" y2="300"/>
+          <text class="hand" x="246" y="282" font-size="15">r</text>
+          <text class="hand" x="476" y="305" font-size="15">x</text>
+          <text class="hand" x="420" y="236" font-size="16">y = <tspan dx="11">x</tspan></text><use class="rad rad-ink" href="#rad" transform="translate(451.7 236) scale(.94)"/>
+          <text class="hand" x="76" y="322" font-size="14">0</text>
+          <text class="hand" x="420" y="322" font-size="14">4</text>
+          <defs><path id="rad" d="M0 -5.5 L2.4 -7 L5.6 1.5 L9.6 -13 H20"/></defs>
+          <text class="hand" x="60" y="396" font-size="16" data-i18n="calcNote">como en AP Calc BC y Cálculo II</text>
+        </svg>
+        <figcaption id="cap-calculus" class="sr-only" data-i18n="calcCap">La región bajo y = raíz de x de 0 a 4, girada alrededor del eje x, tiene volumen 8 pi, unos 25.1.</figcaption>
+      </figure>
+
+      <figure class="sheet pad" id="prob-circuits" role="tabpanel" aria-labelledby="tab-circuits" hidden>
+        <svg viewBox="0 0 520 400" role="img" aria-labelledby="cap-circuits">
+          <text class="hand-g" x="54" y="34" font-size="19" font-weight="700" data-i18n="rcTitle">Circuito RC: voltaje después de 1 s</text>
+          <text class="hand-g" x="54" y="64" font-size="17" data-i18n="rcGiven">Datos: 12 V, R = 10 kΩ, C = 100 µF, descargado</text>
+          <text class="hand-g" x="54" y="92" font-size="17"><tspan style="font-family:'Cambria Math','STIX Two Math','Times New Roman',serif;font-style:italic">τ</tspan> = RC = (10 kΩ)(100 µF) = 1 s</text>
+          <text class="hand-g" x="54" y="120" font-size="17">v<tspan font-size="12" dy="4">C</tspan><tspan dy="-4">(t) = 12 (1 − e</tspan><tspan font-size="12" dy="-8">−t/<tspan style="font-family:'Cambria Math','STIX Two Math','Times New Roman',serif;font-style:italic">τ</tspan></tspan><tspan dy="8">)</tspan></text>
+          <text class="hand-g" x="54" y="148" font-size="17">v<tspan font-size="12" dy="4">C</tspan><tspan dy="-4">(1) = 12 (1 − e</tspan><tspan font-size="12" dy="-8">−1</tspan><tspan dy="8">) = 12 (0.632)</tspan></text>
+          <rect class="answer-hi anim-wipe" x="48" y="161" width="106" height="32" rx="3"/>
+          <text class="hand-g" x="54" y="184" font-size="19" font-weight="700">v<tspan font-size="12" dy="4">C</tspan><tspan dy="-4"> ≈ 7.59 V</tspan></text>
+
+          <g fill="none" stroke="#232A2A" stroke-width="1.8">
+            <path d="M80 290 V240 H125"/><path d="M205 240 H250 V290"/><path d="M250 300 V350 H180"/><path d="M150 350 H80 V300"/>
+            <line x1="66" y1="290" x2="94" y2="290" stroke-width="2"/><line x1="73" y1="300" x2="87" y2="300" stroke-width="4"/>
+            <line x1="150" y1="350" x2="176" y2="336"/>
+          </g>
+          <polyline points="125,240 132,230 145,250 158,230 171,250 184,230 197,250 205,240" fill="none" stroke="#1C4C9E" stroke-width="2.4"/>
+          <line x1="236" y1="290" x2="264" y2="290" stroke="#1C4C9E" stroke-width="3"/>
+          <line x1="236" y1="300" x2="264" y2="300" stroke="#1C4C9E" stroke-width="3"/>
+          <circle cx="150" cy="350" r="3" fill="#fff" stroke="#232A2A" stroke-width="1.5"/>
+          <circle cx="180" cy="350" r="3" fill="#fff" stroke="#232A2A" stroke-width="1.5"/>
+          <text class="hand" x="58" y="287" font-size="15">+</text>
+          <text class="hand" x="100" y="300" font-size="15">12 V</text>
+          <text class="hand" x="144" y="224" font-size="15">10 kΩ</text>
+          <text class="hand" x="186" y="300" font-size="15">100 µF</text>
+          <text class="hand" x="148" y="374" font-size="15">t = 0</text>
+          <line class="axis" x1="322" y1="350" x2="484" y2="350"/>
+          <line class="axis" x1="330" y1="360" x2="330" y2="236"/>
+          <line class="dash" x1="330" y1="250" x2="480" y2="250"/>
+          <line class="dash" x1="366" y1="286.8" x2="366" y2="350"/>
+          <path class="curve anim-draw" pathLength="1" d="M330 350 L339 327.9 L348 310.7 L357 297.2 L366 286.8 L384 272.3 L402 263.5 L420 258.2 L438 255 L456 253 L474 251.8"/>
+          <circle class="anim-pop" cx="366" cy="286.8" r="5.5" fill="#1C4C9E"/>
+          <text class="hand" x="440" y="244" font-size="15">12 V</text>
+          <text class="hand" x="372" y="310" font-size="15">7.59 V</text>
+          <text class="hand" x="361" y="370" font-size="15"><tspan style="font-family:'Cambria Math','STIX Two Math','Times New Roman',serif;font-style:italic">τ</tspan></text>
+          <text class="hand" x="478" y="368" font-size="15">t</text>
+          <text class="hand" x="60" y="396" font-size="16" data-i18n="rcNote">como en Circuitos I y Física II</text>
+        </svg>
+        <figcaption id="cap-circuits" class="sr-only" data-i18n="rcCap">Una fuente de 12 V que carga un capacitor de 100 microfaradios a través de 10 kiloohmios llega a unos 7.59 V en 1 segundo.</figcaption>
+      </figure>
+
+      <figure class="sheet pad" id="prob-c" role="tabpanel" aria-labelledby="tab-c" hidden>
+        <svg viewBox="0 0 520 400" role="img" aria-labelledby="cap-c">
+          <text class="hand-g" x="54" y="34" font-size="19" font-weight="700" data-i18n="cTitle">Enciende un LED sin tocar los demás</text>
+          <text class="hand-g" x="54" y="64" font-size="17" data-i18n="cGiven">Datos: LED en el bit 5 de PORTB (pin 13 del Arduino Uno)</text>
+          <text class="hand-g" x="54" y="92" font-size="17"><tspan class="mono" font-size="15">1 &lt;&lt; 5</tspan> = 0010 0000 = 0x20</text>
+          <text class="hand-g" x="54" y="120" font-size="17" data-i18n="cStep">el OR deja cada 1 y enciende el bit 5</text>
+          <text class="hand-g" x="54" y="148" font-size="17" style="fill:#55605E">✗ <tspan class="mono" font-size="15" text-decoration="line-through">PORTB = 0x20;</tspan></text>
+          <text class="hand" x="222" y="148" font-size="15" data-i18n="cNote1">← apaga los otros 7</text>
+          <rect class="answer-hi anim-wipe" x="48" y="161" width="220" height="32" rx="3"/>
+          <text class="hand-g mono" x="54" y="184" font-size="19" font-weight="700">PORTB |= (1 &lt;&lt; 5);</text>
+
+          <g class="lbl" text-anchor="middle" style="fill:#55605E">
+            <text x="217" y="234">7</text><text x="251" y="234">6</text><text x="285" y="234">5</text><text x="319" y="234">4</text>
+            <text x="353" y="234">3</text><text x="387" y="234">2</text><text x="421" y="234">1</text><text x="455" y="234">0</text>
+          </g>
+          <g class="lbl mono" text-anchor="end">
+            <text x="190" y="265">PORTB</text><text x="190" y="303">| 1&lt;&lt;5</text><text x="190" y="351">= PORTB</text>
+          </g>
+          <g fill="#fff" stroke="#232A2A" stroke-width="1.3">
+            <rect x="200" y="244" width="34" height="30"/><rect x="234" y="244" width="34" height="30"/><rect x="268" y="244" width="34" height="30"/><rect x="302" y="244" width="34" height="30"/>
+            <rect x="336" y="244" width="34" height="30"/><rect x="370" y="244" width="34" height="30"/><rect x="404" y="244" width="34" height="30"/><rect x="438" y="244" width="34" height="30"/>
+            <rect x="200" y="282" width="34" height="30"/><rect x="234" y="282" width="34" height="30"/><rect x="268" y="282" width="34" height="30"/><rect x="302" y="282" width="34" height="30"/>
+            <rect x="336" y="282" width="34" height="30"/><rect x="370" y="282" width="34" height="30"/><rect x="404" y="282" width="34" height="30"/><rect x="438" y="282" width="34" height="30"/>
+            <rect x="200" y="330" width="34" height="30"/><rect x="234" y="330" width="34" height="30"/><rect class="anim-fill" x="268" y="330" width="34" height="30" fill="#1C4C9E"/><rect x="302" y="330" width="34" height="30"/>
+            <rect x="336" y="330" width="34" height="30"/><rect x="370" y="330" width="34" height="30"/><rect x="404" y="330" width="34" height="30"/><rect x="438" y="330" width="34" height="30"/>
+          </g>
+          <g class="hand" text-anchor="middle" font-size="17">
+            <text x="217" y="266">1</text><text x="251" y="266">0</text><text x="285" y="266">0</text><text x="319" y="266">0</text><text x="353" y="266">0</text><text x="387" y="266">1</text><text x="421" y="266">1</text><text x="455" y="266">0</text>
+            <text x="217" y="304">0</text><text x="251" y="304">0</text><text x="285" y="304">1</text><text x="319" y="304">0</text><text x="353" y="304">0</text><text x="387" y="304">0</text><text x="421" y="304">0</text><text x="455" y="304">0</text>
+            <text x="217" y="352">1</text><text x="251" y="352">0</text><text x="285" y="352" style="fill:#fff;font-weight:700">1</text><text x="319" y="352">0</text><text x="353" y="352">0</text><text x="387" y="352">1</text><text x="421" y="352">1</text><text x="455" y="352">0</text>
+          </g>
+          <line x1="110" y1="321" x2="476" y2="321" stroke="#232A2A" stroke-width="1.6"/>
+          <rect class="anim-draw" pathLength="1" x="266" y="239" width="38" height="126" rx="4" fill="none" stroke="#1C4C9E" stroke-width="2.6"/>
+          <text class="hand" x="60" y="396" font-size="16" data-i18n="cNote">como en Programación en C y Microcontroladores</text>
+        </svg>
+        <figcaption id="cap-c" class="sr-only" data-i18n="cCap">Poner en 1 el bit 5 de PORTB con una máscara OR enciende un LED sin cambiar los otros siete pines.</figcaption>
+      </figure>
+
+      <div class="courses">
+        <p class="course" data-course="physics" data-i18n="coursePhysics">High school y universidad · Física, AP Physics 1 y C, Física I</p>
+        <p class="course" data-course="algebra" hidden data-i18n="courseAlgebra">High school · Álgebra 2, Precálculo</p>
+        <p class="course" data-course="geometry" hidden data-i18n="courseGeometry">High school · Geometría (EOC, honors), Precálculo y trigonometría, SAT</p>
+        <p class="course" data-course="calculus" hidden data-i18n="courseCalculus">AP Calc BC · Cálculo II en la universidad</p>
+        <p class="course" data-course="circuits" hidden data-i18n="courseCircuits">Ingeniería · Circuitos eléctricos I, Física II</p>
+        <p class="course" data-course="c" hidden data-i18n="courseC">Ingeniería · Programación en C, Microcontroladores y sistemas embebidos</p>
+      </div>
+      </div>
+      <script>
+      /* class picker (ARIA tabs). Runs right here, before the first paint, so a ?topic= link
+         never flashes the Physics sheet first. The visible sheet "draws" itself (CSS, .play) once on
+         load and again each time a different class is picked. */
+      (function(){
+        const picker = document.getElementById("picker");
+        const tabs = [...picker.querySelectorAll('[role="tab"]')];
+        const topics = tabs.map(t => t.id.slice(4)); // "tab-physics" -> "physics"
+        let cur = 0;
+        const svgs = topics.map(t => document.querySelector("#prob-" + t + " svg"));
+        function play(){
+          svgs.forEach(s => s.classList.remove("play"));
+          void svgs[cur].getBoundingClientRect(); // restart the CSS animation
+          svgs[cur].classList.add("play");
+        }
+        function show(i){
+          cur = i;
+          tabs.forEach((t, j) => {
+            t.setAttribute("aria-selected", j === i);
+            t.tabIndex = j === i ? 0 : -1;
+            document.getElementById("prob-" + topics[j]).hidden = j !== i;
+            picker.querySelector('[data-course="' + topics[j] + '"]').hidden = j !== i;
+          });
+        }
+        /* a visitor's choice: update the URL (no reload, no history entry) and tell GTM */
+        function pick(i){
+          if (i === cur) return;
+          show(i);
+          play();
+          const u = new URL(location.href);
+          u.searchParams.set("topic", topics[i]);
+          history.replaceState(history.state, "", u);
+          (window.dataLayer = window.dataLayer || []).push({ event: "select_content", content_type: "class_problem",
+            item_id: topics[i], page_language: document.documentElement.lang === "es" ? "es" : "en" });
+        }
+        const start = topics.indexOf(new URLSearchParams(location.search).get("topic"));
+        if (start > 0) show(start);
+        play();
+
+        const n = tabs.length;
+        tabs.forEach((t, i) => {
+          t.addEventListener("click", () => pick(i));
+          t.addEventListener("keydown", e => {
+            if (e.altKey || e.ctrlKey || e.metaKey) return;
+            const k = { ArrowRight: (cur + 1) % n, ArrowLeft: (cur - 1 + n) % n, Home: 0, End: n - 1 }[e.key];
+            if (k === undefined) return;
+            e.preventDefault(); pick(k); tabs[k].focus();
+          });
+        });
+        /* swipe the sheet: mostly-horizontal moves over 50px. Passive, so vertical scrolling is untouched. */
+        let x0 = null, y0 = 0;
+        picker.querySelectorAll('[role="tabpanel"]').forEach(p => {
+          p.addEventListener("touchstart", e => {
+            if (e.touches.length === 1) { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; } else x0 = null;
+          }, { passive: true });
+          p.addEventListener("touchend", e => {
+            if (x0 === null) return;
+            const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+            x0 = null;
+            if (Math.abs(dx) > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)) pick(dx < 0 ? (cur + 1) % n : (cur - 1 + n) % n);
+          }, { passive: true });
+        });
+      })();
+      </script>
     </div>
   </div>
 
@@ -1022,9 +1299,10 @@ const FORM_MSG = {
       busy:"Demasiadas solicitudes en este momento. Inténtalo más tarde o escríbeme por WhatsApp."}
 };
 
-/* language links keep the section you're on */
+/* language links keep the section you're on, and the class picked in the hero */
 document.querySelectorAll(".lang a").forEach(a => a.addEventListener("click", () => {
-  a.href = a.getAttribute("href").split("#")[0] + location.hash;
+  const topic = new URLSearchParams(location.search).get("topic");
+  a.href = a.getAttribute("href").split("#")[0] + (topic ? "?topic=" + encodeURIComponent(topic) : "") + location.hash;
 }));
 
 const WA_TEXT = {
