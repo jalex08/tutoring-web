@@ -49,16 +49,12 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     --ink-dark:#143A7A;
     --hi:#F6E15A;         /* highlighter, used once per screen */
     --rule:#D5DED2;
-    --line:#D3DCD8;       /* soft-line sheets: border */
-    --soft-shadow:0 1px 2px rgba(35,42,42,.04),0 6px 18px rgba(35,42,42,.06); /* soft-line sheets: shadow */
     --display:"Bricolage Grotesque", system-ui, sans-serif;
     --body:"Atkinson Hyperlegible", system-ui, sans-serif;
     --hand:"Kalam", "Comic Neue", cursive;
     --wrap:1120px;
   }
   *{box-sizing:border-box}
-  /* soft-line sheets: notebook margin line (home .sheet/.note-sheet, legal .sheet); --margin-x sets its position */
-  .sheet::before,.note-sheet::before{content:"";position:absolute;top:0;bottom:0;left:var(--margin-x,16px);width:1px;background:#E7A3A3;opacity:.45}
   html{scroll-behavior:smooth;scroll-padding-top:68px} /* keeps anchors and keyboard focus clear of the sticky header */
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
   body{margin:0;background:var(--paper);color:var(--graphite);font:400 1.0625rem/1.6 var(--body);-webkit-font-smoothing:antialiased}
@@ -133,6 +129,13 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   @media (max-width:760px){.foot-grid{grid-template-columns:1fr;padding-bottom:96px}} /* room for the WhatsApp button */
   /* ---- footer-css:end ---- */
   /* ==== shared:end ==== */
+
+  /* soft-line sheets (home page only): same values as pages/legal.css, kept separate on purpose */
+  :root{
+    --line:#D3DCD8;
+    --soft-shadow:0 1px 2px rgba(35,42,42,.04),0 6px 18px rgba(35,42,42,.06);
+  }
+  .sheet::before,.note-sheet::before{content:"";position:absolute;top:0;bottom:0;left:var(--margin-x,16px);width:1px;background:#E7A3A3;opacity:.45} /* notebook margin line */
 
   /* hero */
   .hero{padding:64px 0 72px;border-bottom:1px solid var(--rule)}
