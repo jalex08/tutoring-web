@@ -59,7 +59,8 @@ function createDevServer({ onSend } = {}) {
     const pathname = new URL("http://localhost" + req.url).pathname;
     const h = routes.find((r) => r.url.test(pathname));
     if (h && h.static_files) {
-      const file = path.join(ROOT, h.static_files);
+      const groups = pathname.match(h.url); // static_files may use \1, \2 ... like App Engine
+      const file = path.join(ROOT, h.static_files.replace(/\\(\d)/g, (_, n) => groups[n]));
       if (!fs.existsSync(file)) {
         res.writeHead(404);
         return res.end("missing static file");

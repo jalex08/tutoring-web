@@ -4,7 +4,8 @@
  * POST /api/contact (JSON) -> emails the request to Jose and a confirmation to
  * the client, through any SMTP server (Gmail by default). The pages are
  * served as static files by App Engine (see app.yaml); any URL without a
- * static handler reaches this code and gets a 301 (/index.html, /es, /es/index.html) or a real 404 page.
+ * static handler reaches this code and gets a 301 (/index.html, /es, /es/index.html, legal
+ * pages without the trailing slash) or a real 404 page.
  *
  * Everything about the mail server lives in Secret Manager (never in this
  * repo), so it can be changed without a redeploy: values are re-read every
@@ -187,7 +188,12 @@ const CONFIRM = {
       "and I'll reply within one business day to set up a time.\n\n" +
       `Level: ${v.level}\nCourse: ${v.course}\n\n` +
       "If you need to add anything, just reply to this email.\n\n" +
-      "Jose Diaz\nhttps://josediaztutoring.com\n",
+      "Jose Diaz\nhttps://josediaztutoring.com\n" +
+      "\n-- \n" +
+      "Jose Diaz Tutoring · Broward & Miami-Dade · Online anywhere\n" +
+      "You're receiving this because you sent a request on josediaztutoring.com.\n" +
+      "Privacy Policy: https://josediaztutoring.com/privacy/\n" +
+      "Terms: https://josediaztutoring.com/terms/\n",
   },
   es: {
     subject: "Recibí tu solicitud de tutoría",
@@ -197,7 +203,12 @@ const CONFIRM = {
       "y te respondo en un día hábil para coordinar el horario.\n\n" +
       `Nivel: ${v.level}\nCurso: ${v.course}\n\n` +
       "Si quieres agregar algo, solo responde a este correo.\n\n" +
-      "Jose Diaz\nhttps://josediaztutoring.com\n",
+      "Jose Diaz\nhttps://josediaztutoring.com\n" +
+      "\n-- \n" +
+      "Jose Diaz Tutoring · Broward y Miami-Dade · En línea desde cualquier lugar\n" +
+      "Recibes este correo porque enviaste una solicitud en josediaztutoring.com.\n" +
+      "Política de privacidad: https://josediaztutoring.com/es/privacidad/\n" +
+      "Términos: https://josediaztutoring.com/es/terminos/\n",
   },
 };
 
@@ -343,6 +354,10 @@ const SECURITY_HEADERS = {
   "Referrer-Policy": "strict-origin-when-cross-origin",
 };
 const REDIRECTS = { "/index.html": "/", "/es": "/es/", "/es/index.html": "/es/" };
+// legal pages: /privacy and /privacy/index.html -> /privacy/ (the slash URLs are static, see app.yaml)
+for (const p of ["/privacy", "/terms", "/accessibility", "/es/privacidad", "/es/terminos", "/es/accesibilidad"]) {
+  REDIRECTS[p] = REDIRECTS[`${p}/index.html`] = `${p}/`;
+}
 let page404 = null;
 
 function notFoundPage(req, res) {
