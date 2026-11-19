@@ -81,9 +81,19 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5em;font:700 1rem/1 var(--body);
     padding:15px 22px;border-radius:8px;text-decoration:none;border:2px solid var(--ink);cursor:pointer}
   .btn-primary{background:var(--ink);color:#fff}
-  .btn-primary:hover{background:var(--ink-dark);border-color:var(--ink-dark)}
   .btn-ghost{background:transparent;color:var(--ink)}
-  .btn-ghost:hover{background:#fff}
+  /* hover states (pointer devices only, so a tap on a phone doesn't leave a "stuck" hover).
+     Primary: darker ink, white text. Outline buttons and chips: pad-green fill, dark ink. Never the highlighter. */
+  .btn,.chip{transition:background-color .15s,border-color .15s,color .15s}
+  @media (hover:hover){
+    .btn-primary:hover{background:var(--ink-dark);border-color:var(--ink-dark);color:#fff}
+    .btn-ghost:hover{background:var(--pad);border-color:var(--ink-dark);color:var(--ink-dark)}
+    .chip:not([aria-pressed="true"]):not([aria-selected="true"]):hover{background:var(--pad);border-color:var(--ink-dark);color:var(--ink-dark)}
+    .chip[aria-pressed="true"]:hover,.chip[aria-selected="true"]:hover{background:var(--ink-dark);border-color:var(--ink-dark);color:#fff}
+  }
+  @media (prefers-reduced-motion:reduce){.btn,.chip{transition:none}}
+  /* text links in the page: darker ink on hover (buttons, chips and the WhatsApp float keep their own colors) */
+  main a:not(.btn):not(.ibtn):not(.chip):not(.wa-float):hover{color:var(--ink-dark)}
 
   /* header */
   .site-head{position:sticky;top:0;z-index:20;background:rgba(251,252,250,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--rule)}
@@ -360,8 +370,8 @@ const track = (event, params) => (window.dataLayer = window.dataLayer || []).pus
 document.addEventListener("click", e => {
   const a = e.target.closest && e.target.closest("a[href]");
   if (!a) return;
-  const href = a.getAttribute("href"), where = a.id === "wa-float" ? "floating_button" : (a.closest("footer") ? "footer" : "page");
-  if (a.classList.contains("wa-link")) track("contact_click", { contact_method: "whatsapp", link_location: where });
+  const href = a.getAttribute("href"), where = a.id === "wa-float" ? "floating_button" : (a.dataset.loc || (a.closest("footer") ? "footer" : "page"));
+  if (a.classList.contains("wa-link") || a.dataset.contact === "whatsapp") track("contact_click", { contact_method: "whatsapp", link_location: where });
   else if (href.startsWith("tel:")) track("contact_click", { contact_method: "phone", link_location: where });
   else if (href.startsWith("mailto:")) track("contact_click", { contact_method: "email", link_location: where });
 });

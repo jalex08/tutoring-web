@@ -1,5 +1,5 @@
 {
-  "revision": 3,
+  "revision": 4,
   "schoolYear": "2026-27",
   "range": {
     "start": "2026-08-01",
@@ -1867,6 +1867,11 @@
       "revision": 3,
       "date": "2026-11-19",
       "summary": "Added the MCAT (physics and math in the Chem/Phys section): its own lane, the 35 U.S. 2027 test dates grouped by month with score release dates (AAMC), two official AAMC resources, and a College grade-picker item. Needs the v4 engine (lanes from data) before publishing."
+    },
+    {
+      "revision": 4,
+      "date": "2026-11-19",
+      "summary": "Date note now names the AAMC (MCAT) among the bodies that can change dates. No dates changed."
     }
   ],
   "notice": {
@@ -1879,8 +1884,8 @@
       "es": "Una nota sobre estas fechas"
     },
     "body": {
-      "en": "I check every date against its official source and update this page when something changes. Still, schools, districts, the Florida Department of Education, College Board, ACT and colleges can move a date, a deadline or a rule at any time, sometimes at the last minute. This calendar is a free planning guide, not an official schedule: your school's calendar and the official sources linked here always come first, so please confirm before you register, pay a fee or plan around a date. Jose Diaz Tutoring isn't responsible for missed deadlines, fees or other outcomes based on the information on this page.",
-      "es": "Reviso cada fecha en su fuente oficial y actualizo esta página cuando algo cambia. Aun así, las escuelas, los distritos, el Departamento de Educación de Florida, College Board, ACT y las universidades pueden cambiar una fecha, un plazo o una regla en cualquier momento, a veces a última hora. Este calendario es una guía gratuita para planificar, no un calendario oficial: el calendario de tu escuela y las fuentes oficiales que enlazo aquí siempre tienen la última palabra, así que confirma antes de inscribirte, pagar una tarifa o planificar alrededor de una fecha. Jose Diaz Tutoring no se hace responsable de plazos perdidos, cargos u otras consecuencias por usar la información de esta página."
+      "en": "I check every date against its official source and update this page when something changes. Still, schools, districts, the Florida Department of Education, College Board, ACT, the AAMC and colleges can move a date, a deadline or a rule at any time, sometimes at the last minute. This calendar is a free planning guide, not an official schedule: your school's calendar and the official sources linked here always come first, so please confirm before you register, pay a fee or plan around a date. Jose Diaz Tutoring isn't responsible for missed deadlines, fees or other outcomes based on the information on this page.",
+      "es": "Reviso cada fecha en su fuente oficial y actualizo esta página cuando algo cambia. Aun así, las escuelas, los distritos, el Departamento de Educación de Florida, College Board, ACT, la AAMC y las universidades pueden cambiar una fecha, un plazo o una regla en cualquier momento, a veces a última hora. Este calendario es una guía gratuita para planificar, no un calendario oficial: el calendario de tu escuela y las fuentes oficiales que enlazo aquí siempre tienen la última palabra, así que confirma antes de inscribirte, pagar una tarifa o planificar alrededor de una fecha. Jose Diaz Tutoring no se hace responsable de plazos perdidos, cargos u otras consecuencias por usar la información de esta página."
     },
     "report": {
       "en": "Spotted a date that changed? Tell me and I'll fix it.",

@@ -387,7 +387,7 @@ function staticFooter(footer, current) {
 
 // --- exam calendar pages ---------------------------------------------------------------------
 const examData = examCal.parse(fs.readFileSync(path.join(ROOT, EXAM_DATA), "utf8"));
-const EXAM_TM = "SAT, AP and PSAT/NMSQT are trademarks registered by College Board. ACT is a registered trademark of ACT Education Corp. Neither is affiliated with this site. Always confirm dates with the official source linked on each one.";
+const EXAM_TM = "SAT, AP and PSAT/NMSQT are trademarks registered by College Board. ACT is a registered trademark of ACT Education Corp. MCAT is a registered trademark of the AAMC. None of them is affiliated with this site. Always confirm dates with the official source linked on each one.";
 const clientJs = replaceOne(fs.readFileSync(path.join(ROOT, "pages/exams/exams.js"), "utf8").trim(), /__EXAM_STRINGS__/, () => JSON.stringify(examCal.STRINGS), "exam strings placeholder");
 const examCss = fs.readFileSync(path.join(ROOT, "pages/exams/exams.css"), "utf8").trim();
 const ldScript = (data) => `<script type="application/ld+json">\n${pricing.ldJson(data)}\n</script>`;

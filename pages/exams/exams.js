@@ -283,7 +283,7 @@
         (e.note ? '<p class="note">' + esc(nm(e.note)) + "</p>" : "") +
         (e.verify ? '<p class="verify">' + ICON_WARN + esc(t("verify")) + "</p>" : "") + "</div>" +
         '<div class="side"><span class="count">' + cnt + '</span><div class="acts">' +
-        '<button type="button" class="ibtn" data-ics="' + e.id + '">' + ICON_CAL + '<span class="lbl-long">' + esc(t("ics")) + '</span><span class="sr">' + esc(nm(e.label)) + "</span></button>" +
+        '<button type="button" class="ibtn" data-ics="' + e.id + '">' + ICON_CAL + '<span class="lbl-long">' + esc(t("ics")) + '</span><span class="sr">, ' + esc(nm(e.label)) + "</span></button>" +
         '<a class="ibtn" href="' + esc(D.sources[e.src].url) + '" target="_blank" rel="noopener" title="' + esc(D.sources[e.src].label) + '">' + esc(t("source")) + "</a>" +
         "</div></div></li>";
     });

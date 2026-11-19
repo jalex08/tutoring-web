@@ -91,7 +91,7 @@ module.exports = {
   u6: '<a href="/es/examenes/?for=college">Física y matemáticas del MCAT</a>', u6n: "sección Chem/Phys, para quienes van a medicina",
   eTitle: "Cursos de ingeniería",
   eLede: "Para estudiantes de ingeniería eléctrica y de computación. Son los temas con los que trabajo a diario como ingeniero, así que vemos la teoría y cómo se usa en hardware real.",
-  eNote: "¿No ves tu curso? Envíame el programa.",
+  eNote: "¿No ves tu curso?", syllabusBtn: "Envíame el programa", syllabusMail: "o por correo",
   e1: "Circuitos eléctricos I y II", e1n: "DC, AC, transitorios", e2: "Diseño lógico digital",
   e3: "Programación", e3n: "C, C++, Python", e4: "Microcontroladores y sistemas embebidos",
   schTitle: "Tutorías para cursos en", schUM: "Universidad de Miami",
@@ -120,7 +120,7 @@ module.exports = {
   perHour: "por hora",
   r2t: '<span lang="en">High school</span>, mensual', r2p: '<span data-price="plan.hs-monthly.sessions">8</span> sesiones al mes, los mismos días y horas cada semana.',
   r2s: '<span data-price="plan.hs-monthly.perHour">unos $54/hora</span>, ahorras <span data-price="plan.hs-monthly.save">$91</span>',
-  r3t: "Universidad, individual", r3p: "Cálculo, ecuaciones diferenciales y física.",
+  r3t: "Universidad, individual", r3p: "Cálculo, ecuaciones diferenciales, física y preparación para el MCAT.",
   r4t: "Universidad, semestre", r4p: '<span data-price="plan.college-semester.sessions">12</span> sesiones individuales organizadas alrededor de tus parciales y tu final.',
   r4s: '<span data-price="plan.college-semester.perHour">unos $75/hora</span>, ahorras <span data-price="plan.college-semester.save">$181</span>',
   r5t: "Repaso en grupo para exámenes", r5p: "De 3 a 5 estudiantes del mismo curso, sesión de 2 horas antes de un parcial o final.", r5s: "por estudiante, por hora",
@@ -323,7 +323,7 @@ module.exports = {
   tosIndependent: `
       <h2>Un servicio independiente</h2>
       <p>Jose Diaz Tutoring es un servicio de tutorías independiente. No tiene relación con ninguna escuela, <i lang="en">college</i> ni universidad mencionada en este sitio, ni cuenta con su aval; sus nombres se usan solo para describir los cursos en los que doy tutorías.</p>
-      <p>AP y SAT son marcas registradas del College Board. ACT es una marca registrada de su titular. Ninguno de ellos tiene relación con este sitio ni lo avala.</p>
+      <p>AP y SAT son marcas registradas del College Board. ACT es una marca registrada de su titular. MCAT es una marca registrada de la AAMC. Ninguno de ellos tiene relación con este sitio ni lo avala.</p>
     `,
   tosRates: `
       <h2>Tarifas y pagos</h2>
@@ -397,7 +397,7 @@ module.exports = {
     `,
   tosFreeResources: `
       <h2>Recursos gratuitos y fechas de exámenes</h2>
-      <p>El calendario de exámenes, el verificador de puntaje y las demás guías gratuitas de este sitio son para planificar e informarte en general. Reviso las fechas en las fuentes oficiales, pero las escuelas, los distritos, el Departamento de Educación de Florida, College Board, ACT y las universidades pueden cambiar fechas, plazos y requisitos en cualquier momento. El calendario de tu escuela y las fuentes oficiales siempre tienen prioridad. Jose Diaz Tutoring no se hace responsable de plazos perdidos, cargos u otras consecuencias por usar estos recursos. El verificador de puntaje es una estimación; solo tu escuela puede confirmar que cumples un requisito. "Resumir con Claude" abre un servicio de IA de terceros cuyas respuestas pueden tener errores.</p>
+      <p>El calendario de exámenes, el verificador de notas y las demás guías gratuitas de este sitio son para planificar e informarte en general. Reviso las fechas en las fuentes oficiales, pero las escuelas, los distritos, el Departamento de Educación de Florida, College Board, ACT, la AAMC y las universidades pueden cambiar fechas, plazos y requisitos en cualquier momento. El calendario de tu escuela y las fuentes oficiales siempre tienen prioridad. Jose Diaz Tutoring no se hace responsable de plazos perdidos, cargos u otras consecuencias por usar estos recursos. El verificador de notas es una estimación; solo tu escuela puede confirmar que cumples un requisito. "Resumir con Claude" abre un servicio de IA de terceros cuyas respuestas pueden tener errores.</p>
     `,
   tosEnding: `
       <h2>Fin del servicio</h2>
@@ -460,16 +460,16 @@ module.exports = {
 
   // ---- exam calendar (pages/exams/hub.html, pages/exams/algebra-1-eoc.html) ----
   // {{x:…}} tokens are filled by the server from the exam data: keep them exactly as in the English source.
-  exmTm: "SAT, AP y PSAT/NMSQT son marcas registradas de College Board. ACT es marca registrada de ACT Education Corp. Ninguna está afiliada a este sitio. Confirma siempre las fechas en la fuente oficial que aparece en cada una.",
+  exmTm: "SAT, AP y PSAT/NMSQT son marcas registradas de College Board. ACT es marca registrada de ACT Education Corp. MCAT es marca registrada de la AAMC. Ninguna está afiliada a este sitio. Confirma siempre las fechas en la fuente oficial que aparece en cada una.",
 
   // hub: /es/examenes/
   exTitle: "Calendario de exámenes de Florida {{x:year}} | Jose Diaz Tutoring",
   exDesc: "Fechas de exámenes en Florida {{x:year}}: EOC de Álgebra 1 y Geometría, SAT, ACT, AP y finales universitarios. Elige el grado y mira qué importa.",
   exCrumb: "Calendario de exámenes",
   exH1: "Calendario de exámenes de Florida, {{x:year}}",
-  exLede: "Todas las fechas y plazos de los exámenes en los que ayudo, desde el EOC de Álgebra 1 hasta los finales universitarios. Cada fecha enlaza a su fuente oficial, y las que ya pasaron desaparecen solas.",
+  exLede: "Todas las fechas y plazos de los exámenes en los que ayudo, desde el EOC de Álgebra 1 hasta los finales universitarios y el MCAT. Cada fecha enlaza a su fuente oficial, y las que ya pasaron desaparecen solas.",
   exChecked: "Fechas revisadas el",
-  exSources: "Fuentes: FDOE, College Board, ACT y la oficina de registro de cada universidad",
+  exSources: "Fuentes: FDOE, College Board, ACT, la AAMC y la oficina de registro de cada universidad",
   exFinderH: "¿Quién tiene examen este año?",
   exFinderP: "Elige el grado y verás solo los exámenes que le tocan, por qué importan y qué hacer ahora.",
   exGradeLabel: "Grado",
