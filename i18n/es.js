@@ -88,6 +88,7 @@ module.exports = {
   u1: "Álgebra universitaria y precálculo", u2: "Cálculo I, II y III", u3: "Ecuaciones diferenciales",
   u4: "Física I y II", u4n: "con álgebra o con cálculo",
   u5: '<a href="/es/examenes/?for=college">Repasos para parciales y finales</a>', u5n: "individuales o en grupo",
+  u6: '<a href="/es/examenes/?for=college">Física y matemáticas del MCAT</a>', u6n: "sección Chem/Phys, para quienes van a medicina",
   eTitle: "Cursos de ingeniería",
   eLede: "Para estudiantes de ingeniería eléctrica y de computación. Son los temas con los que trabajo a diario como ingeniero, así que vemos la teoría y cómo se usa en hardware real.",
   eNote: "¿No ves tu curso? Envíame el programa.",

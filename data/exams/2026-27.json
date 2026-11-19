@@ -1,5 +1,5 @@
 {
-  "revision": 2,
+  "revision": 3,
   "schoolYear": "2026-27",
   "range": {
     "start": "2026-08-01",
@@ -9,8 +9,8 @@
   "nextYear": {
     "label": "2027-28",
     "note": {
-      "en": "FDOE posts a preliminary schedule each December and the final one by late spring. College Board and ACT post next year's dates well before then. They'll appear here once they're checked.",
-      "es": "El FDOE publica un calendario preliminar cada diciembre y el definitivo a finales de la primavera. College Board y ACT publican las fechas del año siguiente mucho antes. Aparecerán aquí en cuanto estén revisadas."
+      "en": "FDOE posts a preliminary schedule each December and the final one by late spring. College Board and ACT post next year's dates well before then, and the AAMC posts the next MCAT calendar in the fall. They'll appear here once they're checked.",
+      "es": "El FDOE publica un calendario preliminar cada diciembre y el definitivo a finales de la primavera. College Board y ACT publican las fechas del año siguiente mucho antes, y la AAMC publica el calendario del MCAT en el otoño. Aparecerán aquí en cuanto estén revisadas."
     }
   },
   "sources": {
@@ -85,6 +85,14 @@
     "bf": {
       "label": "Bright Futures test scores by graduating class (OSFA handbook, via St. Johns County schools)",
       "url": "https://www-bhs.stjohns.k12.fl.us/guidance/florida-bright-futures/"
+    },
+    "aamc-cal": {
+      "label": "AAMC: 2027 U.S. MCAT calendar, scheduling deadlines and score release dates",
+      "url": "https://students-residents.aamc.org/register-mcat-exam/us-mcat-calendar-scheduling-deadlines-and-score-release-dates-0"
+    },
+    "aamc-cp": {
+      "label": "AAMC: Chemical and Physical Foundations of Biological Systems section overview",
+      "url": "https://students-residents.aamc.org/whats-mcat-exam/chemical-and-physical-foundations-biological-systems-section-overview"
     }
   },
   "lanes": [
@@ -107,6 +115,11 @@
       "id": "college",
       "en": "College finals",
       "es": "Finales universitarios"
+    },
+    {
+      "id": "mcat",
+      "en": "MCAT",
+      "es": "MCAT"
     }
   ],
   "exams": [
@@ -376,6 +389,29 @@
       "resources": [
         "paul",
         "mit"
+      ],
+      "pageLive": false
+    },
+    {
+      "id": "mcat",
+      "lane": "mcat",
+      "page": "/exams/mcat/",
+      "pageEs": "/es/examenes/mcat/",
+      "name": {
+        "en": "MCAT: physics and math",
+        "es": "MCAT: física y matemáticas"
+      },
+      "who": {
+        "en": "Pre-med college students applying to medical school",
+        "es": "Estudiantes universitarios que van a aplicar a medicina"
+      },
+      "stakes": {
+        "en": "Medical school admissions. Physics and math are tested in the Chem/Phys section: 59 questions, 95 minutes, no calculator.",
+        "es": "Admisiones a medicina. La física y las matemáticas van en la sección Chem/Phys: 59 preguntas, 95 minutos, sin calculadora."
+      },
+      "resources": [
+        "aamcfree",
+        "aamccp"
       ],
       "pageLive": false
     }
@@ -1082,6 +1118,192 @@
         "en": "FAU finals",
         "es": "Finales de FAU"
       }
+    },
+    {
+      "id": "mcat-01",
+      "exam": "mcat",
+      "type": "dates",
+      "start": "2027-01-15",
+      "end": "2027-01-30",
+      "src": "aamc-cal",
+      "checked": "2026-11-19",
+      "label": {
+        "en": "MCAT test dates, January",
+        "es": "Fechas del MCAT en enero"
+      },
+      "short": {
+        "en": "January",
+        "es": "Enero"
+      },
+      "note": {
+        "en": "Jan 15, 16, 21, 29 and 30 (the 30th at select centers only). Scores Feb 16 to Mar 2.",
+        "es": "15, 16, 21, 29 y 30 de enero (el 30 solo en algunos centros). Notas del 16 de febrero al 2 de marzo."
+      }
+    },
+    {
+      "id": "mcat-02",
+      "exam": "mcat",
+      "type": "test",
+      "start": "2027-02-12",
+      "src": "aamc-cal",
+      "checked": "2026-11-19",
+      "label": {
+        "en": "MCAT test date, February",
+        "es": "Fecha del MCAT en febrero"
+      },
+      "note": {
+        "en": "Scores Mar 16.",
+        "es": "Notas el 16 de marzo."
+      }
+    },
+    {
+      "id": "mcat-03",
+      "exam": "mcat",
+      "type": "dates",
+      "start": "2027-03-06",
+      "end": "2027-03-19",
+      "src": "aamc-cal",
+      "checked": "2026-11-19",
+      "label": {
+        "en": "MCAT test dates, March",
+        "es": "Fechas del MCAT en marzo"
+      },
+      "short": {
+        "en": "March",
+        "es": "Marzo"
+      },
+      "note": {
+        "en": "Mar 6 and 19. Scores Apr 6 and Apr 20.",
+        "es": "6 y 19 de marzo. Notas el 6 y el 20 de abril."
+      }
+    },
+    {
+      "id": "mcat-04",
+      "exam": "mcat",
+      "type": "dates",
+      "start": "2027-04-09",
+      "end": "2027-04-17",
+      "src": "aamc-cal",
+      "checked": "2026-11-19",
+      "label": {
+        "en": "MCAT test dates, April",
+        "es": "Fechas del MCAT en abril"
+      },
+      "short": {
+        "en": "April",
+        "es": "Abril"
+      },
+      "note": {
+        "en": "Apr 9, 10, 16 and 17. Scores May 11 and May 18.",
+        "es": "9, 10, 16 y 17 de abril. Notas el 11 y el 18 de mayo."
+      }
+    },
+    {
+      "id": "mcat-05",
+      "exam": "mcat",
+      "type": "dates",
+      "start": "2027-05-01",
+      "end": "2027-05-29",
+      "src": "aamc-cal",
+      "checked": "2026-11-19",
+      "label": {
+        "en": "MCAT test dates, May",
+        "es": "Fechas del MCAT en mayo"
+      },
+      "short": {
+        "en": "May",
+        "es": "Mayo"
+      },
+      "note": {
+        "en": "May 1, 7, 8, 13, 14, 21 and 29 (the 14th at select centers only). Scores Jun 2 to Jun 29.",
+        "es": "1, 7, 8, 13, 14, 21 y 29 de mayo (el 14 solo en algunos centros). Notas del 2 al 29 de junio."
+      }
+    },
+    {
+      "id": "mcat-06",
+      "exam": "mcat",
+      "type": "dates",
+      "start": "2027-06-11",
+      "end": "2027-06-26",
+      "src": "aamc-cal",
+      "checked": "2026-11-19",
+      "label": {
+        "en": "MCAT test dates, June",
+        "es": "Fechas del MCAT en junio"
+      },
+      "short": {
+        "en": "June",
+        "es": "Junio"
+      },
+      "note": {
+        "en": "Jun 11, 12, 25 and 26. Scores Jul 13 and Jul 27.",
+        "es": "11, 12, 25 y 26 de junio. Notas el 13 y el 27 de julio."
+      }
+    },
+    {
+      "id": "mcat-07",
+      "exam": "mcat",
+      "type": "dates",
+      "start": "2027-07-09",
+      "end": "2027-07-30",
+      "src": "aamc-cal",
+      "checked": "2026-11-19",
+      "label": {
+        "en": "MCAT test dates, July",
+        "es": "Fechas del MCAT en julio"
+      },
+      "short": {
+        "en": "July",
+        "es": "Julio"
+      },
+      "note": {
+        "en": "Jul 9, 10, 23 and 30 (the 9th at select centers only). Scores Aug 10 to Aug 31.",
+        "es": "9, 10, 23 y 30 de julio (el 9 solo en algunos centros). Notas del 10 al 31 de agosto."
+      }
+    },
+    {
+      "id": "mcat-08",
+      "exam": "mcat",
+      "type": "dates",
+      "start": "2027-08-14",
+      "end": "2027-08-28",
+      "src": "aamc-cal",
+      "checked": "2026-11-19",
+      "extendsYear": true,
+      "label": {
+        "en": "MCAT test dates, August",
+        "es": "Fechas del MCAT en agosto"
+      },
+      "short": {
+        "en": "August",
+        "es": "Agosto"
+      },
+      "note": {
+        "en": "Aug 14, 20, 21 and 28 (the 28th at select centers only). Scores Sep 14 to Sep 28.",
+        "es": "14, 20, 21 y 28 de agosto (el 28 solo en algunos centros). Notas del 14 al 28 de septiembre."
+      }
+    },
+    {
+      "id": "mcat-09",
+      "exam": "mcat",
+      "type": "dates",
+      "start": "2027-09-02",
+      "end": "2027-09-11",
+      "src": "aamc-cal",
+      "checked": "2026-11-19",
+      "extendsYear": true,
+      "label": {
+        "en": "MCAT test dates, September",
+        "es": "Fechas del MCAT en septiembre"
+      },
+      "short": {
+        "en": "September",
+        "es": "Septiembre"
+      },
+      "note": {
+        "en": "Sep 2, 3, 10 and 11, the last dates of 2027. Scores Oct 5 and Oct 12.",
+        "es": "2, 3, 10 y 11 de septiembre, las últimas fechas de 2027. Notas el 5 y el 12 de octubre."
+      }
     }
   ],
   "algebra1Requirement": {
@@ -1457,8 +1679,8 @@
         "es": "Universidad"
       },
       "intro": {
-        "en": "Calculus, Physics and engineering courses decide whether a student stays in a STEM major.",
-        "es": "Cálculo, Física y los cursos de ingeniería deciden si un estudiante sigue en una carrera STEM."
+        "en": "Calculus, Physics and engineering courses decide whether a student stays in a STEM major. Pre-meds also face the MCAT.",
+        "es": "Cálculo, Física y los cursos de ingeniería deciden si un estudiante sigue en una carrera STEM. Y quien va para medicina tiene además el MCAT."
       },
       "items": [
         {
@@ -1471,6 +1693,18 @@
             "en": "Don't wait for the final: the first exam, around week 5 to 7, is the warning sign.",
             "es": "No esperen al final: el primer examen, entre la semana 5 y 7, es la señal de alerta."
           }
+        },
+        {
+          "exam": "mcat",
+          "why": {
+            "en": "Pre-med? About a quarter of the MCAT's Chem/Phys section is introductory physics, and every calculation is done by hand: 59 questions in 95 minutes, no calculator. 2027 dates run Jan 15 to Sep 11, with no testing October to December.",
+            "es": "¿Vas para medicina? Cerca de una cuarta parte de la sección Chem/Phys del MCAT es física introductoria, y todos los cálculos se hacen a mano: 59 preguntas en 95 minutos, sin calculadora. Las fechas de 2027 van del 15 de enero al 11 de septiembre; no hay examen de octubre a diciembre."
+          },
+          "todo": {
+            "en": "Take the free AAMC sample test early to find the physics and math gaps, then book a date with time to fix them. Changes close 10 days before each date.",
+            "es": "Haz temprano el examen de muestra gratis de la AAMC para ver qué falla en física y matemáticas, y luego reserva una fecha con tiempo para corregirlo. Los cambios cierran 10 días antes de cada fecha."
+          },
+          "src": "aamc-cal"
         }
       ]
     }
@@ -1595,6 +1829,26 @@
       "url": "https://ocw.mit.edu/courses/18-01sc-single-variable-calculus-fall-2010",
       "official": false,
       "checked": "2026-11-19"
+    },
+    "aamcfree": {
+      "label": {
+        "en": "Free official sample test, practice exam and content outline",
+        "es": "Examen de muestra, examen de práctica y temario oficiales, gratis"
+      },
+      "by": "AAMC · MCAT Official Prep",
+      "url": "https://students-residents.aamc.org/prepare-mcat-exam/free-planning-and-study-resources",
+      "official": true,
+      "checked": "2026-11-19"
+    },
+    "aamccp": {
+      "label": {
+        "en": "What the Chem/Phys section tests, topic by topic",
+        "es": "Qué evalúa la sección Chem/Phys, tema por tema"
+      },
+      "by": "AAMC",
+      "url": "https://students-residents.aamc.org/whats-mcat-exam/chemical-and-physical-foundations-biological-systems-section-overview",
+      "official": true,
+      "checked": "2026-11-19"
     }
   },
   "$schemaNote": "One file per school year. Edit dates here only; pages are generated from it. Run: node scripts/check-exams.js data/exams/2026-27.json --links",
@@ -1608,6 +1862,11 @@
       "revision": 2,
       "date": "2026-11-19",
       "summary": "Added the date notice (short line, full note, checker, Claude and calendar-file lines). Word-problem example made language-neutral. No dates changed."
+    },
+    {
+      "revision": 3,
+      "date": "2026-11-19",
+      "summary": "Added the MCAT (physics and math in the Chem/Phys section): its own lane, the 35 U.S. 2027 test dates grouped by month with score release dates (AAMC), two official AAMC resources, and a College grade-picker item. Needs the v4 engine (lanes from data) before publishing."
     }
   ],
   "notice": {

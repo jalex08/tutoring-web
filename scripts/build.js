@@ -176,6 +176,8 @@ function jsonld(lang, s) {
     ...extra,
   });
   const subjects = ["hs1", "hs2", "hs3", "hs4", "hs5", "hs6", "u1", "u2", "u3", "u4", "e1", "e2", "e3", "e4"].map(T);
+  // the MCAT subject, spelled out (the page shows it as "MCAT physics & math" + "Chem/Phys section, …")
+  subjects.splice(10, 0, lang === "es" ? "Física y matemáticas del MCAT (sección Chem/Phys)" : "MCAT physics and math (Chem/Phys section)");
   // the FAQ questions in page order (word for word the same as the page)
   const faqKeys = [...html.matchAll(/<summary data-i18n="(q\d+)">/g)].map((m) => m[1]);
   if (!faqKeys.length) fail("no FAQ questions found");

@@ -24,8 +24,8 @@ const TZ = "America/New_York";
 const SITE = "https://josediaztutoring.com";
 
 const STRINGS = {
-  en: { all: "All", state: "Florida state tests", satact: "SAT and ACT", ap: "AP exams", college: "College finals",
-    test: "Test day", window: "Testing window", reg: "Registration deadline", late: "Late registration, extra fee", finals: "Finals week",
+  en: { all: "All", // lane names come from data.lanes
+    test: "Test day", window: "Testing window", dates: "Test dates", reg: "Registration deadline", late: "Late registration, extra fee", finals: "Finals week",
     today: "today", tomorrow: "tomorrow", inDays: "in {n} days", inWeeks: "in {n} weeks", inMonths: "in {n} months",
     open: "open now, {n} days left", openLast: "open now, last day", opens: "opens {x}",
     ics: "Add to calendar", source: "Source", showAll: "Show all {n} dates", showLess: "Show fewer",
@@ -47,8 +47,8 @@ const STRINGS = {
     rulerLabel: "{e} scale {a} to {b}. Level 3 starts at {c}.", meets: "{c} or higher",
     claudeIntro: "I'm a parent in Florida. Summarize the key takeaways from this page about the {e} in plain language. Then ask me my child's grade and whether they've taken the test, and tell me what to do next.",
     claudeFacts: "Key facts from the page ({y}, checked {d}):", claudeEnd: "If something depends on my child's school, tell me what to ask the counselor.", page: "Page: " },
-  es: { all: "Todos", state: "Exámenes estatales", satact: "SAT y ACT", ap: "Exámenes AP", college: "Finales universitarios",
-    test: "Día del examen", window: "Período de examen", reg: "Fecha límite de inscripción", late: "Inscripción tardía, con recargo", finals: "Semana de finales",
+  es: { all: "Todos",
+    test: "Día del examen", window: "Período de examen", dates: "Fechas de examen", reg: "Fecha límite de inscripción", late: "Inscripción tardía, con recargo", finals: "Semana de finales",
     today: "hoy", tomorrow: "mañana", inDays: "en {n} días", inWeeks: "en {n} semanas", inMonths: "en {n} meses",
     open: "abierto, quedan {n} días", openLast: "abierto, último día", opens: "abre {x}",
     ics: "Añadir al calendario", source: "Fuente", showAll: "Ver las {n} fechas", showLess: "Ver menos",
@@ -95,7 +95,7 @@ const GUIDE_SOURCES = { alg1: ["fdoe-eoc", "fdoe-schedule", "fdoe-grad", "fdoe-r
 // --- validation (what the pages need to render; scripts/check-exams.js adds warnings + links) ---
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
-const TYPES = ["test", "window", "reg", "late", "finals"];
+const TYPES = ["test", "window", "dates", "reg", "late", "finals"];
 const MAX_BYTES = 60000; // minified; Secret Manager's limit is 64 KiB
 
 /** Every problem that would break the pages (empty array = usable). */
@@ -422,6 +422,9 @@ function value(name, c, exam) {
   let m;
   switch (name) {
     case "year": return c.esc(yearText(c.D.schoolYear));
+    // the year graph's wide viewBox, so the server-rendered page has the right height before the script
+    // draws it: 168 + 54 per extra lane (pages/exams/exams.js uses the same numbers; it recomputes on phones)
+    case "graphViewBox": return `0 0 1040 ${168 + 54 * (c.D.lanes.length - 1)}`;
     case "checked": return c.esc(c.mdy(P(c.D.checked)));
     case "audPanel": return audPanel(c);
     case "ledger": return ledgerAll(c);

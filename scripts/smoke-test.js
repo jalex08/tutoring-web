@@ -176,7 +176,8 @@ srv.listen(0, async () => {
       // every human-readable string must be on the page (URLs, ids, codes and a few known facts aside)
       const allowed = new Set(["Jalex Diaz", "Universidad Tecnológica de La Habana José Antonio Echeverría", "$40–$110",
         "Broward County, FL", "Miami-Dade County, FL", "USD", "HOUR", "MONTH", "HUR", "MON", "en", "es", "degree",
-        "students", "estudiantes", "Math, physics and engineering tutor", "Tutor de matemáticas, física e ingeniería"]);
+        "students", "estudiantes", "Math, physics and engineering tutor", "Tutor de matemáticas, física e ingeniería",
+        "MCAT physics and math (Chem/Phys section)", "Física y matemáticas del MCAT (sección Chem/Phys)"]);
       const walk = (v, key) => {
         if (Array.isArray(v)) return v.forEach((x) => walk(x, key));
         if (v && typeof v === "object") return Object.entries(v).forEach(([k, x]) => walk(x, k));

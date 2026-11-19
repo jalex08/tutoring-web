@@ -149,8 +149,14 @@
   function drawYear(animate) {
     var svg = $("yearsvg"); if (!svg) return;
     var compact = svg.parentNode.getBoundingClientRect().width < 640;
-    G = compact ? { W: 340, H: 350, x0: 6, x1: 334, top: 84, bottom: 322, lanes: { state: 128, satact: 186, ap: 244, college: 300 }, labelAbove: true, fs: 13 }
-                : { W: 1040, H: 330, x0: 176, x1: 1020, top: 80, bottom: 304, lanes: { state: 116, satact: 170, ap: 224, college: 278 }, labelAbove: false, fs: 13 };
+    // Lanes come from the data: any number, in data order. Adding a lane needs no code change.
+    // (The server's graphViewBox token in exam-calendar.js uses the same wide-layout numbers: 168 + 54 per extra lane.)
+    G = compact ? { W: 340, x0: 6, x1: 334, top: 84, first: 128, step: 58, pad: 22, foot: 28, labelAbove: true, fs: 13 }
+                : { W: 1040, x0: 176, x1: 1020, top: 80, first: 116, step: 54, pad: 26, foot: 26, labelAbove: false, fs: 13 };
+    G.lanes = {};
+    D.lanes.forEach(function (ln, i) { G.lanes[ln.id] = G.first + G.step * i; });
+    G.bottom = G.first + G.step * (D.lanes.length - 1) + G.pad;
+    G.H = G.bottom + G.foot;
     svg.setAttribute("viewBox", "0 0 " + G.W + " " + G.H);
     if (compact) {
       var len = 165, st = new Date(S.today.getTime() - 10 * 864e5);
@@ -242,9 +248,9 @@
   /* ---------- coming up ---------- */
   function renderChips() {
     var box = $("chips"); if (!box) return; box.innerHTML = "";
-    ["all", "state", "satact", "ap", "college"].forEach(function (k) {
-      var b = document.createElement("button");
-      b.type = "button"; b.className = "chip"; b.textContent = t(k);
+    ["all"].concat(D.lanes.map(function (l) { return l.id; })).forEach(function (k) {
+      var b = document.createElement("button"), ln = D.lanes.filter(function (l) { return l.id === k; })[0];
+      b.type = "button"; b.className = "chip"; b.textContent = ln ? nm(ln) : t(k);
       b.setAttribute("aria-pressed", S.filter === k ? "true" : "false");
       b.onclick = function () { S.filter = k; S.expanded = false; renderChips(); renderLedger(); track("exam_filter", k); };
       box.appendChild(b);

@@ -58,9 +58,9 @@ const evIds = new Set();
   if (evIds.has(e.id)) err(`duplicate event id ${e.id}`); evIds.add(e.id);
   if (!examIds.has(e.exam)) err(`${w}: unknown exam ${e.exam}`);
   (e.also || []).forEach((a) => { if (!examIds.has(a)) err(`${w}: unknown "also" exam ${a}`); });
-  if (!["test", "window", "reg", "late", "finals"].includes(e.type)) err(`${w}: unknown type ${e.type}`);
+  if (!["test", "window", "dates", "reg", "late", "finals"].includes(e.type)) err(`${w}: unknown type ${e.type}`);
   date(e.start, `${w}.start`); if (e.end) { date(e.end, `${w}.end`); if (ISO.test(e.end) && ISO.test(e.start) && P(e.end) < P(e.start)) err(`${w}: end before start`); }
-  if (ISO.test(e.start || "") && D.range && (P(e.start) < P(D.range.start) || P(e.start) > P(D.range.end))) warn(`${w}: outside the school-year range`);
+  if (!e.extendsYear && ISO.test(e.start || "") && D.range && (P(e.start) < P(D.range.start) || P(e.start) > P(D.range.end))) warn(`${w}: outside the school-year range`);
   if (!D.sources[e.src]) err(`${w}: unknown source ${e.src}`);
   bi(e.label, `${w}.label`); if (e.note) bi(e.note, `${w}.note`); if (e.short) bi(e.short, `${w}.short`);
   date(e.checked, `${w}.checked`);
