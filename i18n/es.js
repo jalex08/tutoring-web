@@ -27,6 +27,7 @@ module.exports = {
   ctaShort: "Agenda una llamada gratis",
   heroTitle: "Matemáticas y física, de la mano de un ingeniero que las usa todos los días.",
   heroLede: "Tutorías individuales y en grupos pequeños para estudiantes de secundaria y universidad. En línea desde cualquier lugar, o en persona en Broward y Miami-Dade, en español o en inglés.",
+  ctaMini: "Llamada gratis",
   ctaLong: "Agenda una llamada gratis de 20 minutos",
   ctaRates: "Ver precios",
   fact1: "<strong>Tutor desde 2016</strong>",
@@ -392,6 +393,10 @@ module.exports = {
   tosMaterials: `
       <h2>Materiales</h2>
       <p>Las hojas de ejercicios, las soluciones y los apuntes que te doy son para tu estudio personal. Por favor, no los revendas ni los publiques.</p>
+    `,
+  tosFreeResources: `
+      <h2>Recursos gratuitos y fechas de exámenes</h2>
+      <p>El calendario de exámenes, el verificador de puntaje y las demás guías gratuitas de este sitio son para planificar e informarte en general. Reviso las fechas en las fuentes oficiales, pero las escuelas, los distritos, el Departamento de Educación de Florida, College Board, ACT y las universidades pueden cambiar fechas, plazos y requisitos en cualquier momento. El calendario de tu escuela y las fuentes oficiales siempre tienen prioridad. Jose Diaz Tutoring no se hace responsable de plazos perdidos, cargos u otras consecuencias por usar estos recursos. El verificador de puntaje es una estimación; solo tu escuela puede confirmar que cumples un requisito. "Resumir con Claude" abre un servicio de IA de terceros cuyas respuestas pueden tener errores.</p>
     `,
   tosEnding: `
       <h2>Fin del servicio</h2>

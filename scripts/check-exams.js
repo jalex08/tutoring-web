@@ -78,6 +78,8 @@ const evIds = new Set();
     if (it.src && !D.sources[it.src]) err(`audience ${a.id} item ${i}: unknown source ${it.src}`);
   });
 });
+if (D.notice) ["short", "title", "body", "report", "checker", "claude", "ics"].forEach((k) => bi(D.notice[k], `notice.${k}`));
+else warn("no \"notice\" block: the date disclaimer will fall back to the template text");
 Object.entries(D.resources || {}).forEach(([k, r]) => { bi(r.label, `resource ${k}`); if (!/^https:\/\//.test(r.url)) err(`resource ${k}: URL must be https`); });
 Object.entries(D.sources || {}).forEach(([k, s]) => { if (!/^https:\/\//.test(s.url)) err(`source ${k}: URL must be https`); });
 

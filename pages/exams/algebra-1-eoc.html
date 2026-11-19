@@ -18,6 +18,7 @@
       <h1 data-i18n="egH1">Algebra 1 EOC</h1>
       <p class="lede" data-i18n="egLede">Florida's end-of-course exam for Algebra 1. Passing it, or an approved alternative, is part of earning a standard high school diploma.</p>
       <p class="status" id="examStatus">{{x:examStatus}}</p>
+      <p class="notice-short"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="8" fill="none" stroke="#1C4C9E" stroke-width="1.6"/><path d="M9 8v5" stroke="#1C4C9E" stroke-linecap="round" stroke-width="1.8"/><circle cx="9" cy="5.3" r="1.1" fill="#1C4C9E"/></svg><span data-notice="short">{{x:notice.short}}</span></p>
     </div>
     <div class="sheet margin pass">
       <div>
@@ -48,6 +49,7 @@
         <span data-i18n="egClaudeBtn">Summarize with Claude</span>
       </a>
       <p data-i18n="egClaudeP">Opens Claude in a new tab with this page's key facts, so you can ask about your own situation. You may need to sign in.</p>
+      <p class="claude-ai"><span data-notice="claude">{{x:notice.claude}}</span></p>
     </div>
   </aside>
 </div>
@@ -90,6 +92,7 @@
       <ul class="nexts chk-list nojs-only">{{x:chkList}}</ul>
       <div aria-live="polite" class="result" id="chkResult"></div>
       <p class="fine-note" id="chkNote">{{x:chkNote}}</p>
+      <p class="fine-note"><span data-notice="checker">{{x:notice.checker}}</span></p>
     </div>
   </div>
 </section>
@@ -150,6 +153,11 @@
         <div class="acts"><a class="btn btn-ghost" href="/#contact">Book a free 20-minute intro</a></div>
       </div>
     </div>
+    <aside class="sheet notice notice-guide" aria-labelledby="notice-h-exam"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="8" fill="none" stroke="#1C4C9E" stroke-width="1.6"/><path d="M9 8v5" stroke="#1C4C9E" stroke-linecap="round" stroke-width="1.8"/><circle cx="9" cy="5.3" r="1.1" fill="#1C4C9E"/></svg><div>
+        <h2 id="notice-h-exam"><span data-notice="title">{{x:notice.title}}</span></h2>
+        <p><span data-notice="body">{{x:notice.body}}</span></p>
+        <p class="notice-report"><span data-notice="report">{{x:notice.report}}</span> <!--notice-contact--></p>
+      </div></aside>
     <div class="sources">
       <b><span data-i18n="egSrcH">Sources, checked</span> <span data-checked>{{x:checked}}</span></b>
       <ul id="srcList">{{x:srcList}}</ul>
@@ -159,5 +167,5 @@
 
 <div class="motto">
   <!--site-motto-->
-  <div class="wrap acts"><a class="btn btn-primary" href="/#contact" data-i18n="ctaLong">Book a free 20-minute intro</a><a class="btn btn-ghost wa-link" href="https://wa.me/17868329107" target="_blank" rel="noopener">WhatsApp</a></div>
+  <div class="wrap acts"><a class="btn btn-primary" href="/#contact" data-i18n="ctaLong">Book a free 20-minute intro</a><a class="btn btn-ghost wa-link" href="{{cfg:wa}}" target="_blank" rel="noopener">WhatsApp</a></div>
 </div>

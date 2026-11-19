@@ -405,6 +405,12 @@ function examPage(page, lang) {
   };
   const title = meta("title"), desc = meta("description"), exam = meta("exam", false);
   body = replaceOne(body.trim(), /<!--site-motto-->/g, () => P.motto, "motto placeholder");
+  // contact details from CONFIG, never typed in the page sources (no email link if CONFIG.email isn't set)
+  const waUrl = `https://wa.me/${CONFIG.whatsapp}`;
+  body = body.replace(/\{\{cfg:wa\}\}/g, waUrl).replace(/<!--notice-contact-->/g, () =>
+    `<a class="wa-link" href="${waUrl}" target="_blank" rel="noopener">WhatsApp</a>` +
+    (isSet(CONFIG.email) ? ` · <a href="mailto:${esc(CONFIG.email)}">${lang === "es" ? ES.footEmail : "Email"}</a>` : ""));
+  if (/\{\{cfg:|<!--notice-contact-->/.test(body)) fail(`${page.src}: unfilled contact placeholder`);
   // the floating WhatsApp button sits inside <main>, like the legal pages
   body += `\n\n${P.wa.replace(" is-hidden", "")}`;
 

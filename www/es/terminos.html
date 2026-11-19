@@ -101,6 +101,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   @media (max-width:920px){.nav{display:none}}
   @media (max-width:560px){.head-cta{display:none}.mark small{display:none}}
   @media (max-width:380px){.mark{font-size:1.08rem}.head-in{gap:14px}}
+  /* Spanish header between the nav breakpoint and ~1120px: the longer labels wrapped (#14b), so use the
+     short CTA label, a tighter nav and no subtitle there. English never needs it. */
+  .cta-mini{display:none}
+  @media (min-width:921px) and (max-width:1120px){
+    html[lang="es"] .head-cta .cta-full,html[lang="es"] .mark small{display:none}
+    html[lang="es"] .head-cta .cta-mini{display:inline}
+    html[lang="es"] .nav{gap:16px}
+  }
 
   /* floating WhatsApp */
   .wa-float{position:fixed;right:18px;bottom:18px;z-index:30;display:inline-flex;align-items:center;gap:9px;
@@ -225,7 +233,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <a href="/terms/" hreflang="en" lang="en" data-lang="en">EN</a>
       <a href="/es/terminos/" hreflang="es" lang="es" data-lang="es" aria-current="page">ES</a>
     </nav>
-    <a class="btn btn-primary head-cta" href="/es/#contact" data-i18n="ctaShort">Agenda una llamada gratis</a>
+    <a class="btn btn-primary head-cta" href="/es/#contact"><span class="cta-full" data-i18n="ctaShort">Agenda una llamada gratis</span><span class="cta-mini" data-i18n="ctaMini">Llamada gratis</span></a>
   </div>
 </header>
 
@@ -256,6 +264,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <li><a href="#grabacion-de-sesiones">Grabación de sesiones</a></li>
       <li><a href="#mensajes-sobre-tus-sesiones">Mensajes sobre tus sesiones</a></li>
       <li><a href="#materiales">Materiales</a></li>
+      <li><a href="#recursos-gratuitos-y-fechas-de-examenes">Recursos gratuitos y fechas de exámenes</a></li>
       <li><a href="#fin-del-servicio">Fin del servicio</a></li>
       <li><a href="#limite-de-responsabilidad">Límite de responsabilidad</a></li>
       <li><a href="#desacuerdos-y-ley-aplicable">Desacuerdos y ley aplicable</a></li>
@@ -362,6 +371,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <section class="sec" data-i18n="tosMaterials">
       <h2 id="materiales">Materiales</h2>
       <p>Las hojas de ejercicios, las soluciones y los apuntes que te doy son para tu estudio personal. Por favor, no los revendas ni los publiques.</p>
+    </section>
+
+    <section class="sec" data-i18n="tosFreeResources">
+      <h2 id="recursos-gratuitos-y-fechas-de-examenes">Recursos gratuitos y fechas de exámenes</h2>
+      <p>El calendario de exámenes, el verificador de puntaje y las demás guías gratuitas de este sitio son para planificar e informarte en general. Reviso las fechas en las fuentes oficiales, pero las escuelas, los distritos, el Departamento de Educación de Florida, College Board, ACT y las universidades pueden cambiar fechas, plazos y requisitos en cualquier momento. El calendario de tu escuela y las fuentes oficiales siempre tienen prioridad. Jose Diaz Tutoring no se hace responsable de plazos perdidos, cargos u otras consecuencias por usar estos recursos. El verificador de puntaje es una estimación; solo tu escuela puede confirmar que cumples un requisito. "Resumir con Claude" abre un servicio de IA de terceros cuyas respuestas pueden tener errores.</p>
     </section>
 
     <section class="sec" data-i18n="tosEnding">

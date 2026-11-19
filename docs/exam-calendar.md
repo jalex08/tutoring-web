@@ -39,6 +39,12 @@ www/es/examenes.html, www/es/examenes/…           <script id="exam-data"> bloc
   field notes, resources, sources, score list and ruler. So the pages work without JavaScript
   and search engines see the real content. The script then replaces those containers with the
   interactive versions. Date math on the server uses today in America/New_York.
+- **Date notice.** `notice` in the data (EN/ES): `short` (top band), `title` + `body` + `report`
+  (the "A note about these dates" box), `checker` (under the score checker), `claude` (under
+  "Summarize with Claude") and `ics` (added to every downloaded calendar file). The server renders
+  them into `data-notice` slots; if the data has no `notice`, `NOTICE_FALLBACK` in
+  `exam-calendar.js` is used. The WhatsApp/Email links after `report` come from `CONFIG` in
+  `www/index.html` at build time (no Email link if `CONFIG.email` isn't set).
 - **Strings.** `STRINGS` in `exam-calendar.js` is the only copy of the EN/ES interface text
   ("Testing window", "opens in 11 days" …); the build writes it into the page script.
 - **Fallback.** If `site-exams` is missing, unreadable or invalid, the server uses the data built

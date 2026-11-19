@@ -10,7 +10,7 @@
  *   Exam guide page: <body data-exam="alg1"> · #examStatus · [data-nextwin]
  *                    #winList · #heroRuler · #chkForm/#chkTest/#chkScore/#chkResult/#chkNote
  *                    #waffle · #brkList · #examLinks · #srcList · #claudeBtn
- *   Both:            [data-checked]
+ *   Both:            [data-checked] · [data-notice=short|title|body|report|checker|claude] (text from D.notice)
  *
  * The server (exam-calendar.js) renders the same containers first, so the page works without
  * JavaScript; #srcList is server-only.
@@ -54,6 +54,9 @@
   function dow(d) { return cap(clean(new Intl.DateTimeFormat(LOC, { weekday: "short" }).format(d))); }
   function md(d) { return LANG === "es" ? d.getDate() + " " + mon(d).toLowerCase() : mon(d) + " " + d.getDate(); }
   function mdy(d) { return LANG === "es" ? d.getDate() + " de " + clean(new Intl.DateTimeFormat("es-US", { month: "long" }).format(d)) + " de " + d.getFullYear() : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d); }
+  // Spanish window in a sentence: "del 3 al 28 de mayo", "del 30 de noviembre al 18 de diciembre" (same as the server)
+  function dm(d) { return d.getDate() + " de " + new Intl.DateTimeFormat("es-US", { month: "long" }).format(d); }
+  function delAl(ev) { var a = P(ev.start), b = P(ev.end || ev.start); if (+a === +b) return "el " + dm(a); return a.getMonth() === b.getMonth() ? "del " + a.getDate() + " al " + dm(b) : "del " + dm(a) + " al " + dm(b); }
   function range(ev) { var a = P(ev.start); return ev.end ? md(a) + " – " + md(P(ev.end)) : md(a); }
   function rel(n) { if (n === 0) return t("today"); if (n === 1) return t("tomorrow"); if (n <= 45) return t("inDays", { n: n }); if (n <= 120) return t("inWeeks", { n: Math.round(n / 7) }); return t("inMonths", { n: Math.round(n / 30.4) }); }
   function status(ev) {
@@ -293,7 +296,7 @@
     var txt = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Jose Diaz Tutoring//Exam calendar//EN", "CALSCALE:GREGORIAN", "BEGIN:VEVENT",
       "UID:" + ev.id + "-" + D.schoolYear + "@josediaztutoring.com", "DTSTAMP:" + stamp,
       "DTSTART;VALUE=DATE:" + f(a), "DTEND;VALUE=DATE:" + f(b), "SUMMARY:" + icsEsc(nm(ev.label)),
-      "DESCRIPTION:" + icsEsc((ev.note ? nm(ev.note) + "\n" : "") + (LANG === "es" ? "Fuente: " : "Source: ") + src.label + " " + src.url + "\n" + SITE + HUB),
+      "DESCRIPTION:" + icsEsc((ev.note ? nm(ev.note) + "\n" : "") + (D.notice && D.notice.ics ? nm(D.notice.ics) + "\n" : "") + (LANG === "es" ? "Fuente: " : "Source: ") + src.label + " " + src.url + "\n" + SITE + HUB),
       "BEGIN:VALARM", "TRIGGER:-P2D", "ACTION:DISPLAY", "DESCRIPTION:" + icsEsc(nm(ev.label)), "END:VALARM",
       "END:VEVENT", "END:VCALENDAR"].join("\r\n");
     var url = URL.createObjectURL(new Blob([txt], { type: "text/calendar" }));
@@ -322,7 +325,7 @@
       }
     }
     var nw = document.querySelector("[data-nextwin]");
-    if (nw) nw.textContent = w ? t("nextWinText", { w: nm(w.short).toLowerCase(), r: range(w) }) : t("nextWinNone", { y: nextYear() });
+    if (nw) nw.textContent = w ? t("nextWinText", { w: nm(w.short).toLowerCase(), r: LANG === "es" ? delAl(w) : range(w) }) : t("nextWinNone", { y: nextYear() });
     var ol = $("winList");
     if (ol) {
       ol.innerHTML = "";
@@ -447,6 +450,7 @@
 
   /* ---------- init ---------- */
   if (q.get("for") && audById(q.get("for"))) S.aud = q.get("for");
+  if (D.notice) [].forEach.call(document.querySelectorAll("[data-notice]"), function (b) { var v = D.notice[b.getAttribute("data-notice")]; if (v) b.textContent = nm(v); });
   [].forEach.call(document.querySelectorAll("[data-checked]"), function (b) { b.textContent = mdy(P(D.checked)); });
   renderFinder(false); drawYear(true); renderChips(); renderLedger(); renderExam();
   var rz;

@@ -296,3 +296,24 @@ section{padding:46px 0}
 .chk-lede{margin-top:8px;max-width:64ch}
 .sources{margin-top:26px}
 .claude .btn:hover{color:#fff}
+
+/* v2 (2026-11-19): all-exams grid alignment + roomier resource links */
+.allgrid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.allgrid .aud-item{align-content:start}
+.res a{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:start}
+.res .badge{grid-column:1;justify-self:start;transform:none}
+.res a>span:not(.badge):not(.ext){grid-column:1}
+.res .ext{grid-column:2;grid-row:1 / span 2;align-self:center}
+
+/* v2: date notice */
+.notice-short{display:flex;gap:9px;align-items:flex-start;margin-top:12px;font-size:.92rem;color:var(--muted);max-width:70ch}
+.notice-short svg,.notice svg{flex:none;margin-top:3px}
+.notice{display:flex;gap:14px;padding:22px 26px 20px;margin-top:6px}
+.notice h2{font-size:1.2rem;margin-bottom:6px}
+.notice p{font-size:.97rem;max-width:74ch}
+.notice .notice-report{margin-top:10px;font-weight:700}
+.notice .notice-report a{margin-left:4px}
+.claude .claude-ai{font-size:.84rem;color:var(--muted);flex-basis:100%;max-width:none}
+.notice-guide{margin-top:22px}
+.band .notice-short{margin-top:14px}
+@media (max-width:600px){.notice{padding:18px 16px}}

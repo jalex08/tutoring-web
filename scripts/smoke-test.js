@@ -434,7 +434,7 @@ srv.listen(0, async () => {
           assert.match(h, /<svg id="yearsvg"[^>]*><title id="yeartitle">2026–27<\/title><\/svg>/);
           assert.ok(h.includes("<noscript><style>#graph,"), "graph hidden without JS");
         } else {
-          assert.ok(t.includes(lang === "es" ? "Próxima oportunidad: invierno, del 30 nov – 18 dic." : "Next chance: winter window, Nov 30 – Dec 18."), "next window");
+          assert.ok(t.includes(lang === "es" ? "Próxima oportunidad: invierno, del 30 de noviembre al 18 de diciembre." : "Next chance: winter window, Nov 30 – Dec 18."), "next window");
           assert.ok(t.includes(lang === "es" ? "Próximo período: Invierno, 30 nov – 18 dic" : "Next window: Winter, Nov 30 – Dec 18"), "status line");
           assert.equal((h.match(/<li( class="(past|now)")?><div class="w-name">/g) || []).length, 4, "four windows");
           assert.equal((h.match(/<div class="brk">/g) || []).length, bundled.exams[0].breaks.length, "field notes");
@@ -451,6 +451,26 @@ srv.listen(0, async () => {
   const rowLines = (h) => [...h.slice(h.indexOf('id="ledger"')).matchAll(/<li class="row[^"]*">([\s\S]*?)<\/li>/g)].map((m) => {
     const g = (re) => decode(((m[1].match(re) || [])[1] || "").replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
     return `${g(/<span class="mon">(.*?)<\/span>/)} ${g(/<span class="day">(.*?)<\/span>/)} ${g(/<span class="dow">(.*?)<\/span>/)} | ${g(/<p class="title">(.*?)<\/p>/)} | ${g(/<p class="meta">(.*?)<\/p>/)}`;
+  });
+  await check("exam pages: date notice in every slot, page language, server-rendered; contact links from CONFIG", () => {
+    const N = bundled.notice;
+    const slots = (h) => Object.fromEntries([...h.matchAll(/<span data-notice="(\w+)">([^<]*)<\/span>/g)].map((m) => [m[1], decode(m[2])]));
+    for (const page of EXAMS) for (const lang of ["en", "es"]) {
+      const h = examHtml[page[lang]], got = slots(h);
+      const want = page.guide ? ["short", "claude", "checker", "title", "body", "report"] : ["short", "title", "body", "report"];
+      assert.deepEqual(Object.keys(got).sort(), [...want].sort(), page[lang]);
+      for (const k of want) assert.equal(got[k], N[k][lang], `${page[lang]} ${k}`);
+      assert.match(h, /<p class="notice-short"><svg aria-hidden="true"/);
+      assert.match(h, /<aside class="sheet notice[^"]*" aria-labelledby="notice-h-(hub|exam)">/);
+      const report = h.match(/<p class="notice-report">([\s\S]*?)<\/p>/)[1];
+      assert.ok(report.includes('href="https://wa.me/17868329107"') && report.includes('href="mailto:jose@josediaztutoring.com"'), report);
+      assert.ok(report.includes(lang === "es" ? ">Correo</a>" : ">Email</a>"));
+      assert.ok(!/class="[^"]*\bhl\b/.test(h.slice(h.indexOf("<main"), h.indexOf("<script id=\"exam-data\""))), "no highlighter in the server-rendered page");
+    }
+    // a data file without "notice" -> the fallback text
+    const D = examCal.parse(JSON.stringify({ ...bundled, notice: undefined }));
+    const f = examCal.fill(fsx.readFileSync("www/es/examenes.html", "utf8"), D, "2026-11-19");
+    assert.ok(f.includes(examCal.NOTICE_FALLBACK.short.es) && f.includes("Una nota sobre estas fechas"));
   });
   await check("exam pages: spot-check dates against the JSON", () => {
     const rows = rowLines(examHtml["/exams/"]), rowsEs = rowLines(examHtml["/es/examenes/"]);
@@ -504,7 +524,7 @@ srv.listen(0, async () => {
     const changed = JSON.parse(JSON.stringify(bundled));
     const sat = changed.events.find((e) => e.id === "sat-dec");
     sat.start = "2026-12-06";
-    changed.revision = 2;
+    changed.revision = bundled.revision + 1;
     const quiet = console.warn, loud = console.log, warnings = [];
     console.warn = (...a) => warnings.push(a.join(" "));
     console.log = () => {};
@@ -512,7 +532,7 @@ srv.listen(0, async () => {
       app._setExamsSource(async () => JSON.stringify(changed));
       const rows = rowLines(await (await get("/exams/")).text());
       assert.ok(rows.includes("Dec 6 Sun | SAT | Test day SAT") && !rows.includes("Dec 5 Sat | SAT | Test day SAT"), "new date not shown");
-      assert.equal((await (await get("/exams/data.json")).json()).revision, 2);
+      assert.equal((await (await get("/exams/data.json")).json()).revision, bundled.revision + 1);
       // cached: the secret is read once, then not again within 10 minutes
       let reads = 0;
       app._setExamsSource(async () => { reads++; return JSON.stringify(changed); });
@@ -524,7 +544,7 @@ srv.listen(0, async () => {
         app._setExamsSource(src);
         const rows = rowLines(await (await get("/exams/")).text());
         assert.ok(rows.includes("Dec 5 Sat | SAT | Test day SAT"), `${what}: bundled data not served`);
-        assert.equal((await (await get("/exams/data.json")).json()).revision, 1, what);
+        assert.equal((await (await get("/exams/data.json")).json()).revision, bundled.revision, what);
       }
       assert.ok(warnings.some((w) => /invalid/.test(w)) && warnings.some((w) => /not set/.test(w)) && warnings.some((w) => /couldn't read/.test(w)), "no warning logged");
     } finally {

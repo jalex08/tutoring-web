@@ -66,10 +66,27 @@ const STRINGS = {
     showingFor: "Mostrando las fechas de {g}.", showEvery: "Ver todos los exámenes",
     allIntro: "Todos los exámenes de este calendario. Elige un grado arriba para ver la lista corta.",
     footFor: "Estos exámenes aparecen resaltados en el calendario de abajo.", waffle: "{n} de cada 100 aprobaron",
-    nextWinText: "{w}, del {r}", nextWinNone: "el calendario {y}",
+    nextWinText: "{w}, {r}", nextWinNone: "el calendario {y}",
     rulerLabel: "Escala del {e}: de {a} a {b}. El Nivel 3 empieza en {c}.", meets: "{c} o más",
     claudeIntro: "Soy padre/madre en Florida. Resume en español, con palabras sencillas, lo más importante de esta página sobre el {e}. Luego pregúntame en qué grado está mi hijo/a y si ya tomó el examen, y dime qué hacer ahora.",
     claudeFacts: "Datos clave de la página ({y}, revisados el {d}):", claudeEnd: "Si algo depende de la escuela, dime qué preguntarle al consejero.", page: "Página: " },
+};
+
+// The date notice. The live text is D.notice (EN/ES) in the data; this is used only for a data file
+// without a "notice" block (or without one of its keys).
+const NOTICE_KEYS = ["short", "title", "body", "report", "checker", "claude", "ics"];
+const NOTICE_FALLBACK = {
+  short: { en: "Dates come from official sources and are checked regularly, but schools and testing agencies can change them. Always confirm with your school or the official site before you register or plan.",
+    es: "Las fechas vienen de fuentes oficiales y se revisan con frecuencia, pero las escuelas y las agencias de exámenes pueden cambiarlas. Confirma siempre con tu escuela o en el sitio oficial antes de inscribirte o hacer planes." },
+  title: { en: "A note about these dates", es: "Una nota sobre estas fechas" },
+  body: { en: "I check every date against its official source and update this page when something changes. Still, schools, districts, the Florida Department of Education, College Board, ACT and colleges can move a date, a deadline or a rule at any time, sometimes at the last minute. This calendar is a free planning guide, not an official schedule: your school's calendar and the official sources linked here always come first, so please confirm before you register, pay a fee or plan around a date. Jose Diaz Tutoring isn't responsible for missed deadlines, fees or other outcomes based on the information on this page.",
+    es: "Reviso cada fecha en su fuente oficial y actualizo esta página cuando algo cambia. Aun así, las escuelas, los distritos, el Departamento de Educación de Florida, College Board, ACT y las universidades pueden cambiar una fecha, un plazo o una regla en cualquier momento, a veces a última hora. Este calendario es una guía gratuita para planificar, no un calendario oficial: el calendario de tu escuela y las fuentes oficiales que enlazo aquí siempre tienen la última palabra, así que confirma antes de inscribirte, pagar una tarifa o planificar alrededor de una fecha. Jose Diaz Tutoring no se hace responsable de plazos perdidos, cargos u otras consecuencias por usar la información de esta página." },
+  report: { en: "Spotted a date that changed? Tell me and I'll fix it.", es: "¿Viste una fecha que cambió? Avísame y la corrijo." },
+  checker: { en: "This checker is a quick guide based on the scores FDOE publishes. Only your school counselor can confirm that a requirement is met.",
+    es: "Este verificador es una guía rápida basada en las notas que publica el FDOE. Solo el consejero de la escuela puede confirmar que se cumplió un requisito." },
+  claude: { en: "Claude's answer is written by AI and can make mistakes. Check anything important against the official sources.",
+    es: "La respuesta de Claude la escribe una IA y puede equivocarse. Comprueba lo importante en las fuentes oficiales." },
+  ics: { en: "Dates can change. Confirm with your school or the official source.", es: "Las fechas pueden cambiar. Confírmalas con tu escuela o en la fuente oficial." },
 };
 
 // Sources listed at the bottom of a guide, in this order (keys of data.sources; missing ones are skipped).
@@ -159,6 +176,10 @@ function problems(D) {
     if (!(T.min <= T.cut && T.cut <= T.max) || T.step <= 0) out.push(`algebra1Requirement test ${T.id}: needs min <= cut <= max and step > 0`);
   }
   bi(req.note, "algebra1Requirement.note");
+  if (D.notice !== undefined) {
+    if (!isObj(D.notice)) out.push('"notice" must be an object');
+    else for (const k of NOTICE_KEYS) if (D.notice[k] !== undefined) bi(D.notice[k], `notice.${k}`);
+  }
   const st = D.stats.alg1PassRate2026;
   if (!isObj(st) || !["grades9to12", "grade8AndLower"].every((k) => Number.isInteger(st[k]) && st[k] >= 0 && st[k] <= 100)) {
     out.push("stats.alg1PassRate2026 needs grades9to12 and grade8AndLower (0–100)");
@@ -211,6 +232,13 @@ function context(D, lang, today) {
   const mdy = (d) => (lang === "es" ? `${d.getUTCDate()} de ${clean(f({ month: "long" }, d))} de ${d.getUTCFullYear()}` : f({ month: "short", day: "numeric", year: "numeric" }, d));
   const monthYear = (d) => cap(lang === "es" ? `${f({ month: "long" }, d)} de ${d.getUTCFullYear()}` : f({ month: "long", year: "numeric" }, d));
   const range = (ev) => (ev.end ? md(P(ev.start)) + " – " + md(P(ev.end)) : md(P(ev.start)));
+  // Spanish window in a sentence: "del 3 al 28 de mayo", "del 30 de noviembre al 18 de diciembre"
+  const dm = (d) => `${d.getUTCDate()} de ${f({ month: "long" }, d)}`;
+  const delAl = (ev) => {
+    const a = P(ev.start), b = P(ev.end || ev.start);
+    if (+a === +b) return `el ${dm(a)}`;
+    return a.getUTCMonth() === b.getUTCMonth() ? `del ${a.getUTCDate()} al ${dm(b)}` : `del ${dm(a)} al ${dm(b)}`;
+  };
   const rel = (n) => (n === 0 ? t("today") : n === 1 ? t("tomorrow") : n <= 45 ? t("inDays", { n }) : n <= 120 ? t("inWeeks", { n: Math.round(n / 7) }) : t("inMonths", { n: Math.round(n / 30.4) }));
   function status(ev) {
     const a = P(ev.start), b = ev.end ? P(ev.end) : a;
@@ -225,7 +253,7 @@ function context(D, lang, today) {
   const upcoming = () => D.events.filter((e) => status(e).state !== "past").sort(byDate);
   const nextFor = (id) => upcoming().filter((e) => (e.exam === id || (e.also || []).includes(id)) && e.type !== "reg" && e.type !== "late")[0];
   const guideURL = (x) => (x && x.pageLive ? (lang === "es" ? x.pageEs : x.page) : null);
-  return { D, lang, L, t, nm, esc, mon, dow, md, mdy, monthYear, range, status, examOf, evById, byDate, upcoming, nextFor, guideURL };
+  return { D, lang, L, t, nm, esc, mon, dow, md, mdy, monthYear, range, delAl, status, examOf, evById, byDate, upcoming, nextFor, guideURL };
 }
 
 // --- rendered blocks (same markup as pages/exams/exams.js, which replaces them in the browser) ---
@@ -298,7 +326,7 @@ function examStatus(c, exam) {
 function nextWinText(c, exam) {
   const w = nextWin(c, exam);
   if (!w) return c.esc(c.t("nextWinNone", { y: c.D.nextYear.label }));
-  return c.esc(c.t("nextWinText", { w: c.nm(w.short).toLowerCase(), r: c.range(w) }));
+  return c.esc(c.t("nextWinText", { w: c.nm(w.short).toLowerCase(), r: c.lang === "es" ? c.delAl(w) : c.range(w) }));
 }
 
 /** Guide, #winList. */
@@ -409,6 +437,10 @@ function value(name, c, exam) {
     case "chkList": return chkList(c);
     case "chkNote": return c.esc(c.nm(c.D.algebra1Requirement.note));
     case "heroRuler": return heroRuler(c, needExam());
+    case "notice.short": case "notice.title": case "notice.body": case "notice.report": case "notice.checker": case "notice.claude": {
+      const k = name.slice(7), v = c.D.notice && c.D.notice[k];
+      return c.esc(c.nm(v && v[c.lang] ? v : NOTICE_FALLBACK[k]));
+    }
     case "rulerLabel": return rulerLabel(c, needExam());
   }
   if ((m = name.match(/^cut\.([\w-]+)$/))) {
@@ -446,7 +478,7 @@ function embedded(html) {
 /** One-line description (logs, set-exams.sh). */
 const summary = (D) => `school year ${D.schoolYear}, revision ${D.revision}, checked ${D.checked}, ${D.events.length} dates, ${D.exams.length} exams`;
 
-module.exports = { TZ, SITE, STRINGS, GUIDE_SOURCES, MAX_BYTES, problems, parse, fill, embedded, inlineJson, todayInFlorida, yearText, summary, TOKEN_RE, DATA_RE };
+module.exports = { TZ, SITE, STRINGS, NOTICE_FALLBACK, GUIDE_SOURCES, MAX_BYTES, problems, parse, fill, embedded, inlineJson, todayInFlorida, yearText, summary, TOKEN_RE, DATA_RE };
 
 if (require.main === module) {
   const file = process.argv[2];

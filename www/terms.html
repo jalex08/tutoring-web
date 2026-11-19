@@ -101,6 +101,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   @media (max-width:920px){.nav{display:none}}
   @media (max-width:560px){.head-cta{display:none}.mark small{display:none}}
   @media (max-width:380px){.mark{font-size:1.08rem}.head-in{gap:14px}}
+  /* Spanish header between the nav breakpoint and ~1120px: the longer labels wrapped (#14b), so use the
+     short CTA label, a tighter nav and no subtitle there. English never needs it. */
+  .cta-mini{display:none}
+  @media (min-width:921px) and (max-width:1120px){
+    html[lang="es"] .head-cta .cta-full,html[lang="es"] .mark small{display:none}
+    html[lang="es"] .head-cta .cta-mini{display:inline}
+    html[lang="es"] .nav{gap:16px}
+  }
 
   /* floating WhatsApp */
   .wa-float{position:fixed;right:18px;bottom:18px;z-index:30;display:inline-flex;align-items:center;gap:9px;
@@ -225,7 +233,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <a href="/terms/" hreflang="en" lang="en" data-lang="en" aria-current="page">EN</a>
       <a href="/es/terminos/" hreflang="es" lang="es" data-lang="es">ES</a>
     </nav>
-    <a class="btn btn-primary head-cta" href="/#contact" data-i18n="ctaShort">Book a free intro</a>
+    <a class="btn btn-primary head-cta" href="/#contact"><span class="cta-full" data-i18n="ctaShort">Book a free intro</span><span class="cta-mini" data-i18n="ctaMini">Free intro</span></a>
   </div>
 </header>
 
@@ -256,6 +264,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <li><a href="#recording-sessions">Recording sessions</a></li>
       <li><a href="#messages-about-your-sessions">Messages about your sessions</a></li>
       <li><a href="#materials">Materials</a></li>
+      <li><a href="#free-resources-and-exam-dates">Free resources and exam dates</a></li>
       <li><a href="#ending-the-service">Ending the service</a></li>
       <li><a href="#limitation-of-liability">Limitation of liability</a></li>
       <li><a href="#disputes-and-governing-law">Disputes and governing law</a></li>
@@ -362,6 +371,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <section class="sec" data-i18n="tosMaterials">
       <h2 id="materials">Materials</h2>
       <p>Worksheets, solutions and notes I give you are for your own study. Please don't resell them or post them publicly.</p>
+    </section>
+
+    <section class="sec" data-i18n="tosFreeResources">
+      <h2 id="free-resources-and-exam-dates">Free resources and exam dates</h2>
+      <p>The exam calendar, score checker and other free guides on this site are for general planning and information. I check dates against official sources, but schools, districts, the Florida Department of Education, College Board, ACT and colleges can change dates, deadlines and requirements at any time. Your school's calendar and the official sources always take priority. Jose Diaz Tutoring isn't responsible for missed deadlines, fees or other outcomes based on these resources. Score checks are an estimate; only your school can confirm that a requirement is met. "Summarize with Claude" opens a third-party AI service whose answers can contain mistakes.</p>
     </section>
 
     <section class="sec" data-i18n="tosEnding">
