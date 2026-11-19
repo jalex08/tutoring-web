@@ -160,6 +160,7 @@ module.exports = {
   footGbp: "Perfil en Google",
   footReview: "Déjame una reseña en Google",
   footContact: "Contacto",
+  footWaDetail: "Respuesta más rápida", footCall: "Llamar o escribir", footEmail: "Correo", footLiDetail: "Trayectoria profesional",
   footPolicies: "Políticas", footPrivacy: "Privacidad", footTerms: "Términos", footA11y: "Accesibilidad",
   footFine: "Servicio independiente de tutorías. Sin afiliación con las instituciones mencionadas en este sitio.",
   required: "(obligatorio)",

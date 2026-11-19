@@ -122,8 +122,22 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .legal-links{display:flex;flex-wrap:wrap;align-items:center}
   .legal-links li + li::before{content:"\00B7";color:var(--muted);padding:0 8px}
   .legal-links a[aria-current="page"]{color:var(--graphite);text-decoration:none;border-bottom:2px solid var(--ink)}
+  /* contact rows: icon + label + detail, one full-width link each */
+  .contact-rows{margin-bottom:6px}
+  .contact-rows li{border-bottom:1px solid #E3EDDD}
+  .contact-rows li:last-child{border-bottom:0} /* hidden rows are removed, so the last visible row is last */
+  .site-foot .contact-row{display:flex;align-items:center;gap:14px;min-height:56px;padding:8px 0;font-weight:400;text-decoration:none;color:var(--graphite)}
+  .contact-ic{flex:none;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;
+    background:var(--pad);border:1px solid var(--grid);color:var(--ink)}
+  .contact-ic svg{width:22px;height:22px}
+  .contact-txt{display:flex;flex-direction:column;min-width:0}
+  .contact-label{font:700 1rem/1.3 var(--body);color:var(--ink);text-underline-offset:3px}
+  .contact-detail{font-size:.875rem;line-height:1.35;color:#4D5656;overflow-wrap:anywhere} /* 7.5:1 on white */
+  .contact-row:hover .contact-label,.contact-row:focus-visible .contact-label{text-decoration:underline}
+  .site-foot .contact-row:focus-visible{outline:3px solid var(--ink);outline-offset:2px;border-radius:6px}
   .fine{grid-column:1/-1;border-top:1px solid var(--rule);padding-top:12px;font-size:.88rem;display:flex;flex-wrap:wrap;gap:2px 10px}
-  @media (max-width:760px){.foot-grid{grid-template-columns:1fr;padding-bottom:96px}} /* room for the WhatsApp button */
+  @media (max-width:1099px){.foot-grid{padding-bottom:96px}} /* room for the floating WhatsApp button: below ~1100px it can reach the fine print */
+  @media (max-width:760px){.foot-grid{grid-template-columns:1fr}}
   /* ---- footer-css:end ---- */
   /* ==== shared:end ==== */
 /* Legal pages (privacy, terms, accessibility; EN + ES). scripts/build.js inlines
@@ -222,7 +236,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <ol><li><a href="/es/" data-i18n="crumbHome">Inicio</a></li><li aria-current="page" data-i18n="accCrumb">Accesibilidad</li></ol>
     </nav>
     <h1 data-i18n="accH1">Declaración de accesibilidad</h1>
-    <p class="updated"><span data-i18n="lastReviewed">Última revisión:</span> <time datetime="2026-11-17">17 de noviembre de 2026</time></p>
+    <p class="updated"><span data-i18n="lastReviewed">Última revisión:</span> <time datetime="2026-11-19">19 de noviembre de 2026</time></p>
   </div>
 </div>
 
@@ -292,11 +306,28 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
     <div>
       <h2 class="foot-h" data-i18n="footContact">Contacto</h2>
+      <!-- contact rows: filled from CONFIG (by the script at the end of www/index.html, and by scripts/build.js
+           for the static footers); a row whose value isn't set is left out.
+           Icons: Tabler Icons outline (MIT), inline so there are no extra requests. -->
+      <ul class="foot-list contact-rows">
+        <li id="foot-wa"><a class="contact-row wa-link" href="https://wa.me/17868329107" target="_blank" rel="noopener">
+          <span class="contact-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9"/><path d="M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1"/></svg></span>
+          <span class="contact-txt"><span class="contact-label">WhatsApp</span> <span class="contact-detail" data-i18n="footWaDetail">Respuesta más rápida</span></span>
+        </a></li>
+        <li id="foot-tel"><a class="contact-row" href="tel:+17868329107">
+          <span class="contact-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2"/></svg></span>
+          <span class="contact-txt"><span class="contact-label" data-i18n="footCall">Llamar o escribir</span> <span class="contact-detail">(786) 832-9107</span></span>
+        </a></li>
+        <li id="foot-mail"><a class="contact-row" href="mailto:jose@josediaztutoring.com">
+          <span class="contact-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10"/><path d="M3 7l9 6l9 -6"/></svg></span>
+          <span class="contact-txt"><span class="contact-label" data-i18n="footEmail">Correo</span> <span class="contact-detail">jose@josediaztutoring.com</span></span>
+        </a></li>
+        <li id="foot-li"><a class="contact-row li-link" href="https://www.linkedin.com/in/jalex-diaz/" target="_blank" rel="noopener">
+          <span class="contact-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 11v5"/><path d="M8 8v.01"/><path d="M12 16v-5"/><path d="M16 16v-3a2 2 0 1 0 -4 0"/><path d="M3 7a4 4 0 0 1 4 -4h10a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-10a4 4 0 0 1 -4 -4l0 -10"/></svg></span>
+          <span class="contact-txt"><span class="contact-label">LinkedIn</span> <span class="contact-detail" data-i18n="footLiDetail">Trayectoria profesional</span></span>
+        </a></li>
+      </ul>
       <ul class="foot-list">
-        <li><a href="tel:+17868329107">+1 (786) 832-9107</a></li>
-        <li><a class="wa-link" href="https://wa.me/17868329107" target="_blank" rel="noopener">WhatsApp</a></li>
-        <li><a href="mailto:jose@josediaztutoring.com">jose@josediaztutoring.com</a></li>
-        <li><a class="li-link" href="https://www.linkedin.com/in/jalex-diaz/" target="_blank" rel="noopener">LinkedIn</a></li>
         <li id="foot-gbp" hidden><a href="#" target="_blank" rel="noopener" data-i18n="footGbp">Perfil en Google</a></li>
         <li id="foot-review" hidden><a href="#" target="_blank" rel="noopener" data-i18n="footReview">Déjame una reseña en Google</a></li>
       </ul>
