@@ -1,0 +1,163 @@
+<!--
+  Algebra 1 EOC guide (/exams/algebra-1-eoc/): English source. Spanish text is in i18n/es.js (keys eg*, exm*).
+  `npm run build` turns this into the page templates www/exams/algebra-1-eoc.html and
+  www/es/examenes/eoc-algebra-1.html. {{x:name}} tokens are filled by the server at request time
+  from the exam data (exam-calendar.js). Markup and text: reference/algebra-1-eoc.en.html.
+  The FAQ below is copied word for word into the page's FAQPage structured data by the build.
+-->
+<meta name="title" content="Algebra 1 EOC: passing score, dates and how to prepare | Jose Diaz Tutoring" data-i18n-attr="content:egTitle">
+<meta name="description" content="Florida Algebra 1 EOC: passing score {{x:cut.alg1}}, {{x:year}} testing windows, other scores that meet the requirement, and free official practice." data-i18n-attr="content:egDesc">
+<meta name="exam" content="alg1">
+
+<div class="pad band exam-band">
+  <div class="wrap hero2">
+    <div>
+      <nav class="crumbs" aria-label="Breadcrumb" data-i18n-attr="aria-label:crumbLabel">
+        <ol><li><a href="/" data-i18n="crumbHome">Home</a></li><li><a href="/exams/" data-i18n="exCrumb">Exam calendar</a></li><li aria-current="page" data-i18n="egCrumb">Algebra 1 EOC</li></ol>
+      </nav>
+      <h1 data-i18n="egH1">Algebra 1 EOC</h1>
+      <p class="lede" data-i18n="egLede">Florida's end-of-course exam for Algebra 1. Passing it, or an approved alternative, is part of earning a standard high school diploma.</p>
+      <p class="status" id="examStatus">{{x:examStatus}}</p>
+    </div>
+    <div class="sheet margin pass">
+      <div>
+        <span class="big">{{x:cut.alg1}}<span aria-hidden="true" class="swipe"></span></span>
+        <span class="big-cap" data-i18n="egBigCap">the score that passes</span>
+      </div>
+      <div>
+        <h2 class="pass-h" data-i18n="egScaleH">Where {{x:cut.alg1}} sits on the scale</h2>
+        <svg aria-label="{{x:rulerLabel}}" class="ruler" id="heroRuler" role="img" viewBox="0 0 640 150">{{x:heroRuler}}</svg>
+      </div>
+      <p class="foot" data-i18n="egScaleFoot">Levels from FDOE's {{x:year}} EOC fact sheet. Level 3 means on grade level. Geometry passes at {{x:cut.geo}}.</p>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <aside aria-labelledby="tk" class="short" id="takeaways">
+    <h2 id="tk" data-i18n="egShortH">The short version</h2>
+    <ul data-i18n="egShort">
+      <li>Passing score is <b>{{x:cut.alg1}}</b> (Level 3). It's a graduation requirement, and it usually counts for 30% of the Algebra 1 grade.</li>
+      <li>Next chance: <b data-nextwin="en">{{x:nextwin}}</b>. Your school picks the exact day.</li>
+      <li>Not passed yet? SAT Math {{x:cut.sat}}, ACT Math {{x:cut.act}}, PSAT Math {{x:cut.psat}} or Geometry EOC Level 3 also meets the requirement.</li>
+      <li>It's on the computer and adapts to each answer: 160 minutes, with a built-in scientific calculator and reference sheet. Do the official practice test first.</li>
+    </ul>
+    <div class="claude">
+      <a class="btn btn-ghost" href="https://claude.ai/new" id="claudeBtn" rel="noopener" target="_blank">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18"><path d="M3 4.5h12M3 9h8M3 13.5h10" stroke="currentColor" stroke-linecap="round" stroke-width="2"/></svg>
+        <span data-i18n="egClaudeBtn">Summarize with Claude</span>
+      </a>
+      <p data-i18n="egClaudeP">Opens Claude in a new tab with this page's key facts, so you can ask about your own situation. You may need to sign in.</p>
+    </div>
+  </aside>
+</div>
+
+<section>
+  <div class="wrap two">
+    <div class="sheet glance">
+      <h2 class="sm-h" data-i18n="egGlanceH">At a glance</h2>
+      <dl data-i18n="egGlance">
+        <dt>Who takes it</dt><dd>Everyone enrolled in Algebra 1, middle schoolers included</dd>
+        <dt>Format</dt><dd>On the computer, computer-adaptive: questions get harder or easier based on answers</dd>
+        <dt>Length</dt><dd>One 160-minute session, break after 80 minutes. Students can keep working up to a normal school day.</dd>
+        <dt>Tools</dt><dd>Online scientific calculator and reference sheet built in</dd>
+        <dt>Results</dt><dd>Reported to the school within 24 hours</dd>
+        <dt>Retakes</dt><dd>Every window, until passed</dd>
+      </dl>
+    </div>
+    <div class="sheet windows">
+      <h2 class="sm-h" data-i18n="egWinH">{{x:year}} testing windows</h2>
+      <ol id="winList">{{x:winList}}</ol>
+      <p class="fine-note" data-i18n="egWinNote">Your school picks the day inside each window. Ask the teacher or counselor.</p>
+    </div>
+  </div>
+</section>
+
+<section id="checker" class="sec-tight">
+  <div class="wrap">
+    <div class="sheet margin checker">
+      <h2 data-i18n="egChkH">Check a score against the requirement</h2>
+      <p class="muted chk-lede" data-i18n="egChkP">Any one of these meets the Algebra 1 graduation requirement. Nothing you type leaves this page.</p>
+      <form class="form" id="chkForm" novalidate>
+        <label class="field"><span data-i18n="egChkTest">Test</span>
+          <select id="chkTest">{{x:chkOptions}}</select>
+        </label>
+        <label class="field"><span data-i18n="egChkScore">Score</span>
+          <input id="chkScore" inputmode="numeric" required type="number">
+        </label>
+        <button class="btn btn-primary" type="submit" data-i18n="egChkBtn">Check score</button>
+      </form>
+      <ul class="nexts chk-list nojs-only">{{x:chkList}}</ul>
+      <div aria-live="polite" class="result" id="chkResult"></div>
+      <p class="fine-note" id="chkNote">{{x:chkNote}}</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec-tight">
+  <div class="wrap">
+    <div class="sheet stat">
+      <div class="waffle" id="waffle" role="img" aria-label="{{x:waffleLabel}}">{{x:waffle}}</div>
+      <div data-i18n="egStat">
+        <div class="num">{{x:stat.grades9to12}}%</div>
+        <p>of high schoolers (grades 9–12) who took the Algebra 1 EOC in spring 2026 passed. Students who took it in 8th grade or earlier passed at {{x:stat.grade8AndLower}}%.</p>
+        <p>In my experience, students who don't pass are usually missing a handful of skills, not the whole course. Find those skills and the score moves.</p>
+        <p class="fine-note">Source: FDOE, 2026 FAST and B.E.S.T. EOC results.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec-tight">
+  <div class="wrap">
+    <div class="sheet margin breaks">
+      <h2 data-i18n="egBrkH">Where students lose points</h2>
+      <p class="src-line" data-i18n="egBrkP">From my sessions with students, not official data. I check these in the first session.</p>
+      <div id="brkList">{{x:brkList}}</div>
+    </div>
+  </div>
+</section>
+
+<section class="sec-tight">
+  <div class="wrap two">
+    <div>
+      <h2 class="sm-h" data-i18n="egLinksH">Free official practice</h2>
+      <div class="links" id="examLinks">{{x:examLinks}}</div>
+    </div>
+    <div class="faq">
+      <h2 class="sm-h faq-h" data-i18n="egFaqH">Questions parents ask</h2>
+      <div data-i18n="egFaq">
+        <details><summary>Can my child graduate without passing the EOC?</summary><p>Yes, with an approved score on another test: SAT Math {{x:cut.sat}}, PSAT/NMSQT or PSAT 10 Math {{x:cut.psat}}, ACT Math or PreACT Secure Math {{x:cut.act}}, CLT or CLT10 Quantitative Reasoning {{x:cut.clt}}, or Level 3 on the Geometry EOC.</p></details>
+        <details><summary>How many times can they retake it?</summary><p>As many as it takes. It's offered in fall, winter, spring and summer windows.</p></details>
+        <details><summary>Does the PERT still count?</summary><p>No. It isn't on FDOE's current list of alternative scores.</p></details>
+        <details><summary>When will we see the score?</summary><p>Results reach the school within 24 hours of finishing the test.</p></details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec-tight">
+  <div class="wrap">
+    <div class="sheet help">
+      <div data-i18n="egHelpGroup">
+        <h3>Small-group EOC review</h3>
+        <p>3 to 5 students, 2 hours, scheduled right before each testing window. We work the skills above on official-style questions.</p>
+        <div class="acts"><a class="btn btn-primary" href="/#contact">Ask about the next group</a></div>
+      </div>
+      <div data-i18n="egHelpOne">
+        <h3>One-on-one</h3>
+        <p>A first session to find the missing skills, then a plan up to test day. Online or in person in Broward and Miami-Dade.</p>
+        <div class="acts"><a class="btn btn-ghost" href="/#contact">Book a free 20-minute intro</a></div>
+      </div>
+    </div>
+    <div class="sources">
+      <b><span data-i18n="egSrcH">Sources, checked</span> <span data-checked>{{x:checked}}</span></b>
+      <ul id="srcList">{{x:srcList}}</ul>
+    </div>
+  </div>
+</section>
+
+<div class="motto">
+  <!--site-motto-->
+  <div class="wrap acts"><a class="btn btn-primary" href="/#contact" data-i18n="ctaLong">Book a free 20-minute intro</a><a class="btn btn-ghost wa-link" href="https://wa.me/17868329107" target="_blank" rel="noopener">WhatsApp</a></div>
+</div>

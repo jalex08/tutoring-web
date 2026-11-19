@@ -3,6 +3,7 @@
 !/app.yaml
 !/server.js
 !/pricing.js
+!/exam-calendar.js
 !/package.json
 !/package-lock.json
 !/www/

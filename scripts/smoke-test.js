@@ -12,6 +12,7 @@ const pricing = require("../pricing.js");
 
 let sent = [];
 const srv = createDevServer({ onSend: (m) => sent.push(m), pricingFile: "" });
+srv.keepAliveTimeout = 120e3; // some checks run for several seconds between requests
 let failures = 0;
 
 async function check(name, fn) {
@@ -346,16 +347,215 @@ srv.listen(0, async () => {
       assert.ok(h.includes(`<a href="${p}"`), p);
     assert.ok(h.includes("Independent tutoring service.") && h.includes("Servicio independiente de tutorías."));
   });
+  // ---- exam calendar ------------------------------------------------------------------------------
+  console.log("exam calendar (site-exams secret, filled by the server)");
+  const fsx = require("node:fs");
+  const examCal = require("../exam-calendar.js");
+  const bundled = JSON.parse(fsx.readFileSync("data/exams/2026-27.json", "utf8"));
+  const EXAMS = [
+    { en: "/exams/", es: "/es/examenes/", title: ["Florida exam calendar 2026–27 | Jose Diaz Tutoring", "Calendario de exámenes de Florida 2026–27 | Jose Diaz Tutoring"],
+      desc: ["Florida test dates for 2026–27: Algebra 1 and Geometry EOC, SAT, ACT, AP and college finals. Pick your student's grade to see what matters and when.",
+        "Fechas de exámenes en Florida 2026–27: EOC de Álgebra 1 y Geometría, SAT, ACT, AP y finales universitarios. Elige el grado y mira qué importa."] },
+    { en: "/exams/algebra-1-eoc/", es: "/es/examenes/eoc-algebra-1/", guide: true,
+      title: ["Algebra 1 EOC: passing score, dates and how to prepare | Jose Diaz Tutoring", "EOC de Álgebra 1: nota para aprobar, fechas y cómo prepararse | Jose Diaz Tutoring"],
+      desc: ["Florida Algebra 1 EOC: passing score 400, 2026–27 testing windows, other scores that meet the requirement, and free official practice.",
+        "EOC de Álgebra 1 en Florida: se aprueba con 400, períodos 2026–27, otras notas que cumplen el requisito y práctica oficial gratis."] },
+  ];
+  app._setExamsToday(() => "2026-11-19");
+  const examHtml = {};
+  for (const page of EXAMS) {
+    for (const [i, lang] of ["en", "es"].entries()) {
+      const p = page[lang];
+      const r = await get(p);
+      const h = await r.text();
+      examHtml[p] = h;
+      Object.assign(all, { [p]: h });
+      await check(`${p}: 200, cached 10 min, head, toggle, footer`, () => {
+        assert.equal(r.status, 200);
+        assert.equal(r.headers.get("cache-control"), "public, max-age=600");
+        assert.ok(r.headers.get("strict-transport-security"));
+        assert.match(h, new RegExp(`<html lang="${lang}">`));
+        assert.equal(decode(h.match(/<title>([^<]*)<\/title>/)[1]), page.title[i]);
+        assert.equal(decode(h.match(/<meta name="description" content="([^"]*)"/)[1]), page.desc[i]);
+        assert.ok(h.includes(`<link rel="canonical" href="https://josediaztutoring.com${p}">`));
+        for (const [hl, u] of [["en", page.en], ["es", page.es], ["x-default", page.en]])
+          assert.ok(h.includes(`<link rel="alternate" hreflang="${hl}" href="https://josediaztutoring.com${u}">`), hl);
+        assert.ok(h.includes(`<meta property="og:url" content="https://josediaztutoring.com${p}">`));
+        assert.ok(h.includes('<meta property="og:image" content="https://josediaztutoring.com/og-image.png">'));
+        assert.ok(h.includes('<meta name="twitter:card" content="summary_large_image">'));
+        assert.ok(h.slice(0, h.indexOf("<title>")).includes("'dataLayer','GTM-TG7DX6ZB')"), "GTM missing");
+        assert.ok(h.includes(`<a href="${page.en}" hreflang="en"`) && h.includes(`<a href="${page.es}" hreflang="es"`), "EN/ES toggle");
+        assert.match(h, /<a class="wa-float wa-link" id="wa-float"[^>]*aria-label="[^"]+"/);
+        assert.ok(h.includes(lang === "es" ? "SAT, AP y PSAT/NMSQT son marcas registradas de College Board." : "SAT, AP and PSAT/NMSQT are trademarks registered by College Board."), "trademark line");
+        assert.ok(h.includes(lang === "es" ? "Servicio independiente de tutorías." : "Independent tutoring service."), "independence line");
+        assert.ok(!/\{\{x:[\w.-]+\}\}/.test(h), "unfilled token");
+        assert.ok(!h.includes("data-price") && !/\$(65|90|110|40|429|899|1,099)\b/.test(visible(h)), "a price on an exam page");
+        if (page.guide) assert.match(h, /<body data-exam="alg1">/);
+      });
+      await check(`${p}: JSON-LD (BreadcrumbList${page.guide ? ", FAQPage word for word" : ""}, no Event)`, () => {
+        const blocks = [...h.matchAll(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1]));
+        assert.deepEqual(blocks.map((b) => b["@type"]), page.guide ? ["BreadcrumbList", "FAQPage"] : ["BreadcrumbList"]);
+        assert.ok(!/"Event"/.test(JSON.stringify(blocks)));
+        const crumbs = blocks[0].itemListElement;
+        assert.equal(crumbs[crumbs.length - 1].item, `https://josediaztutoring.com${p}`);
+        assert.equal(crumbs[0].item, `https://josediaztutoring.com${lang === "es" ? "/es/" : "/"}`);
+        const text = visible(h);
+        for (const c of crumbs) assert.ok(text.includes(c.name), c.name);
+        if (page.guide) {
+          const faq = blocks[1].mainEntity;
+          assert.equal(faq.length, 4);
+          assert.equal(blocks[1].inLanguage, lang);
+          for (const q of faq) {
+            assert.ok(text.includes(q.name), q.name);
+            assert.ok(text.includes(q.acceptedAnswer.text), q.acceptedAnswer.text);
+          }
+          assert.ok(faq[0].acceptedAnswer.text.includes(lang === "es" ? "420 en SAT Math" : "SAT Math 420"));
+        }
+      });
+      await check(`${p}: data inlined (</ escaped) and server-rendered content`, () => {
+        const m = h.match(/<script id="exam-data" type="application\/json">([\s\S]*?)<\/script>/);
+        assert.ok(m, "no #exam-data");
+        assert.ok(!m[1].includes("</"), "</ not escaped");
+        assert.deepEqual(JSON.parse(m[1]), bundled);
+        const t = visible(h);
+        if (lang === "en") assert.ok(t.includes("Dates checked Nov 19, 2026") || t.includes("Sources, checked Nov 19, 2026"), "checked date");
+        else assert.ok(t.includes("19 de noviembre de 2026"), "checked date");
+        if (!page.guide) {
+          // every date of the year, grouped by month, with type and source link
+          const ledger = h.slice(h.indexOf('id="ledger"'), h.indexOf("</section>", h.indexOf('id="ledger"')));
+          assert.equal((ledger.match(/<li class="row/g) || []).length, bundled.events.length);
+          assert.equal((ledger.match(/class="ibtn" href="https:/g) || []).length, bundled.events.length);
+          assert.ok(visible(ledger).includes(lang === "es" ? "Diciembre de 2026" : "December 2026"));
+          const panel = h.slice(h.indexOf('id="audPanel"'), h.indexOf('id="graph"'));
+          assert.equal((panel.match(/<li class="aud-item">/g) || []).length, bundled.exams.length);
+          assert.equal((panel.match(/>(Read the guide|Ver la guía)</g) || []).length, 1, "guide link only for pageLive exams");
+          assert.ok(panel.includes(lang === "es" ? 'href="/es/examenes/eoc-algebra-1/"' : 'href="/exams/algebra-1-eoc/"'));
+          assert.ok(!/coming soon|pronto/i.test(visible(panel)));
+          assert.match(h, /<svg id="yearsvg"[^>]*><title id="yeartitle">2026–27<\/title><\/svg>/);
+          assert.ok(h.includes("<noscript><style>#graph,"), "graph hidden without JS");
+        } else {
+          assert.ok(t.includes(lang === "es" ? "Próxima oportunidad: invierno, del 30 nov – 18 dic." : "Next chance: winter window, Nov 30 – Dec 18."), "next window");
+          assert.ok(t.includes(lang === "es" ? "Próximo período: Invierno, 30 nov – 18 dic" : "Next window: Winter, Nov 30 – Dec 18"), "status line");
+          assert.equal((h.match(/<li( class="(past|now)")?><div class="w-name">/g) || []).length, 4, "four windows");
+          assert.equal((h.match(/<div class="brk">/g) || []).length, bundled.exams[0].breaks.length, "field notes");
+          assert.equal((h.match(/<i class="on"><\/i>/g) || []).length, 38, "waffle");
+          assert.ok(h.includes('href="https://flfast.org/families.html"'), "resource link");
+          assert.match(h, /<ul id="srcList"><li><a href="https:/);
+          assert.match(h, /<svg aria-label="[^"]+400\.?" class="ruler" id="heroRuler" role="img" viewBox="0 0 640 150"><g /);
+          assert.match(h, /<a class="btn btn-ghost" href="https:\/\/claude\.ai\/new" id="claudeBtn" rel="noopener" target="_blank">/);
+        }
+      });
+    }
+  }
+  // the hub's full date list, one line per row: "Dec 5 Sat | SAT | Test day SAT"
+  const rowLines = (h) => [...h.slice(h.indexOf('id="ledger"')).matchAll(/<li class="row[^"]*">([\s\S]*?)<\/li>/g)].map((m) => {
+    const g = (re) => decode(((m[1].match(re) || [])[1] || "").replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
+    return `${g(/<span class="mon">(.*?)<\/span>/)} ${g(/<span class="day">(.*?)<\/span>/)} ${g(/<span class="dow">(.*?)<\/span>/)} | ${g(/<p class="title">(.*?)<\/p>/)} | ${g(/<p class="meta">(.*?)<\/p>/)}`;
+  });
+  await check("exam pages: spot-check dates against the JSON", () => {
+    const rows = rowLines(examHtml["/exams/"]), rowsEs = rowLines(examHtml["/es/examenes/"]);
+    for (const s of ["Dec 5 Sat | SAT | Test day SAT", "Dec 12 Sat | ACT | Test day ACT", "Nov 30 Mon | Algebra 1 and Geometry EOC, winter window | Testing window Nov 30 – Dec 18",
+      "May 10 Mon | AP Calculus AB and BC, 8 a.m. | Test day AP Calculus and Precalculus"]) assert.ok(rows.includes(s), `${s}\n${rows.join("\n")}`);
+    assert.ok(rowsEs.some((r) => r.startsWith("Dic 5 Sáb | SAT |")), rowsEs.join("\n"));
+    const guide = visible(examHtml["/exams/algebra-1-eoc/"]);
+    assert.ok(guide.includes("Nov 30 – Dec 18, 2026"));
+  });
+  await check("/exams/data.json: the live data, JSON, cached 10 min, noindex", async () => {
+    const r = await get("/exams/data.json");
+    assert.equal(r.status, 200);
+    assert.match(r.headers.get("content-type"), /^application\/json/);
+    assert.equal(r.headers.get("cache-control"), "public, max-age=600");
+    assert.equal(r.headers.get("x-robots-tag"), "noindex");
+    assert.deepEqual(await r.json(), bundled);
+  });
+  for (const p of ["/exams", "/exams.html", "/exams/index.html", "/exams/algebra-1-eoc", "/exams/algebra-1-eoc.html", "/es/examenes", "/es/examenes/eoc-algebra-1", "/es/examenes/index.html"]) {
+    const to = p.replace(/(\.html|\/index\.html)$/, "") + "/";
+    await check(`${p} -> 301 ${to}`, async () => {
+      const r = await get(p);
+      assert.equal(r.status, 301);
+      assert.equal(r.headers.get("location"), to);
+    });
+  }
+  for (const p of ["/exams/foo", "/exams/algebra-1-eoc/foo", "/exams/geometry-eoc/", "/es/examenes/foo", "/examenes/", "/es/exams/"]) {
+    await check(`${p} -> 404 html, noindex`, async () => {
+      const r = await get(p);
+      assert.equal(r.status, 404);
+      assert.equal(r.headers.get("x-robots-tag"), "noindex");
+      assert.match(await r.text(), /This page doesn't exist/);
+    });
+  }
+  await check("every page with the main footer links to the exam calendar", async () => {
+    for (const [p, h] of Object.entries(all)) {
+      const foot = h.slice(h.indexOf('<footer class="site-foot">'));
+      assert.ok(foot.includes(p.startsWith("/es/") ? '<a href="/es/examenes/"' : '<a href="/exams/"'), p);
+    }
+    const h404 = await (await get("/nope")).text();
+    assert.ok(h404.includes('<a href="/exams/"') && h404.includes('<a href="/es/examenes/" lang="es">'));
+  });
+  await check("home: subject links to the exam pages, and no Algebra 2 EOC", () => {
+    assert.ok(pages.en.includes('incl. <a href="/exams/algebra-1-eoc/">Florida EOC</a> prep (Algebra 1)'));
+    assert.ok(pages.es.includes('<a href="/es/examenes/eoc-algebra-1/">EOC de Florida</a> (Álgebra 1)'));
+    for (const q of ["g10", "g11", "college"]) {
+      assert.ok(pages.en.includes(`href="/exams/?for=${q}"`), q);
+      assert.ok(pages.es.includes(`href="/es/examenes/?for=${q}"`), q);
+    }
+  });
+  await check("a changed site-exams secret shows up without a rebuild; invalid or missing -> bundled data", async () => {
+    const changed = JSON.parse(JSON.stringify(bundled));
+    const sat = changed.events.find((e) => e.id === "sat-dec");
+    sat.start = "2026-12-06";
+    changed.revision = 2;
+    const quiet = console.warn, loud = console.log, warnings = [];
+    console.warn = (...a) => warnings.push(a.join(" "));
+    console.log = () => {};
+    try {
+      app._setExamsSource(async () => JSON.stringify(changed));
+      const rows = rowLines(await (await get("/exams/")).text());
+      assert.ok(rows.includes("Dec 6 Sun | SAT | Test day SAT") && !rows.includes("Dec 5 Sat | SAT | Test day SAT"), "new date not shown");
+      assert.equal((await (await get("/exams/data.json")).json()).revision, 2);
+      // cached: the secret is read once, then not again within 10 minutes
+      let reads = 0;
+      app._setExamsSource(async () => { reads++; return JSON.stringify(changed); });
+      await get("/exams/"); await get("/es/examenes/"); await get("/exams/data.json");
+      assert.equal(reads, 1, "secret read more than once within the cache window");
+      const broken = JSON.parse(JSON.stringify(changed));
+      broken.events[0].exam = "nope";
+      for (const [what, src] of [["invalid JSON", async () => "{nope"], ["bad data", async () => JSON.stringify(broken)], ["missing", async () => ""], ["unreadable", async () => { throw new Error("HTTP 403"); }]]) {
+        app._setExamsSource(src);
+        const rows = rowLines(await (await get("/exams/")).text());
+        assert.ok(rows.includes("Dec 5 Sat | SAT | Test day SAT"), `${what}: bundled data not served`);
+        assert.equal((await (await get("/exams/data.json")).json()).revision, 1, what);
+      }
+      assert.ok(warnings.some((w) => /invalid/.test(w)) && warnings.some((w) => /not set/.test(w)) && warnings.some((w) => /couldn't read/.test(w)), "no warning logged");
+    } finally {
+      console.warn = quiet;
+      console.log = loud;
+      app._setExamsSource(async () => "");
+    }
+  });
+  await check("exam data: fill works for every day of the school year (EN + ES)", () => {
+    const tpl = ["www/exams.html", "www/es/examenes.html", "www/exams/algebra-1-eoc.html", "www/es/examenes/eoc-algebra-1.html"].map((f) => fsx.readFileSync(f, "utf8"));
+    const D = examCal.parse(JSON.stringify(bundled));
+    for (let d = new Date(Date.UTC(2026, 6, 1)); d <= new Date(Date.UTC(2027, 8, 30)); d.setUTCDate(d.getUTCDate() + 1)) {
+      const day = d.toISOString().slice(0, 10);
+      for (const t of tpl) assert.ok(!/\{\{x:[\w.-]+\}\}/.test(examCal.fill(t, D, day)), day);
+    }
+    const end = visible(examCal.fill(tpl[2], D, "2027-08-02"));
+    assert.ok(end.includes("2027-28 windows coming soon") && end.includes("Next chance: the 2027-28 schedule."), "end-of-year text");
+  });
+  app._setExamsToday(null);
+
   await check("every internal link and #anchor resolves", async () => {
     const seen = new Map();
     const ids = (h) => new Set([...h.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
     for (const [from, h] of Object.entries(all)) {
-      for (const [, href] of h.matchAll(/<a\b[^>]*\shref="([^"]*)"/g)) {
+      for (const [, href] of h.replace(/<script[\s\S]*?<\/script>/g, "").matchAll(/<a\b[^>]*\shref="([^"]*)"/g)) { // not inside scripts
         if (/^(https?:|mailto:|tel:)/.test(href) || href === "#") continue;
         const [p, hash] = href.split("#");
         const target = p || from;
         if (!seen.has(target)) {
-          const r = await get(target);
+          let r;
+          try { r = await get(target); } catch (e) { throw new Error(`${from}: ${href}: ${e.cause?.code || e.message}`); }
           seen.set(target, r.status === 200 ? await r.text() : r.status);
         }
         const t = seen.get(target);
@@ -364,11 +564,13 @@ srv.listen(0, async () => {
       }
     }
   });
-  await check("sitemap lists all 8 pages with hreflang", async () => {
+  await check("sitemap lists all 12 pages with hreflang", async () => {
     const xml = await (await get("/sitemap.xml")).text();
-    assert.equal((xml.match(/<loc>/g) || []).length, 8);
-    assert.equal((xml.match(/hreflang=/g) || []).length, 24);
+    assert.equal((xml.match(/<loc>/g) || []).length, 12);
+    assert.equal((xml.match(/hreflang=/g) || []).length, 36);
     assert.ok(xml.includes("<loc>https://josediaztutoring.com/es/terminos/</loc>"));
+    for (const p of ["/exams/", "/es/examenes/", "/exams/algebra-1-eoc/", "/es/examenes/eoc-algebra-1/"])
+      assert.match(xml, new RegExp(`<loc>https://josediaztutoring.com${p}</loc>\\n    <lastmod>\\d{4}-\\d\\d-\\d\\d</lastmod>`), p);
   });
   await check("robots.txt disallows /api/ and keeps the sitemap", async () => {
     const t = await (await get("/robots.txt")).text();

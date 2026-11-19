@@ -9,9 +9,15 @@
  * pricing.js). If the secret is missing or invalid, the built-in fallback
  * prices are used and a warning is logged; if filling fails, the built file
  * (which already holds the fallback prices) is sent as is. Every other page is
- * a static file (see app.yaml); any URL without a static handler reaches this
+ * a static file (see app.yaml), except the exam calendar pages below; any URL without a static handler reaches this
  * code and gets a 301 (/index.html, /es, /es/index.html, legal pages without
  * the trailing slash) or a real 404 page.
+ *
+ * Exam calendar: /exams/, /exams/algebra-1-eoc/, /es/examenes/, /es/examenes/eoc-algebra-1/ are
+ * built templates (www/exams.html, ...) filled here at request time from the JSON secret
+ * `site-exams` (cached EXAMS_TTL = 10 minutes; see exam-calendar.js), with dates worked out for
+ * today in Florida. The same data is served at /exams/data.json. If the secret is missing or
+ * invalid, the copy built into the templates (data/exams/<year>.json) is used and a warning is logged.
  *
  * Everything about the mail server lives in Secret Manager (never in this
  * repo), so it can be changed without a redeploy: values are re-read every
@@ -41,6 +47,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const nodemailer = require("nodemailer");
 const pricingLib = require("./pricing.js");
+const examCal = require("./exam-calendar.js");
 
 const PORT = Number(process.env.PORT) || 8080;
 const PROJECT = process.env.GOOGLE_CLOUD_PROJECT || "";
@@ -458,6 +465,107 @@ async function pricedPage(req, res, pathname) {
   res.end(req.method === "HEAD" ? undefined : body);
 }
 
+// --- exam calendar (JSON secret site-exams) ---------------------------------------------------
+// Same pattern as the prices: cached for EXAMS_TTL; missing or invalid -> the copy built into the
+// page templates (the bundled fallback file), with a warning; a failed refresh keeps the last good data.
+const EXAMS_TTL = 10 * 60e3;
+const EXAMS_SECRET = "site-exams";
+let examsSource = () => fetchSecret(EXAMS_SECRET, false); // "" = not set; the dev server swaps this
+let examsCache = null; // { value, at }
+let examsLoad = null;
+let examsToday = () => examCal.todayInFlorida(); // tests can pin the day
+
+const EXAM_PAGES = {
+  "/exams/": "www/exams.html",
+  "/exams/algebra-1-eoc/": "www/exams/algebra-1-eoc.html",
+  "/es/examenes/": "www/es/examenes.html",
+  "/es/examenes/eoc-algebra-1/": "www/es/examenes/eoc-algebra-1.html",
+};
+const EXAM_DATA_URL = "/exams/data.json";
+let examFallback = null; // the data built into the templates
+
+function examTemplate(pathname) {
+  if (!pageFiles.has(pathname)) pageFiles.set(pathname, fs.readFileSync(path.join(__dirname, EXAM_PAGES[pathname]), "utf8"));
+  return pageFiles.get(pathname);
+}
+function bundledExams() {
+  return (examFallback ??= examCal.embedded(examTemplate("/exams/")));
+}
+
+async function loadExams() {
+  let raw;
+  try {
+    raw = await examsSource();
+  } catch (err) {
+    console.warn(`Exams: couldn't read secret ${EXAMS_SECRET} (${err.message}); using ${examsCache ? "the last good data" : "the bundled data"}.`);
+    return examsCache ? examsCache.value : bundledExams();
+  }
+  if (!raw) {
+    console.warn(`Exams: secret ${EXAMS_SECRET} is not set; using the bundled data.`);
+    return bundledExams();
+  }
+  try {
+    const value = examCal.parse(raw);
+    if (!examsCache || examsCache.value.revision !== value.revision || JSON.stringify(examsCache.value) !== JSON.stringify(value)) {
+      console.log(`Exams: loaded ${EXAMS_SECRET}: ${examCal.summary(value)}`);
+    }
+    return value;
+  } catch (err) {
+    console.warn(`Exams: secret ${EXAMS_SECRET} is invalid (${err.message}); using the bundled data.`);
+    return bundledExams();
+  }
+}
+
+async function currentExams() {
+  if (examsCache && Date.now() - examsCache.at < EXAMS_TTL) return examsCache.value;
+  examsLoad ??= loadExams()
+    .then((value) => (examsCache = { value, at: Date.now() }).value)
+    .finally(() => (examsLoad = null));
+  return examsLoad;
+}
+
+const examRendered = new WeakMap(); // data -> { "path|day": page }
+function renderExam(pathname, data, day) {
+  if (!examRendered.has(data)) examRendered.set(data, new Map());
+  const cache = examRendered.get(data), key = `${pathname}|${day}`;
+  if (!cache.has(key)) {
+    if (cache.size > 40) cache.clear(); // a new day: drop yesterday's pages
+    cache.set(key, examCal.fill(examTemplate(pathname), data, day));
+  }
+  return cache.get(key);
+}
+
+async function examPage(req, res, pathname) {
+  const day = examsToday();
+  let body;
+  try {
+    body = renderExam(pathname, await currentExams(), day);
+  } catch (err) {
+    console.error(`Exams: couldn't fill ${pathname} from the live data (${err.message}); using the bundled data.`);
+    try {
+      body = renderExam(pathname, bundledExams(), day);
+    } catch (err2) {
+      // still a working page: the script renders everything from the data built into it
+      console.error(`Exams: couldn't fill ${pathname} from the bundled data either (${err2.message}); sending the template.`);
+      body = examTemplate(pathname);
+    }
+  }
+  res.writeHead(200, { ...SECURITY_HEADERS, "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=600" });
+  res.end(req.method === "HEAD" ? undefined : body);
+}
+
+async function examData(req, res) {
+  let data;
+  try { data = await currentExams(); } catch { data = bundledExams(); }
+  res.writeHead(200, {
+    ...SECURITY_HEADERS,
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "public, max-age=600",
+    "X-Robots-Tag": "noindex",
+  });
+  res.end(req.method === "HEAD" ? undefined : JSON.stringify(data));
+}
+
 const SECURITY_HEADERS = {
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "X-Content-Type-Options": "nosniff",
@@ -466,6 +574,10 @@ const SECURITY_HEADERS = {
 const REDIRECTS = { "/index.html": "/", "/es": "/es/", "/es/index.html": "/es/" };
 // legal pages: /privacy, /privacy.html and /privacy/index.html -> /privacy/ (the slash URLs are static, see app.yaml)
 for (const p of ["/privacy", "/terms", "/accessibility", "/es/privacidad", "/es/terminos", "/es/accesibilidad"]) {
+  REDIRECTS[p] = REDIRECTS[`${p}.html`] = REDIRECTS[`${p}/index.html`] = `${p}/`;
+}
+// exam pages: /exams, /exams.html and /exams/index.html -> /exams/ (and the same for the other three)
+for (const p of Object.keys(EXAM_PAGES).map((u) => u.slice(0, -1))) {
   REDIRECTS[p] = REDIRECTS[`${p}.html`] = REDIRECTS[`${p}/index.html`] = `${p}/`;
 }
 let page404 = null;
@@ -495,6 +607,18 @@ function page(req, res, pathname, query) {
   if (to && read) {
     res.writeHead(301, { ...SECURITY_HEADERS, Location: to, "Cache-Control": "public, max-age=3600" });
     return res.end();
+  }
+  if (EXAM_PAGES[pathname] && read) {
+    return examPage(req, res, pathname).catch((err) => {
+      console.error(err);
+      if (!res.headersSent) notFoundPage(req, res);
+    });
+  }
+  if (pathname === EXAM_DATA_URL && read) {
+    return examData(req, res).catch((err) => {
+      console.error(err);
+      if (!res.headersSent) notFoundPage(req, res);
+    });
   }
   if (PRICED[pathname] && read) {
     return pricedPage(req, res, pathname).catch((err) => {
@@ -528,6 +652,7 @@ if (require.main === module) {
   server.listen(PORT, () => {
     console.log(`Listening on ${PORT}`);
     currentPricing().catch(() => {}); // warm the price cache before the first visitor
+    currentExams().catch(() => {}); // and the exam data
     smtpConfig().then(
       (c) => console.log(`SMTP server: ${c.host}:${c.port} (${c.secure ? "TLS" : "STARTTLS"})`),
       (err) => console.error("SMTP settings are invalid:", err.message)
@@ -541,4 +666,9 @@ module.exports = {
   // dev server / tests: read prices from somewhere else; clear the 10-minute cache
   _setPricingSource: (fn) => { pricingSource = fn; pricingCache = null; },
   _clearPricingCache: () => { pricingCache = null; },
+  // dev server / tests: read the exam data from somewhere else; clear its cache; pin "today"
+  currentExams,
+  _setExamsSource: (fn) => { examsSource = fn; examsCache = null; },
+  _clearExamsCache: () => { examsCache = null; },
+  _setExamsToday: (fn) => { examsToday = fn || (() => examCal.todayInFlorida()); },
 };
