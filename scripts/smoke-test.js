@@ -159,7 +159,8 @@ srv.listen(0, async () => {
     await check(`${lang}: brand, footer, testimonials hidden`, () => {
       assert.match(html, /<a class="mark" href="#top">Jose Diaz Tutoring<small/);
       assert.match(html, /© <span id="yr">\d+<\/span> Jose Diaz Tutoring\./);
-      assert.ok(html.includes('<a href="tel:+17868329107">+1 (786) 832-9107</a>'));
+      assert.match(html, /<a class="contact-row" href="tel:\+17868329107">[\s\S]*?<span class="contact-detail">\(786\) 832-9107<\/span>/);
+      for (const id of ["foot-wa", "foot-tel", "foot-mail", "foot-li"]) assert.ok(html.includes(`<li id="${id}">`), `footer row ${id}`);
       assert.match(html, /<section id="reviews" hidden>/);
       assert.ok(!/\[(University|Parent|First name)/.test(visible(html)), "placeholder testimonial text is visible");
     });
@@ -188,7 +189,7 @@ srv.listen(0, async () => {
       assert.deepEqual(prices, [65, 90, 110, 40, 429, 899, 1099]);
       for (const p of prices) assert.ok(page.includes("$" + p.toLocaleString("en-US")), `$${p} not visible`);
       assert.equal(biz.priceRange, "$40–$110");
-      assert.ok(page.includes("+1 (786) 832-9107") && biz.telephone === "+1-786-832-9107");
+      assert.ok(page.includes("(786) 832-9107") && biz.telephone === "+1-786-832-9107");
       const faq = ld["@graph"][3].mainEntity;
       assert.equal(faq.length, 7);
       assert.equal((html.match(/<details><summary data-i18n="q\d+">/g) || []).length, 7, "7 questions on the page");

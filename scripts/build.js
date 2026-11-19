@@ -112,6 +112,10 @@ const telDigits = (html.match(/href="tel:\+?(\d+)"/) || [])[1];
 if (telDigits !== String(CONFIG.phone).replace(/\D/g, "")) fail(`footer tel: link (${telDigits}) doesn't match CONFIG.phone (${CONFIG.phone})`);
 const footMail = (html.match(/<footer[\s\S]*?href="mailto:([^"]+)"/) || [])[1];
 if (isSet(CONFIG.email) && footMail !== CONFIG.email) fail(`footer mailto: link (${footMail}) doesn't match CONFIG.email (${CONFIG.email})`);
+// the visible phone and email in the footer's contact rows (static on the legal and 404 pages)
+const rowText = (id) => ((html.match(new RegExp(`<li id="${id}">[\\s\\S]*?class="contact-detail">([^<]*)<`)) || [])[1] || "");
+if (!String(CONFIG.phone).replace(/\D/g, "").endsWith(rowText("foot-tel").replace(/\D/g, "")) || !rowText("foot-tel")) fail(`footer phone text (${rowText("foot-tel")}) doesn't match CONFIG.phone (${CONFIG.phone})`);
+if (isSet(CONFIG.email) && rowText("foot-mail") !== CONFIG.email) fail(`footer email text (${rowText("foot-mail")}) doesn't match CONFIG.email (${CONFIG.email})`);
 // © year in the footer (static, so the pages need no script for it)
 html = replaceOne(html, /(<span id="yr">)\d{4}(<\/span>)/, `$1${today.slice(0, 4)}$2`, "footer year");
 
@@ -335,6 +339,10 @@ const PARTS = { en: parts(enHtml), es: parts(es) };
 function staticFooter(footer, current) {
   for (const [id, url] of [["foot-gbp", CONFIG.googleBusinessProfile], ["foot-review", CONFIG.googleReview]]) {
     if (isSet(url)) footer = replaceOne(footer, new RegExp(`<li id="${id}" hidden><a href="#"`), `<li id="${id}"><a href="${esc(url)}"`, id);
+  }
+  // contact rows whose CONFIG value isn't set are left out (the home page's script removes them the same way)
+  for (const [id, value] of [["foot-wa", CONFIG.whatsapp], ["foot-tel", CONFIG.phone], ["foot-mail", CONFIG.email], ["foot-li", CONFIG.linkedin]]) {
+    if (!isSet(value)) footer = replaceOne(footer, new RegExp(`\\n *<li id="${id}">[\\s\\S]*?</li>`), "", `footer row ${id}`);
   }
   if (current) footer = replaceOne(footer, new RegExp(`<a href="${current}"`), `<a href="${current}" aria-current="page"`, `footer link to ${current}`);
   return footer;
