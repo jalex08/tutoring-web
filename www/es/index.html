@@ -405,6 +405,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   @media (max-width:860px){.contact-grid{grid-template-columns:1fr;gap:32px}}
   @media (max-width:520px){.row2{grid-template-columns:1fr}form{padding:22px}}
 
+  /* Outline buttons on pad-green surfaces: white at rest, so the pad-green hover is visible */
+  .on-pad .btn.btn-ghost{background:#fff}
+  @media (hover:hover){
+    .on-pad .btn.btn-ghost:hover{background:var(--pad);border-color:var(--ink-dark);color:var(--ink-dark)}
+  }
 </style>
 <script type="application/ld+json" id="ld">
 {
@@ -1090,7 +1095,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <li><b data-i18n="u6"><a href="/es/examenes/?for=college">Física y matemáticas del MCAT</a></b><span data-i18n="u6n">sección Chem/Phys, para quienes van a medicina</span></li>
           </ul>
         </div>
-        <div class="level level-eng">
+        <div class="level level-eng on-pad">
           <div>
             <h3 data-i18n="eTitle">Cursos de ingeniería</h3>
             <p data-i18n="eLede">Para estudiantes de ingeniería eléctrica y de computación. Son los temas con los que trabajo a diario como ingeniero, así que vemos la teoría y cómo se usa en hardware real.</p>
