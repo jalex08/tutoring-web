@@ -1,0 +1,100 @@
+<!--
+  Exam calendar hub (/exams/): English source. Spanish text is in i18n/es.js (keys ex*, exm*).
+  `npm run build` turns this into the page templates www/exams.html and www/es/examenes.html,
+  with the site's header, footer, CSS, analytics, pages/exams/exams.css and pages/exams/exams.js.
+  {{x:name}} tokens are filled by the server at request time from the exam data
+  (secret site-exams, see exam-calendar.js and docs/exam-calendar.md). Markup and text: reference/exams.en.html.
+-->
+<meta name="title" content="Florida exam calendar {{x:year}} | Jose Diaz Tutoring" data-i18n-attr="content:exTitle">
+<meta name="description" content="Florida test dates for {{x:year}}: Algebra 1 and Geometry EOC, SAT, ACT, AP and college finals. Pick your student's grade to see what matters and when." data-i18n-attr="content:exDesc">
+
+<div class="pad band hub-band">
+  <div class="wrap">
+    <nav class="crumbs" aria-label="Breadcrumb" data-i18n-attr="aria-label:crumbLabel">
+      <ol><li><a href="/" data-i18n="crumbHome">Home</a></li><li aria-current="page" data-i18n="exCrumb">Exam calendar</li></ol>
+    </nav>
+    <h1 data-i18n="exH1">Florida exam calendar, {{x:year}}</h1>
+    <p class="lede" data-i18n="exLede">Every test date and deadline for the exams I tutor, from the Algebra 1 EOC to college finals and the MCAT. Each date links to the official page it came from, and dates that have passed drop off on their own.</p>
+    <div class="checked">
+      <span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="none" stroke="#1C4C9E" stroke-width="1.6"/><path d="M4.6 8.3l2.2 2.2 4.6-4.8" fill="none" stroke="#1C4C9E" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/></svg><span data-i18n="exChecked">Dates checked</span> <b data-checked>{{x:checked}}</b></span>
+      <span data-i18n="exSources">Sources: FDOE, College Board, ACT, the AAMC and each college's registrar</span>
+    </div>
+    <p class="notice-short"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="8" fill="none" stroke="#1C4C9E" stroke-width="1.6"/><path d="M9 8v5" stroke="#1C4C9E" stroke-linecap="round" stroke-width="1.8"/><circle cx="9" cy="5.3" r="1.1" fill="#1C4C9E"/></svg><span data-notice="short">{{x:notice.short}}</span></p>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="sheet finder" id="finder">
+    <div class="finder-head">
+      <h2 data-i18n="exFinderH">Who's taking a test this year?</h2>
+      <p data-i18n="exFinderP">Pick a grade to see only the exams that matter for them, why, and what to do now.</p>
+    </div>
+    <div class="chips aud" id="audChips" role="tablist" aria-label="Grade" data-i18n-attr="aria-label:exGradeLabel"></div>
+    <div id="audPanel" role="tabpanel" aria-live="polite">{{x:audPanel}}</div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="sheet graph" id="graph">
+    <div class="graph-top">
+      <h2 data-i18n="exGraphH">The school year at a glance</h2>
+      <p class="muted graph-tip" data-i18n="exGraphP">Tap a mark to see its date and deadlines.</p>
+    </div>
+    <div class="graph-scroll"><svg id="yearsvg" role="img" aria-labelledby="yeartitle" viewBox="{{x:graphViewBox}}"><title id="yeartitle">{{x:year}}</title></svg></div>
+    <div class="legend" data-i18n="exLegend">
+      <span><i class="lg-dot"></i>Test day</span>
+      <span><i class="lg-bar"></i>Testing window or finals week</span>
+      <span><i class="lg-soft"></i>School-day testing (your district picks)</span>
+    </div>
+  </div>
+</div>
+
+<section id="next">
+  <div class="wrap">
+    <div class="sec-head">
+      <div><h2 data-i18n="exNextH">Coming up</h2></div>
+      <div class="chips" id="chips" role="group" aria-label="Filter" data-i18n-attr="aria-label:exFilterLabel"></div>
+    </div>
+    <div class="audnote" id="audNote" hidden></div>
+    <div class="sheet margin ledger" id="ledger">{{x:ledger}}</div>
+  </div>
+</section>
+
+<section class="promo-sec">
+  <div class="wrap">
+    <div class="sheet margin promo">
+      <div data-i18n="exPromo">
+        <h2>Did your child meet the Algebra 1 requirement?</h2>
+        <p>The EOC isn't the only way. An SAT, ACT, PSAT or Geometry score can count too. Enter a score and see where it lands, plus the next dates to try again.</p>
+        <p class="promo-cta"><a class="btn btn-primary" href="/exams/algebra-1-eoc/#checker">Check a score</a></p>
+      </div>
+      <svg aria-hidden="true" class="mini-ruler" viewBox="0 0 360 120">
+        <g fill="#55605E" font-family="Atkinson Hyperlegible, sans-serif" font-size="12">
+          <rect fill="#fff" height="22" rx="3" stroke="#A9B5B1" width="340" x="10" y="52"/>
+          <rect fill="#E9F2E4" height="22" rx="3" stroke="#A9B5B1" width="168" x="182" y="52"/>
+          <line stroke="#232A2A" stroke-width="2" x1="182" x2="182" y1="38" y2="86"/>
+          <text fill="#232A2A" font-weight="700" text-anchor="middle" x="182" y="104">{{x:cut.sat}}</text>
+          <circle cx="214" cy="63" fill="#1C4C9E" r="8" stroke="#fff" stroke-width="2"/>
+          <text fill="#1C4C9E" font-family="Kalam, cursive" font-size="17" text-anchor="middle" x="214" y="32">460</text>
+          <text x="12" y="104">200</text><text text-anchor="end" x="350" y="104">800</text>
+          <text fill="#232A2A" font-weight="700" x="12" y="20">SAT Math</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="sec-tight">
+  <div class="wrap">
+    <aside class="sheet notice" aria-labelledby="notice-h-hub"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="8" fill="none" stroke="#1C4C9E" stroke-width="1.6"/><path d="M9 8v5" stroke="#1C4C9E" stroke-linecap="round" stroke-width="1.8"/><circle cx="9" cy="5.3" r="1.1" fill="#1C4C9E"/></svg><div>
+        <h2 id="notice-h-hub"><span data-notice="title">{{x:notice.title}}</span></h2>
+        <p><span data-notice="body">{{x:notice.body}}</span></p>
+        <p class="notice-report"><span data-notice="report">{{x:notice.report}}</span> <!--notice-contact--></p>
+      </div></aside>
+  </div>
+</section>
+
+<div class="motto">
+  <!--site-motto-->
+  <div class="wrap acts"><a class="btn btn-primary" href="/#contact" data-i18n="ctaLong">Book a free 20-minute intro</a><a class="btn btn-ghost wa-link" href="{{cfg:wa}}" target="_blank" rel="noopener">WhatsApp</a></div>
+</div>

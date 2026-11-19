@@ -84,9 +84,19 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5em;font:700 1rem/1 var(--body);
     padding:15px 22px;border-radius:8px;text-decoration:none;border:2px solid var(--ink);cursor:pointer}
   .btn-primary{background:var(--ink);color:#fff}
-  .btn-primary:hover{background:var(--ink-dark);border-color:var(--ink-dark)}
   .btn-ghost{background:transparent;color:var(--ink)}
-  .btn-ghost:hover{background:#fff}
+  /* hover states (pointer devices only, so a tap on a phone doesn't leave a "stuck" hover).
+     Primary: darker ink, white text. Outline buttons and chips: pad-green fill, dark ink. Never the highlighter. */
+  .btn,.chip{transition:background-color .15s,border-color .15s,color .15s}
+  @media (hover:hover){
+    .btn-primary:hover{background:var(--ink-dark);border-color:var(--ink-dark);color:#fff}
+    .btn-ghost:hover{background:var(--pad);border-color:var(--ink-dark);color:var(--ink-dark)}
+    .chip:not([aria-pressed="true"]):not([aria-selected="true"]):hover{background:var(--pad);border-color:var(--ink-dark);color:var(--ink-dark)}
+    .chip[aria-pressed="true"]:hover,.chip[aria-selected="true"]:hover{background:var(--ink-dark);border-color:var(--ink-dark);color:#fff}
+  }
+  @media (prefers-reduced-motion:reduce){.btn,.chip{transition:none}}
+  /* text links in the page: darker ink on hover (buttons, chips and the WhatsApp float keep their own colors) */
+  main a:not(.btn):not(.ibtn):not(.chip):not(.wa-float):hover{color:var(--ink-dark)}
 
   /* header */
   .site-head{position:sticky;top:0;z-index:20;background:rgba(251,252,250,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--rule)}
@@ -104,6 +114,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   @media (max-width:920px){.nav{display:none}}
   @media (max-width:560px){.head-cta{display:none}.mark small{display:none}}
   @media (max-width:380px){.mark{font-size:1.08rem}.head-in{gap:14px}}
+  /* Spanish header between the nav breakpoint and ~1120px: the longer labels wrapped (#14b), so use the
+     short CTA label, a tighter nav and no subtitle there. English never needs it. */
+  .cta-mini{display:none}
+  @media (min-width:921px) and (max-width:1120px){
+    html[lang="es"] .head-cta .cta-full,html[lang="es"] .mark small{display:none}
+    html[lang="es"] .head-cta .cta-mini{display:inline}
+    html[lang="es"] .nav{gap:16px}
+  }
 
   /* floating WhatsApp */
   .wa-float{position:fixed;right:18px;bottom:18px;z-index:30;display:inline-flex;align-items:center;gap:9px;
@@ -194,7 +212,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     .play .anim-pop{opacity:0;transform-box:fill-box;transform-origin:center;animation:jd-pop .28s cubic-bezier(.3,1.6,.6,1) 1.05s forwards}
     .play .anim-fill{animation:jd-fill .3s ease-out 1s both}
     .play .anim-wipe{transform-box:fill-box;transform-origin:left center;transform:scaleX(0);animation:jd-wipe .4s cubic-bezier(.4,0,.2,1) 1.15s forwards}
-    .chip{transition:background-color .15s,color .15s}
   }
   @keyframes jd-draw{to{stroke-dashoffset:0}}
   @keyframes jd-fade{to{opacity:1}}
@@ -232,6 +249,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .level + .level.level-eng{border-left:0}
   .level-eng ul{margin:4px 0 0}
   .level-eng .eng-note{margin-top:14px;color:var(--graphite);font-weight:700}
+  .syllabus-cta{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin-top:12px}
+  .syllabus-cta .btn{padding:12px 18px}
+  .syllabus-cta .btn svg{width:20px;height:20px;flex:none}
+  .syllabus-mail{font-weight:700}
+  @media (max-width:520px){.syllabus-cta{flex-direction:column;align-items:flex-start}.syllabus-cta .btn{width:100%}}
   @media (max-width:760px){.level-eng{grid-template-columns:1fr}}
   @media (max-width:520px){.level li{flex-direction:column;gap:2px}.level li span{text-align:left}}
   @media (max-width:760px){.levels{grid-template-columns:1fr}.level + .level{border-left:0;border-top:1px solid var(--line)}.level{padding:28px 22px}}
@@ -383,6 +405,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   @media (max-width:860px){.contact-grid{grid-template-columns:1fr;gap:32px}}
   @media (max-width:520px){.row2{grid-template-columns:1fr}form{padding:22px}}
 
+  /* Outline buttons on pad-green surfaces: white at rest, so the pad-green hover is visible */
+  .on-pad .btn.btn-ghost{background:#fff}
+  @media (hover:hover){
+    .on-pad .btn.btn-ghost:hover{background:var(--pad);border-color:var(--ink-dark);color:var(--ink-dark)}
+  }
 </style>
 <script type="application/ld+json" id="ld">
 {
@@ -459,7 +486,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       "@type": "Offer",
       "@id": "https://josediaztutoring.com/#rate-college",
       "name": "Universidad, individual",
-      "description": "Cálculo, ecuaciones diferenciales y física.",
+      "description": "Cálculo, ecuaciones diferenciales, física y preparación para el MCAT.",
       "price": 90,
       "priceCurrency": "USD",
       "priceSpecification": {
@@ -617,6 +644,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     "Cálculo I, II y III",
     "Ecuaciones diferenciales",
     "Física I y II",
+    "Física y matemáticas del MCAT (sección Chem/Phys)",
     "Circuitos eléctricos I y II",
     "Diseño lógico digital",
     "Programación",
@@ -718,7 +746,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <a href="/" hreflang="en" lang="en" data-lang="en">EN</a>
       <a href="/es/" hreflang="es" lang="es" data-lang="es" aria-current="page">ES</a>
     </nav>
-    <a class="btn btn-primary head-cta" href="#contact" data-i18n="ctaShort">Agenda una llamada gratis</a>
+    <a class="btn btn-primary head-cta" href="#contact"><span class="cta-full" data-i18n="ctaShort">Agenda una llamada gratis</span><span class="cta-mini" data-i18n="ctaMini">Llamada gratis</span></a>
   </div>
 </header>
 
@@ -1047,12 +1075,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <h3 data-i18n="hsTitle">Secundaria (<span lang="en">high school</span>)</h3>
           <p data-i18n="hsLede">Grados 9 a 12, incluidos <span lang="en">honors</span>, AP y <span lang="en">dual enrollment</span>.</p>
           <ul>
-            <li><b data-i18n="hs1">Álgebra 1 y 2</b><span data-i18n="hs1n">incluye preparación para el EOC de Florida</span></li>
-            <li><b data-i18n="hs2">Geometría</b><span data-i18n="hs2n">incluye preparación para el EOC de Florida</span></li>
+            <li><b data-i18n="hs1">Álgebra 1 y 2</b><span data-i18n="hs1n">incluye preparación para el <a href="/es/examenes/eoc-algebra-1/">EOC de Florida</a> (Álgebra 1)</span></li>
+            <li><b data-i18n="hs2">Geometría</b><span data-i18n="hs2n">incluye preparación para el <a href="/es/examenes/?for=g10">EOC de Florida</a></span></li>
             <li><b data-i18n="hs3">Precálculo y trigonometría</b></li>
-            <li><b data-i18n="hs4">AP Calculus AB y BC</b></li>
-            <li><b data-i18n="hs5">Física y AP Physics 1, 2, C</b></li>
-            <li><b data-i18n="hs6">Matemáticas del SAT y ACT</b></li>
+            <li><b data-i18n="hs4"><a href="/es/examenes/?for=g11">AP Calculus AB y BC</a></b></li>
+            <li><b data-i18n="hs5">Física y <a href="/es/examenes/?for=g11">AP Physics 1, 2, C</a></b></li>
+            <li><b data-i18n="hs6"><a href="/es/examenes/?for=g11">Matemáticas del SAT y ACT</a></b></li>
           </ul>
         </div>
         <div class="level">
@@ -1063,14 +1091,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <li><b data-i18n="u2">Cálculo I, II y III</b></li>
             <li><b data-i18n="u3">Ecuaciones diferenciales</b></li>
             <li><b data-i18n="u4">Física I y II</b><span data-i18n="u4n">con álgebra o con cálculo</span></li>
-            <li><b data-i18n="u5">Repasos para parciales y finales</b><span data-i18n="u5n">individuales o en grupo</span></li>
+            <li><b data-i18n="u5"><a href="/es/examenes/?for=college">Repasos para parciales y finales</a></b><span data-i18n="u5n">individuales o en grupo</span></li>
+            <li><b data-i18n="u6"><a href="/es/examenes/?for=college">Física y matemáticas del MCAT</a></b><span data-i18n="u6n">sección Chem/Phys, para quienes van a medicina</span></li>
           </ul>
         </div>
-        <div class="level level-eng">
+        <div class="level level-eng on-pad">
           <div>
             <h3 data-i18n="eTitle">Cursos de ingeniería</h3>
             <p data-i18n="eLede">Para estudiantes de ingeniería eléctrica y de computación. Son los temas con los que trabajo a diario como ingeniero, así que vemos la teoría y cómo se usa en hardware real.</p>
-            <p class="eng-note" data-i18n="eNote">¿No ves tu curso? Envíame el programa.</p>
+            <p class="eng-note" data-i18n="eNote">¿No ves tu curso?</p>
+            <!-- hrefs are set from CONFIG by the script below (WhatsApp first: a syllabus is a PDF or a photo) -->
+            <p class="syllabus-cta">
+              <a class="btn btn-ghost" id="syllabus-wa" href="#contact" target="_blank" rel="noopener" data-contact="whatsapp" data-loc="syllabus"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 19.5l1.3-3.7A8 8 0 1 1 8.3 18.7z"/></svg><span data-i18n="syllabusBtn">Envíame el programa</span></a>
+              <a class="syllabus-mail" id="syllabus-mail" href="#contact" data-loc="syllabus" data-i18n="syllabusMail">o por correo</a>
+            </p>
           </div>
           <ul>
             <li><b data-i18n="e1">Circuitos eléctricos I y II</b><span data-i18n="e1n">DC, AC, transitorios</span></li>
@@ -1184,7 +1218,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
         <div class="rate" role="listitem">
           <h3 data-i18n="r3t">Universidad, individual</h3>
-          <p data-i18n="r3p">Cálculo, ecuaciones diferenciales y física.</p>
+          <p data-i18n="r3p">Cálculo, ecuaciones diferenciales, física y preparación para el MCAT.</p>
           <div class="price"><span data-price="rate.college">$90</span><small data-i18n="perHour">por hora</small></div>
         </div>
         <div class="rate" role="listitem">
@@ -1314,6 +1348,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <h2 class="foot-h">Jose Diaz Tutoring</h2>
       <p data-i18n="foot">Tutorías de matemáticas, física e ingeniería, en línea y en el sur de Florida.</p>
       <p data-i18n="footArea">En persona en Broward y Miami-Dade · En línea desde cualquier lugar</p>
+      <p class="foot-exams"><a href="/es/examenes/" data-i18n="footExams">Calendario de exámenes</a></p>
     </div>
     <div>
       <h2 class="foot-h" data-i18n="footContact">Contacto</h2>
@@ -1399,6 +1434,15 @@ const WA_TEXT = {
 };
 const waHref = "https://wa.me/" + CONFIG.whatsapp + "?text=" + encodeURIComponent(WA_TEXT[LANG]);
 document.querySelectorAll(".wa-link").forEach(a => a.href = waHref);
+
+/* "Not sure your course is covered?": WhatsApp (takes a PDF or photo) and email, both from CONFIG */
+const SYLLABUS = {
+  en: { wa: "Hi Jose, I'd like to know if you cover my course. Here's the syllabus: ", subject: "Syllabus for my course" },
+  es: { wa: "Hola Jose, quiero saber si das tutorías para mi curso. Te envío el programa: ", subject: "Programa de mi curso" }
+};
+document.getElementById("syllabus-wa").href = "https://wa.me/" + CONFIG.whatsapp + "?text=" + encodeURIComponent(SYLLABUS[LANG].wa);
+if (isSet(CONFIG.email)) document.getElementById("syllabus-mail").href = "mailto:" + CONFIG.email + "?subject=" + encodeURIComponent(SYLLABUS[LANG].subject);
+else document.getElementById("syllabus-mail").remove();
 document.querySelectorAll(".li-link").forEach(a => a.href = CONFIG.linkedin);
 
 /* analytics: events for Google Tag Manager (no personal data, only what was clicked) */
@@ -1407,8 +1451,8 @@ const track = (event, params) => (window.dataLayer = window.dataLayer || []).pus
 document.addEventListener("click", e => {
   const a = e.target.closest && e.target.closest("a[href]");
   if (!a) return;
-  const href = a.getAttribute("href"), where = a.id === "wa-float" ? "floating_button" : (a.closest("footer") ? "footer" : "page");
-  if (a.classList.contains("wa-link")) track("contact_click", { contact_method: "whatsapp", link_location: where });
+  const href = a.getAttribute("href"), where = a.id === "wa-float" ? "floating_button" : (a.dataset.loc || (a.closest("footer") ? "footer" : "page"));
+  if (a.classList.contains("wa-link") || a.dataset.contact === "whatsapp") track("contact_click", { contact_method: "whatsapp", link_location: where });
   else if (href.startsWith("tel:")) track("contact_click", { contact_method: "phone", link_location: where });
   else if (href.startsWith("mailto:")) track("contact_click", { contact_method: "email", link_location: where });
 });

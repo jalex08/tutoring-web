@@ -12,6 +12,10 @@
  *                          www/es/privacidad.html, www/es/terminos.html, www/es/accesibilidad.html
  *                          in place: the JSON-LD block and footer year in www/index.html,
  *                                    the footer in www/404.html
+ *                          www/exams.html, www/exams/algebra-1-eoc.html,
+ *                          www/es/examenes.html, www/es/examenes/eoc-algebra-1.html
+ *                                           exam calendar page templates, from pages/exams/
+ *                                           (server.js fills them at request time, see below)
  *                          www/sitemap.xml  (lastmod = date the page last changed)
  *                          www/llms.txt     its price lines (between the pricing markers)
  *                          seo/pending-indexnow.json  pages whose HTML differs from
@@ -23,6 +27,12 @@
  * Prices: every price on the home pages and in llms.txt comes from pricing.js. The build writes
  * the built-in fallback values (pricing.FALLBACK) into the files; on App Engine, server.js
  * fills in the live values from the `site-pricing` secret when it serves them.
+ *
+ * Exam calendar: the data is one JSON file per school year (EXAM_DATA below). The build first runs
+ * scripts/check-exams.js on it (errors stop the build, warnings only print), then writes it into each
+ * exam page template as the fallback copy. On App Engine, server.js fills the templates' {{x:…}}
+ * tokens and the data block from the `site-exams` secret at request time (exam-calendar.js), so a
+ * date change needs no rebuild. See docs/exam-calendar.md.
  *
  * Run: npm run build      Check only (exit 1 if outputs are stale): npm run build -- --check
  */
@@ -41,6 +51,22 @@ const SITE = "https://josediaztutoring.com";
 const URLS = { en: `${SITE}/`, es: `${SITE}/es/` };
 const CHECK = process.argv.includes("--check");
 
+// Bundled exam data: the fallback when the site-exams secret is missing or invalid. Next school year:
+// add data/exams/2027-28.json and change this one line (then build + deploy).
+const EXAM_DATA = "data/exams/2026-27.json";
+const examCal = require(path.join(ROOT, "exam-calendar.js"));
+
+// the exam data is checked before anything else: errors stop the build, warnings only print
+{
+  const r = require("node:child_process").spawnSync(process.execPath, [path.join(ROOT, "scripts/check-exams.js"), path.join(ROOT, EXAM_DATA)], { encoding: "utf8" });
+  process.stdout.write(r.stdout.replace(/^\n/, ""));
+  process.stderr.write(r.stderr);
+  if (r.status !== 0) {
+    console.error(`build: ${EXAM_DATA} has errors (see above)`);
+    process.exit(1);
+  }
+}
+
 const ES = require(path.join(ROOT, "i18n/es.js"));
 const pricing = require(path.join(ROOT, "pricing.js"));
 const LLMS = path.join(ROOT, "www/llms.txt");
@@ -55,8 +81,13 @@ const LEGAL = [
   { id: "terms", src: "pages/terms.html", en: "/terms/", es: "/es/terminos/", strict: true, noPrices: true },
   { id: "accessibility", src: "pages/accessibility.html", en: "/accessibility/", es: "/es/accesibilidad/" },
 ];
+// Exam calendar pages: English source (Spanish in i18n/es.js), URL in each language. Templates the server fills.
+const EXAM_PAGES = [
+  { id: "hub", src: "pages/exams/hub.html", en: "/exams/", es: "/es/examenes/" },
+  { id: "alg1", src: "pages/exams/algebra-1-eoc.html", en: "/exams/algebra-1-eoc/", es: "/es/examenes/eoc-algebra-1/" },
+];
 // English path -> Spanish path, for links on the Spanish pages
-const ES_PATH = { "/": "/es/", ...Object.fromEntries(LEGAL.map((p) => [p.en, p.es])) };
+const ES_PATH = { "/": "/es/", ...Object.fromEntries([...LEGAL, ...EXAM_PAGES].map((p) => [p.en, p.es])) };
 
 // --- small HTML helpers (the page is hand-written, so these stay simple) -------
 function fail(msg) {
@@ -145,6 +176,8 @@ function jsonld(lang, s) {
     ...extra,
   });
   const subjects = ["hs1", "hs2", "hs3", "hs4", "hs5", "hs6", "u1", "u2", "u3", "u4", "e1", "e2", "e3", "e4"].map(T);
+  // the MCAT subject, spelled out (the page shows it as "MCAT physics & math" + "Chem/Phys section, …")
+  subjects.splice(10, 0, lang === "es" ? "Física y matemáticas del MCAT (sección Chem/Phys)" : "MCAT physics and math (Chem/Phys section)");
   // the FAQ questions in page order (word for word the same as the page)
   const faqKeys = [...html.matchAll(/<summary data-i18n="(q\d+)">/g)].map((m) => m[1]);
   if (!faqKeys.length) fail("no FAQ questions found");
@@ -276,7 +309,7 @@ function translate(src) {
 /** Spanish pages link to Spanish pages (links with hreflang, i.e. the language toggle, are left alone). */
 function localizeLinks(src) {
   return src.replace(/<a\b[^>]*>/g, (tag) =>
-    /\shreflang=/.test(tag) ? tag : tag.replace(/(\shref=")(\/[^"#]*)(#[^"]*)?"/, (m, a, p, h = "") => (p in ES_PATH ? `${a}${ES_PATH[p]}${h}"` : m))
+    /\shreflang=/.test(tag) ? tag : tag.replace(/(\shref=")(\/[^"#?]*)(\?[^"#]*)?(#[^"]*)?"/, (m, a, p, q = "", h = "") => (p in ES_PATH ? `${a}${ES_PATH[p]}${q}${h}"` : m))
   );
 }
 
@@ -331,6 +364,10 @@ function parts(page) {
     footer: between(page, '<footer class="site-foot">', "</footer>", "footer", true),
     wa: between(page, '<a class="wa-float', "</a>", "WhatsApp button", true),
     analytics: between(page, "/* analytics:start", "/* analytics:end */", "analytics script", true),
+    // exam pages only: the motto band (markup + CSS) and the fonts link with Kalam
+    motto: between(page, '<figure class="wrap">', "</figure>", "motto band", true),
+    mottoCss: between(page, "/* motto band */", "/* sections */", "motto CSS", true).replace(/\/\* sections \*\/$/, "").trim(),
+    fonts: (page.match(/<link href="(https:\/\/fonts\.googleapis\.com\/css2\?[^"]+)" rel="stylesheet">/) || fail("fonts link not found in www/index.html"))[1],
   };
 }
 const PARTS = { en: parts(enHtml), es: parts(es) };
@@ -346,6 +383,147 @@ function staticFooter(footer, current) {
   }
   if (current) footer = replaceOne(footer, new RegExp(`<a href="${current}"`), `<a href="${current}" aria-current="page"`, `footer link to ${current}`);
   return footer;
+}
+
+// --- exam calendar pages ---------------------------------------------------------------------
+const examData = examCal.parse(fs.readFileSync(path.join(ROOT, EXAM_DATA), "utf8"));
+const EXAM_TM = "SAT, AP and PSAT/NMSQT are trademarks registered by College Board. ACT is a registered trademark of ACT Education Corp. MCAT is a registered trademark of the AAMC. None of them is affiliated with this site. Always confirm dates with the official source linked on each one.";
+const clientJs = replaceOne(fs.readFileSync(path.join(ROOT, "pages/exams/exams.js"), "utf8").trim(), /__EXAM_STRINGS__/, () => JSON.stringify(examCal.STRINGS), "exam strings placeholder");
+const examCss = fs.readFileSync(path.join(ROOT, "pages/exams/exams.css"), "utf8").trim();
+const ldScript = (data) => `<script type="application/ld+json">\n${pricing.ldJson(data)}\n</script>`;
+// days the build fills every template with, to prove the server can (start, mid-year, end, after the year)
+const FILL_DAYS = [...new Set([today, examData.range.start, examData.checked, "2026-12-02", "2027-05-12", examData.range.end, "2027-08-02"])];
+
+/** One exam page template in one language: the site's head, header, footer and scripts around pages/exams/*.html. */
+function examPage(page, lang) {
+  const P = PARTS[lang];
+  let body = fs.readFileSync(path.join(ROOT, page.src), "utf8").replace(/^<!--[\s\S]*?-->\s*/, "");
+  if (lang === "es") body = localizeLinks(translate(body));
+  const meta = (name, required = true) => {
+    const m = body.match(new RegExp(`<meta name="${name}" content="([^"]*)"[^>]*>\\n?`));
+    if (!m) { if (required) fail(`${page.src}: <meta name="${name}"> missing`); return null; }
+    body = body.replace(m[0], "");
+    return m[1];
+  };
+  const title = meta("title"), desc = meta("description"), exam = meta("exam", false);
+  body = replaceOne(body.trim(), /<!--site-motto-->/g, () => P.motto, "motto placeholder");
+  // contact details from CONFIG, never typed in the page sources (no email link if CONFIG.email isn't set)
+  const waUrl = `https://wa.me/${CONFIG.whatsapp}`;
+  body = body.replace(/\{\{cfg:wa\}\}/g, waUrl).replace(/<!--notice-contact-->/g, () =>
+    `<a class="wa-link" href="${waUrl}" target="_blank" rel="noopener">WhatsApp</a>` +
+    (isSet(CONFIG.email) ? ` · <a href="mailto:${esc(CONFIG.email)}">${lang === "es" ? ES.footEmail : "Email"}</a>` : ""));
+  if (/\{\{cfg:|<!--notice-contact-->/.test(body)) fail(`${page.src}: unfilled contact placeholder`);
+  // the floating WhatsApp button sits inside <main>, like the legal pages
+  body += `\n\n${P.wa.replace(" is-hidden", "")}`;
+
+  const url = (l) => `${SITE}${page[l]}`;
+  const header = P.header
+    .replace('class="mark" href="#top"', `class="mark" href="${lang === "es" ? "/es/" : "/"}"`)
+    .replace(/href="#([\w-]+)"/g, `href="${lang === "es" ? "/es/" : "/"}#$1"`)
+    .replace(/href="\/" hreflang="en"/, `href="${page.en}" hreflang="en"`)
+    .replace(/href="\/es\/" hreflang="es"/, `href="${page.es}" hreflang="es"`);
+  let footer = staticFooter(P.footer, P.footer.includes(`<a href="${page[lang]}"`) ? page[lang] : null);
+  footer = replaceOne(footer, /(<span data-i18n="footFine">[\s\S]*?<\/span>)/, (m) => `${m} <span>${lang === "es" ? ES.exmTm : EXAM_TM}</span>`, "footer fine print");
+
+  // structured data, in the page's language: BreadcrumbList (all), FAQPage (guides, word for word)
+  const crumbs = [...(body.match(/<nav class="crumbs"[\s\S]*?<\/nav>/) || fail(`${page.src}: no breadcrumb`))[0].matchAll(/<li[^>]*>([\s\S]*?)<\/li>/g)];
+  const ld = [{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: crumbs.map((m, i) => {
+      const href = (m[1].match(/href="([^"]+)"/) || [])[1];
+      return { "@type": "ListItem", position: i + 1, name: text(m[1]), item: href ? SITE + href : url(lang) };
+    }),
+  }];
+  const faq = [...body.matchAll(/<details><summary>([\s\S]*?)<\/summary><p>([\s\S]*?)<\/p><\/details>/g)];
+  if (faq.length) {
+    ld.push({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      url: url(lang),
+      inLanguage: lang,
+      mainEntity: faq.map((m) => ({ "@type": "Question", name: text(m[1]), acceptedAnswer: { "@type": "Answer", text: text(m[2]) } })),
+    });
+  }
+
+  const html = `<!DOCTYPE html>
+<!-- Generated by scripts/build.js from ${page.src}${lang === "es" ? " + i18n/es.js" : ""}, pages/exams/exams.{css,js} and the shared parts of www/index.html.
+     Edit those, then run \`npm run build\`. The {{x:…}} tokens and the exam data are filled by server.js at request time. -->
+<html lang="${lang}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+${P.gtmHead}
+<title>${title}</title>
+<meta name="description" content="${desc}">
+<link rel="canonical" href="${url(lang)}">
+<link rel="alternate" hreflang="en" href="${url("en")}">
+<link rel="alternate" hreflang="es" href="${url("es")}">
+<link rel="alternate" hreflang="x-default" href="${url("en")}">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Jose Diaz Tutoring">
+<meta property="og:title" content="${title}">
+<meta property="og:description" content="${desc}">
+<meta property="og:locale" content="${lang}_US">
+<meta property="og:locale:alternate" content="${lang === "en" ? "es" : "en"}_US">
+<meta property="og:url" content="${url(lang)}">
+<meta property="og:image" content="${SITE}/og-image.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="${SITE}/og-image.png">
+<meta name="theme-color" content="#1C4C9E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="${P.fonts}" rel="stylesheet">
+<style>
+  ${P.css}
+  ${P.mottoCss}
+${examCss}
+</style>
+<noscript><style>#graph,#chkForm{display:none}.nojs-only{display:grid !important}</style></noscript>
+${ld.map(ldScript).join("\n")}
+</head>
+<body${exam ? ` data-exam="${exam}"` : ""}>
+${P.gtmBody}
+${P.skip}
+
+${header}
+
+<main id="main">
+${body}
+</main>
+
+${footer}
+
+<script id="exam-data" type="application/json">${examCal.inlineJson(examData)}</script>
+<script>
+const LANG = "${lang}";
+${P.analytics}
+</script>
+<script>
+${clientJs}
+</script>
+</body>
+</html>
+`;
+  // checks: the server can fill it (any day of the year), nothing is left unfilled, the text fits
+  for (const day of FILL_DAYS) {
+    let filled;
+    try { filled = examCal.fill(html, examData, day); } catch (e) { fail(`${page.src} (${lang}): can't fill it for ${day}: ${e.message}`); }
+    const left = filled.match(/.{0,60}\{\{x:[\w.-]+\}\}/);
+    if (left) fail(`${page.src} (${lang}): unfilled token on ${day}: ${left[0]}`);
+    const d = text(filled.match(/<meta name="description" content="([^"]*)"/)[1]);
+    if (d.length > 155) fail(`${page.src} (${lang}): meta description is ${d.length} chars (max 155)`);
+    for (const m of filled.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) {
+      try { JSON.parse(m[1]); } catch (e) { fail(`${page.src} (${lang}): JSON-LD invalid after filling: ${e.message}`); }
+    }
+  }
+  const words = visibleText(body);
+  if (/\$\s?\d/.test(words)) fail(`${page.src} (${lang}): no prices on the exam pages`);
+  return html;
 }
 
 const slug = (t) => t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -473,6 +651,13 @@ for (const page of LEGAL) {
   if (built.en.sections !== built.es.sections) fail(`${page.src}: English has ${built.en.sections} sections, Spanish ${built.es.sections}`);
 }
 
+for (const page of EXAM_PAGES) {
+  const built = { en: examPage(page, "en"), es: examPage(page, "es") };
+  const tokens = (h) => [...new Set([...h.matchAll(examCal.TOKEN_RE)].map((m) => m[1]))].sort().join();
+  if (tokens(built.en) !== tokens(built.es)) fail(`${page.src}: English and Spanish use different {{x:…}} tokens:\n  en ${tokens(built.en)}\n  es ${tokens(built.es)}`);
+  for (const lang of ["en", "es"]) outputs.push([outFile(page[lang]), built[lang]]);
+}
+
 // --- 404 page: the site footer, in both languages -----------------------------------------
 function footer404() {
   let f = staticFooter(PARTS.en.footer);
@@ -481,6 +666,7 @@ function footer404() {
   const esLinks = between(PARTS.es.footer, '<ul class="legal-links">', "</ul>", "Spanish policy links", true).replace('<ul class="legal-links">', '<ul class="legal-links" lang="es">');
   f = replaceOne(f, /(<ul class="legal-links">[\s\S]*?<\/ul>)/, `$1\n      ${esLinks}`, "404 policy links");
   f = replaceOne(f, /(<span data-i18n="footFine">[\s\S]*?<\/span>)/, `$1 <span lang="es">${ES.footFine}</span>`, "404 fine print");
+  f = replaceOne(f, /(<a href="\/exams\/" data-i18n="footExams">[^<]*<\/a>)/, `$1 · <a href="/es/examenes/" lang="es">${ES.footExams}</a>`, "404 exam calendar link");
   return f;
 }
 let page404 = fs.readFileSync(PAGE404, "utf8");
@@ -500,7 +686,7 @@ const readJson = (f, dflt) => (fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 
 const pageHash = (h) => require("node:crypto").createHash("sha256").update(h.replace(/(<span id="yr">)\d{4}(<\/span>)/g, "$1$2")).digest("hex");
 const pageHtml = { "/": enHtml, "/es/": es };
 for (const [file, content] of outputs) pageHtml["/" + path.relative(path.join(ROOT, "www"), file).replace(/\.html$/, "/")] = content;
-const pairs = [{ en: "/", es: "/es/" }, ...LEGAL];
+const pairs = [{ en: "/", es: "/es/" }, ...LEGAL, ...EXAM_PAGES];
 const pagePaths = pairs.flatMap((p) => [p.en, p.es]);
 const published = readJson(PUBLISHED, null);
 const oldPending = Object.fromEntries(readJson(PENDING, []).map((p) => [p.url, p]));

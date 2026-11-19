@@ -1,6 +1,7 @@
 # App Engine standard. Most pages are static files. server.js serves the home
 # pages (/ and /es/) and /llms.txt with the prices from the `site-pricing` secret
-# filled in (Cache-Control: public, max-age=600), handles POST /api/contact (the
+# filled in, and the exam calendar pages with the dates from the `site-exams` secret
+# (both Cache-Control: public, max-age=600), handles POST /api/contact (the
 # booking form), the few redirects that static handlers can't do, and a real 404
 # page for every other URL.
 # App Engine installs package.json dependencies and runs `npm start`.
@@ -124,6 +125,12 @@ handlers:
 
 # Everything else goes to server.js:
 #   / , /es/ , /llms.txt    built files with the live prices filled in (pricing.js)
+#   /exams/ , /exams/algebra-1-eoc/ , /es/examenes/ , /es/examenes/eoc-algebra-1/
+#                           built templates (www/exams.html, ...) with the live exam data
+#                           and today's dates filled in (exam-calendar.js), 10-minute cache
+#   /exams/data.json        the live exam data (JSON, 10-minute cache, X-Robots-Tag: noindex)
+#   /exams, /exams.html, /exams/index.html -> /exams/ (and the same for the other three)   (301)
+#   any other URL under /exams/ or /es/examenes/ -> the 404 page
 #   /api/contact            booking form (POST only)
 #   /index.html -> /,  /es and /es/index.html -> /es/   (301)
 #   /privacy, /privacy.html -> /privacy/ (and the other legal pages)   (301)

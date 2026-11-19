@@ -9,6 +9,9 @@
  *   PRICING_FILE=pricing.json npm run dev
  *                          prices from a local file instead of the site-pricing secret
  *                          (re-read as soon as the file changes; without it: the fallback)
+ *   EXAMS_FILE=exams.json npm run dev
+ *                          exam data from a local file instead of the site-exams secret
+ *                          (same rules; an invalid or missing file -> the bundled data, with a warning)
  */
 "use strict";
 
@@ -19,7 +22,7 @@ const path = require("node:path");
 const ROOT = path.join(__dirname, "..");
 const MIME = {
   ".html": "text/html", ".png": "image/png", ".txt": "text/plain", ".xml": "application/xml",
-  ".svg": "image/svg+xml", ".ico": "image/x-icon",
+  ".svg": "image/svg+xml", ".ico": "image/x-icon", ".json": "application/json",
 };
 
 /** Just enough YAML for app.yaml's handler list. */
@@ -46,7 +49,7 @@ function handlers() {
   return out;
 }
 
-function createDevServer({ onSend, pricingFile = process.env.PRICING_FILE } = {}) {
+function createDevServer({ onSend, pricingFile = process.env.PRICING_FILE, examsFile = process.env.EXAMS_FILE } = {}) {
   const app = require(path.join(ROOT, "server.js"));
   // stub the mailer and secrets: nothing leaves this machine
   app.secrets.set("smtp-config", JSON.stringify({ user: "site@example.test", password: "dev-stub" }));
@@ -59,6 +62,15 @@ function createDevServer({ onSend, pricingFile = process.env.PRICING_FILE } = {}
     console.log(`Prices from ${f}`);
   } else {
     app._setPricingSource(async () => "");
+  }
+  // exam data: a local file stands in for the secret ("" = not set -> the bundled data)
+  if (examsFile) {
+    const f = path.resolve(examsFile);
+    app._setExamsSource(async () => (fs.existsSync(f) ? fs.readFileSync(f, "utf8").trim() : ""));
+    fs.watchFile(f, { interval: 500 }, () => app._clearExamsCache());
+    console.log(`Exam data from ${f}`);
+  } else {
+    app._setExamsSource(async () => "");
   }
   app._setSend(async (messages) => {
     for (const m of messages) console.log(`[email stub] to=${m.to} subject=${JSON.stringify(m.subject)}`);

@@ -27,6 +27,7 @@ module.exports = {
   ctaShort: "Agenda una llamada gratis",
   heroTitle: "Matemáticas y física, de la mano de un ingeniero que las usa todos los días.",
   heroLede: "Tutorías individuales y en grupos pequeños para estudiantes de secundaria y universidad. En línea desde cualquier lugar, o en persona en Broward y Miami-Dade, en español o en inglés.",
+  ctaMini: "Llamada gratis",
   ctaLong: "Agenda una llamada gratis de 20 minutos",
   ctaRates: "Ver precios",
   fact1: "<strong>Tutor desde 2016</strong>",
@@ -79,17 +80,18 @@ module.exports = {
   subTitle: "Lo que enseño",
   subLede: "De secundaria a ingeniería universitaria, un mismo enfoque: entender por qué funciona el método y practicar hasta que salga solo.",
   hsTitle: 'Secundaria (<span lang="en">high school</span>)', hsLede: 'Grados 9 a 12, incluidos <span lang="en">honors</span>, AP y <span lang="en">dual enrollment</span>.',
-  hs1: "Álgebra 1 y 2", hs1n: "incluye preparación para el EOC de Florida",
-  hs2: "Geometría", hs2n: "incluye preparación para el EOC de Florida",
-  hs3: "Precálculo y trigonometría", hs4: "AP Calculus AB y BC",
-  hs5: "Física y AP Physics 1, 2, C", hs6: "Matemáticas del SAT y ACT",
+  hs1: "Álgebra 1 y 2", hs1n: 'incluye preparación para el <a href="/es/examenes/eoc-algebra-1/">EOC de Florida</a> (Álgebra 1)',
+  hs2: "Geometría", hs2n: 'incluye preparación para el <a href="/es/examenes/?for=g10">EOC de Florida</a>',
+  hs3: "Precálculo y trigonometría", hs4: '<a href="/es/examenes/?for=g11">AP Calculus AB y BC</a>',
+  hs5: 'Física y <a href="/es/examenes/?for=g11">AP Physics 1, 2, C</a>', hs6: '<a href="/es/examenes/?for=g11">Matemáticas del SAT y ACT</a>',
   uTitle: "Universidad", uLede: "Matemáticas y física para carreras STEM, pre-medicina e ingeniería.",
   u1: "Álgebra universitaria y precálculo", u2: "Cálculo I, II y III", u3: "Ecuaciones diferenciales",
   u4: "Física I y II", u4n: "con álgebra o con cálculo",
-  u5: "Repasos para parciales y finales", u5n: "individuales o en grupo",
+  u5: '<a href="/es/examenes/?for=college">Repasos para parciales y finales</a>', u5n: "individuales o en grupo",
+  u6: '<a href="/es/examenes/?for=college">Física y matemáticas del MCAT</a>', u6n: "sección Chem/Phys, para quienes van a medicina",
   eTitle: "Cursos de ingeniería",
   eLede: "Para estudiantes de ingeniería eléctrica y de computación. Son los temas con los que trabajo a diario como ingeniero, así que vemos la teoría y cómo se usa en hardware real.",
-  eNote: "¿No ves tu curso? Envíame el programa.",
+  eNote: "¿No ves tu curso?", syllabusBtn: "Envíame el programa", syllabusMail: "o por correo",
   e1: "Circuitos eléctricos I y II", e1n: "DC, AC, transitorios", e2: "Diseño lógico digital",
   e3: "Programación", e3n: "C, C++, Python", e4: "Microcontroladores y sistemas embebidos",
   schTitle: "Tutorías para cursos en", schUM: "Universidad de Miami",
@@ -118,7 +120,7 @@ module.exports = {
   perHour: "por hora",
   r2t: '<span lang="en">High school</span>, mensual', r2p: '<span data-price="plan.hs-monthly.sessions">8</span> sesiones al mes, los mismos días y horas cada semana.',
   r2s: '<span data-price="plan.hs-monthly.perHour">unos $54/hora</span>, ahorras <span data-price="plan.hs-monthly.save">$91</span>',
-  r3t: "Universidad, individual", r3p: "Cálculo, ecuaciones diferenciales y física.",
+  r3t: "Universidad, individual", r3p: "Cálculo, ecuaciones diferenciales, física y preparación para el MCAT.",
   r4t: "Universidad, semestre", r4p: '<span data-price="plan.college-semester.sessions">12</span> sesiones individuales organizadas alrededor de tus parciales y tu final.',
   r4s: '<span data-price="plan.college-semester.perHour">unos $75/hora</span>, ahorras <span data-price="plan.college-semester.save">$181</span>',
   r5t: "Repaso en grupo para exámenes", r5p: "De 3 a 5 estudiantes del mismo curso, sesión de 2 horas antes de un parcial o final.", r5s: "por estudiante, por hora",
@@ -157,6 +159,7 @@ module.exports = {
   send: "Enviar solicitud", sendNote: "Recibirás un correo de confirmación y te respondo en un día hábil.",
   foot: "Tutorías de matemáticas, física e ingeniería, en línea y en el sur de Florida.",
   footArea: "En persona en Broward y Miami-Dade · En línea desde cualquier lugar",
+  footExams: "Calendario de exámenes",
   footGbp: "Perfil en Google",
   footReview: "Déjame una reseña en Google",
   footContact: "Contacto",
@@ -320,7 +323,7 @@ module.exports = {
   tosIndependent: `
       <h2>Un servicio independiente</h2>
       <p>Jose Diaz Tutoring es un servicio de tutorías independiente. No tiene relación con ninguna escuela, <i lang="en">college</i> ni universidad mencionada en este sitio, ni cuenta con su aval; sus nombres se usan solo para describir los cursos en los que doy tutorías.</p>
-      <p>AP y SAT son marcas registradas del College Board. ACT es una marca registrada de su titular. Ninguno de ellos tiene relación con este sitio ni lo avala.</p>
+      <p>AP y SAT son marcas registradas del College Board. ACT es una marca registrada de su titular. MCAT es una marca registrada de la AAMC. Ninguno de ellos tiene relación con este sitio ni lo avala.</p>
     `,
   tosRates: `
       <h2>Tarifas y pagos</h2>
@@ -392,6 +395,10 @@ module.exports = {
       <h2>Materiales</h2>
       <p>Las hojas de ejercicios, las soluciones y los apuntes que te doy son para tu estudio personal. Por favor, no los revendas ni los publiques.</p>
     `,
+  tosFreeResources: `
+      <h2>Recursos gratuitos y fechas de exámenes</h2>
+      <p>El calendario de exámenes, el verificador de notas y las demás guías gratuitas de este sitio son para planificar e informarte en general. Reviso las fechas en las fuentes oficiales, pero las escuelas, los distritos, el Departamento de Educación de Florida, College Board, ACT, la AAMC y las universidades pueden cambiar fechas, plazos y requisitos en cualquier momento. El calendario de tu escuela y las fuentes oficiales siempre tienen prioridad. Jose Diaz Tutoring no se hace responsable de plazos perdidos, cargos u otras consecuencias por usar estos recursos. El verificador de notas es una estimación; solo tu escuela puede confirmar que cumples un requisito. "Resumir con Claude" abre un servicio de IA de terceros cuyas respuestas pueden tener errores.</p>
+    `,
   tosEnding: `
       <h2>Fin del servicio</h2>
       <p>Cualquiera de los dos puede terminar el servicio en cualquier momento. Las sesiones prepagadas que no hayas usado se reembolsan como explico en <a href="#planes-y-reembolsos">Planes y reembolsos</a>.</p>
@@ -450,4 +457,94 @@ module.exports = {
       <p><a href="mailto:jose@josediaztutoring.com">jose@josediaztutoring.com</a></p>
       <p><a href="tel:+17868329107">786-832-9107</a> (llamada o WhatsApp)</p>
     `,
+
+  // ---- exam calendar (pages/exams/hub.html, pages/exams/algebra-1-eoc.html) ----
+  // {{x:…}} tokens are filled by the server from the exam data: keep them exactly as in the English source.
+  exmTm: "SAT, AP y PSAT/NMSQT son marcas registradas de College Board. ACT es marca registrada de ACT Education Corp. MCAT es marca registrada de la AAMC. Ninguna está afiliada a este sitio. Confirma siempre las fechas en la fuente oficial que aparece en cada una.",
+
+  // hub: /es/examenes/
+  exTitle: "Calendario de exámenes de Florida {{x:year}} | Jose Diaz Tutoring",
+  exDesc: "Fechas de exámenes en Florida {{x:year}}: EOC de Álgebra 1 y Geometría, SAT, ACT, AP y finales universitarios. Elige el grado y mira qué importa.",
+  exCrumb: "Calendario de exámenes",
+  exH1: "Calendario de exámenes de Florida, {{x:year}}",
+  exLede: "Todas las fechas y plazos de los exámenes en los que ayudo, desde el EOC de Álgebra 1 hasta los finales universitarios y el MCAT. Cada fecha enlaza a su fuente oficial, y las que ya pasaron desaparecen solas.",
+  exChecked: "Fechas revisadas el",
+  exSources: "Fuentes: FDOE, College Board, ACT, la AAMC y la oficina de registro de cada universidad",
+  exFinderH: "¿Quién tiene examen este año?",
+  exFinderP: "Elige el grado y verás solo los exámenes que le tocan, por qué importan y qué hacer ahora.",
+  exGradeLabel: "Grado",
+  exGraphH: "El año escolar de un vistazo",
+  exGraphP: "Toca una marca para ver su fecha y plazos.",
+  exLegend: `
+      <span><i class="lg-dot"></i>Día de examen</span>
+      <span><i class="lg-bar"></i>Período de exámenes o semana de finales</span>
+      <span><i class="lg-soft"></i>Examen en horario escolar (lo elige tu distrito)</span>
+    `,
+  exNextH: "Lo que viene",
+  exFilterLabel: "Filtro",
+  exPromo: `
+        <h2>¿Tu hijo ya cumplió el requisito de Álgebra 1?</h2>
+        <p>El EOC no es el único camino. Una nota del SAT, ACT, PSAT o del EOC de Geometría también cuenta. Escribe la nota, mira dónde queda y cuáles son las próximas fechas para intentarlo.</p>
+        <p class="promo-cta"><a class="btn btn-primary" href="/es/examenes/eoc-algebra-1/#checker">Revisar una nota</a></p>
+      `,
+
+  // Algebra 1 EOC guide: /es/examenes/eoc-algebra-1/
+  egTitle: "EOC de Álgebra 1: nota para aprobar, fechas y cómo prepararse | Jose Diaz Tutoring",
+  egDesc: "EOC de Álgebra 1 en Florida: se aprueba con {{x:cut.alg1}}, períodos {{x:year}}, otras notas que cumplen el requisito y práctica oficial gratis.",
+  egCrumb: "EOC de Álgebra 1",
+  egH1: "EOC de Álgebra 1",
+  egLede: "El examen de fin de curso de Álgebra 1 en Florida. Aprobarlo, o una alternativa aprobada, es parte de obtener el diploma estándar de high school.",
+  egBigCap: "la nota para aprobar",
+  egScaleH: "Dónde queda el {{x:cut.alg1}} en la escala",
+  egScaleFoot: "Niveles según la hoja informativa del FDOE {{x:year}}. El Nivel 3 significa nivel de grado. Geometría se aprueba con {{x:cut.geo}}.",
+  egShortH: "En resumen",
+  egShort: `
+      <li>Para aprobar hace falta <b>{{x:cut.alg1}}</b> (Nivel 3). Es requisito de graduación y casi siempre vale el 30% de la nota de Álgebra 1.</li>
+      <li>Próxima oportunidad: <b data-nextwin="es">{{x:nextwin}}</b>. La escuela elige el día exacto.</li>
+      <li>¿Todavía no lo aprueba? Un {{x:cut.sat}} en SAT Math, {{x:cut.act}} en ACT Math, {{x:cut.psat}} en PSAT Math o Nivel 3 en el EOC de Geometría también cumplen el requisito.</li>
+      <li>Se hace en computadora y se adapta a cada respuesta: 160 minutos, con calculadora científica y hoja de fórmulas incluidas. Haz primero el examen de práctica oficial.</li>
+    `,
+  egClaudeBtn: "Resumir con Claude",
+  egClaudeP: "Abre Claude en otra pestaña con los datos clave de esta página para que preguntes por tu caso. Puede que tengas que iniciar sesión.",
+  egGlanceH: "Lo básico",
+  egGlance: `
+        <dt>Quién lo toma</dt><dd>Todo el que cursa Álgebra 1, incluso en middle school</dd>
+        <dt>Formato</dt><dd>En computadora y adaptativo: las preguntas suben o bajan de dificultad según las respuestas</dd>
+        <dt>Duración</dt><dd>Una sesión de 160 minutos con descanso a los 80. Se puede seguir trabajando hasta completar un día escolar normal.</dd>
+        <dt>Herramientas</dt><dd>Calculadora científica y hoja de fórmulas en pantalla</dd>
+        <dt>Resultados</dt><dd>Llegan a la escuela en 24 horas</dd>
+        <dt>Repetirlo</dt><dd>En cada período, hasta aprobarlo</dd>
+      `,
+  egWinH: "Períodos de examen {{x:year}}",
+  egWinNote: "La escuela elige el día dentro de cada período. Pregúntale al maestro o al consejero.",
+  egChkH: "Revisa una nota contra el requisito",
+  egChkP: "Cualquiera de estas notas cumple el requisito de graduación de Álgebra 1. Nada de lo que escribas sale de esta página.",
+  egChkTest: "Examen", egChkScore: "Nota", egChkBtn: "Revisar nota",
+  egStat: `
+        <div class="num">{{x:stat.grades9to12}}%</div>
+        <p>de los estudiantes de high school (9.º a 12.º) que tomaron el EOC de Álgebra 1 en la primavera de 2026 lo aprobaron. Los que lo tomaron en 8.º grado o antes lo aprobaron en un {{x:stat.grade8AndLower}}%.</p>
+        <p>En mi experiencia, a quien no aprueba casi siempre le faltan unas pocas destrezas, no el curso entero. Cuando se encuentran, la nota sube.</p>
+        <p class="fine-note">Fuente: FDOE, resultados 2026 de FAST y EOC B.E.S.T.</p>
+      `,
+  egBrkH: "Dónde se pierden puntos",
+  egBrkP: "De mis sesiones con estudiantes, no son datos oficiales. Los reviso en la primera sesión.",
+  egLinksH: "Práctica oficial gratis",
+  egFaqH: "Preguntas de los padres",
+  egFaq: `
+        <details><summary>¿Se puede graduar sin aprobar el EOC?</summary><p>Sí, con una nota aprobada en otro examen: {{x:cut.sat}} en SAT Math, {{x:cut.psat}} en PSAT/NMSQT o PSAT 10 Math, {{x:cut.act}} en ACT Math o PreACT Secure Math, {{x:cut.clt}} en CLT o CLT10 Quantitative Reasoning, o Nivel 3 en el EOC de Geometría.</p></details>
+        <details><summary>¿Cuántas veces puede repetirlo?</summary><p>Las que haga falta. Se ofrece en otoño, invierno, primavera y verano.</p></details>
+        <details><summary>¿Todavía cuenta el PERT?</summary><p>No. No aparece en la lista actual de notas alternativas del FDOE.</p></details>
+        <details><summary>¿Cuándo sabremos la nota?</summary><p>Los resultados llegan a la escuela en 24 horas.</p></details>
+      `,
+  egHelpGroup: `
+        <h3>Repaso del EOC en grupo pequeño</h3>
+        <p>De 3 a 5 estudiantes, 2 horas, justo antes de cada período de examen. Trabajamos las destrezas de arriba con preguntas al estilo oficial.</p>
+        <div class="acts"><a class="btn btn-primary" href="/es/#contact">Pregunta por el próximo grupo</a></div>
+      `,
+  egHelpOne: `
+        <h3>Clases individuales</h3>
+        <p>Una primera sesión para encontrar lo que falta y luego un plan hasta el día del examen. En línea o en persona en Broward y Miami-Dade.</p>
+        <div class="acts"><a class="btn btn-ghost" href="/es/#contact">Agenda una llamada gratis de 20 minutos</a></div>
+      `,
+  egSrcH: "Fuentes, revisadas el",
 };

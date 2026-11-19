@@ -81,9 +81,19 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5em;font:700 1rem/1 var(--body);
     padding:15px 22px;border-radius:8px;text-decoration:none;border:2px solid var(--ink);cursor:pointer}
   .btn-primary{background:var(--ink);color:#fff}
-  .btn-primary:hover{background:var(--ink-dark);border-color:var(--ink-dark)}
   .btn-ghost{background:transparent;color:var(--ink)}
-  .btn-ghost:hover{background:#fff}
+  /* hover states (pointer devices only, so a tap on a phone doesn't leave a "stuck" hover).
+     Primary: darker ink, white text. Outline buttons and chips: pad-green fill, dark ink. Never the highlighter. */
+  .btn,.chip{transition:background-color .15s,border-color .15s,color .15s}
+  @media (hover:hover){
+    .btn-primary:hover{background:var(--ink-dark);border-color:var(--ink-dark);color:#fff}
+    .btn-ghost:hover{background:var(--pad);border-color:var(--ink-dark);color:var(--ink-dark)}
+    .chip:not([aria-pressed="true"]):not([aria-selected="true"]):hover{background:var(--pad);border-color:var(--ink-dark);color:var(--ink-dark)}
+    .chip[aria-pressed="true"]:hover,.chip[aria-selected="true"]:hover{background:var(--ink-dark);border-color:var(--ink-dark);color:#fff}
+  }
+  @media (prefers-reduced-motion:reduce){.btn,.chip{transition:none}}
+  /* text links in the page: darker ink on hover (buttons, chips and the WhatsApp float keep their own colors) */
+  main a:not(.btn):not(.ibtn):not(.chip):not(.wa-float):hover{color:var(--ink-dark)}
 
   /* header */
   .site-head{position:sticky;top:0;z-index:20;background:rgba(251,252,250,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--rule)}
@@ -101,6 +111,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   @media (max-width:920px){.nav{display:none}}
   @media (max-width:560px){.head-cta{display:none}.mark small{display:none}}
   @media (max-width:380px){.mark{font-size:1.08rem}.head-in{gap:14px}}
+  /* Spanish header between the nav breakpoint and ~1120px: the longer labels wrapped (#14b), so use the
+     short CTA label, a tighter nav and no subtitle there. English never needs it. */
+  .cta-mini{display:none}
+  @media (min-width:921px) and (max-width:1120px){
+    html[lang="es"] .head-cta .cta-full,html[lang="es"] .mark small{display:none}
+    html[lang="es"] .head-cta .cta-mini{display:inline}
+    html[lang="es"] .nav{gap:16px}
+  }
 
   /* floating WhatsApp */
   .wa-float{position:fixed;right:18px;bottom:18px;z-index:30;display:inline-flex;align-items:center;gap:9px;
@@ -225,7 +243,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <a href="/terms/" hreflang="en" lang="en" data-lang="en" aria-current="page">EN</a>
       <a href="/es/terminos/" hreflang="es" lang="es" data-lang="es">ES</a>
     </nav>
-    <a class="btn btn-primary head-cta" href="/#contact" data-i18n="ctaShort">Book a free intro</a>
+    <a class="btn btn-primary head-cta" href="/#contact"><span class="cta-full" data-i18n="ctaShort">Book a free intro</span><span class="cta-mini" data-i18n="ctaMini">Free intro</span></a>
   </div>
 </header>
 
@@ -256,6 +274,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <li><a href="#recording-sessions">Recording sessions</a></li>
       <li><a href="#messages-about-your-sessions">Messages about your sessions</a></li>
       <li><a href="#materials">Materials</a></li>
+      <li><a href="#free-resources-and-exam-dates">Free resources and exam dates</a></li>
       <li><a href="#ending-the-service">Ending the service</a></li>
       <li><a href="#limitation-of-liability">Limitation of liability</a></li>
       <li><a href="#disputes-and-governing-law">Disputes and governing law</a></li>
@@ -281,7 +300,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <section class="sec" data-i18n="tosIndependent">
       <h2 id="an-independent-service">An independent service</h2>
       <p>Jose Diaz Tutoring is an independent tutoring service. It isn't affiliated with or endorsed by any school, college or university named on this site; their names are used only to describe the courses I tutor.</p>
-      <p>AP and SAT are trademarks registered by the College Board. ACT is a registered trademark of its owner. Neither is affiliated with or endorses this site.</p>
+      <p>AP and SAT are trademarks registered by the College Board. ACT is a registered trademark of its owner. MCAT is a registered trademark of the AAMC. None of them is affiliated with or endorses this site.</p>
     </section>
 
     <section class="sec" data-i18n="tosRates">
@@ -364,6 +383,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <p>Worksheets, solutions and notes I give you are for your own study. Please don't resell them or post them publicly.</p>
     </section>
 
+    <section class="sec" data-i18n="tosFreeResources">
+      <h2 id="free-resources-and-exam-dates">Free resources and exam dates</h2>
+      <p>The exam calendar, score checker and other free guides on this site are for general planning and information. I check dates against official sources, but schools, districts, the Florida Department of Education, College Board, ACT, the AAMC and colleges can change dates, deadlines and requirements at any time. Your school's calendar and the official sources always take priority. Jose Diaz Tutoring isn't responsible for missed deadlines, fees or other outcomes based on these resources. Score checks are an estimate; only your school can confirm that a requirement is met. "Summarize with Claude" opens a third-party AI service whose answers can contain mistakes.</p>
+    </section>
+
     <section class="sec" data-i18n="tosEnding">
       <h2 id="ending-the-service">Ending the service</h2>
       <p>Either of us can stop at any time. Unused prepaid sessions are refunded as described in <a href="#plans-and-refunds">Plans and refunds</a>.</p>
@@ -403,6 +427,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <h2 class="foot-h">Jose Diaz Tutoring</h2>
       <p data-i18n="foot">Math, physics and engineering tutoring, online and in South Florida.</p>
       <p data-i18n="footArea">Serving Broward &amp; Miami-Dade · Online anywhere</p>
+      <p class="foot-exams"><a href="/exams/" data-i18n="footExams">Exam calendar</a></p>
     </div>
     <div>
       <h2 class="foot-h" data-i18n="footContact">Contact</h2>
@@ -451,8 +476,8 @@ const track = (event, params) => (window.dataLayer = window.dataLayer || []).pus
 document.addEventListener("click", e => {
   const a = e.target.closest && e.target.closest("a[href]");
   if (!a) return;
-  const href = a.getAttribute("href"), where = a.id === "wa-float" ? "floating_button" : (a.closest("footer") ? "footer" : "page");
-  if (a.classList.contains("wa-link")) track("contact_click", { contact_method: "whatsapp", link_location: where });
+  const href = a.getAttribute("href"), where = a.id === "wa-float" ? "floating_button" : (a.dataset.loc || (a.closest("footer") ? "footer" : "page"));
+  if (a.classList.contains("wa-link") || a.dataset.contact === "whatsapp") track("contact_click", { contact_method: "whatsapp", link_location: where });
   else if (href.startsWith("tel:")) track("contact_click", { contact_method: "phone", link_location: where });
   else if (href.startsWith("mailto:")) track("contact_click", { contact_method: "email", link_location: where });
 });
