@@ -49,9 +49,8 @@ function handlers() {
 function createDevServer({ onSend, pricingFile = process.env.PRICING_FILE } = {}) {
   const app = require(path.join(ROOT, "server.js"));
   // stub the mailer and secrets: nothing leaves this machine
-  app.secrets.set("smtp-user", "site@example.test");
-  for (const name of ["smtp-host", "smtp-port", "smtp-secure", "smtp-from", "mail-daily-limit", "mail-ip-hourly-limit", "mail-email-hourly-limit"]) app.secrets.set(name, "");
-  app.secrets.set("owner-email", "");
+  app.secrets.set("smtp-config", JSON.stringify({ user: "site@example.test", password: "dev-stub" }));
+  for (const name of ["mail-daily-limit", "mail-ip-hourly-limit", "mail-email-hourly-limit"]) app.secrets.set(name, "");
   // prices: a local file stands in for the secret ("" = not set -> fallback prices)
   if (pricingFile) {
     const f = path.resolve(pricingFile);

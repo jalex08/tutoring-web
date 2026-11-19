@@ -4,3 +4,4 @@ node_modules/
 
 # IndexNow: changed pages awaiting submission (written by npm run build)
 seo/pending-indexnow.json
+smtp-config.json
