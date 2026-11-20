@@ -635,13 +635,29 @@ function notFoundPage(req, res) {
   res.end(req.method === "HEAD" ? undefined : page404);
 }
 
-function page(req, res, pathname, query, search = "") {
-  const read = req.method === "GET" || req.method === "HEAD";
-  let to = REDIRECTS[pathname];
+/** The 301 target for a path (the REDIRECTS table, old ?lang=es links), or undefined. */
+function redirectFor(pathname, query) {
   // old ?lang=es links -> /es/ (keeps ?topic=, the class picked in the hero)
   if ((pathname === "/" || pathname === "/index.html") && query.get("lang") === "es") {
-    to = "/es/" + (query.get("topic") ? "?topic=" + encodeURIComponent(query.get("topic")) : "");
+    return "/es/" + (query.get("topic") ? "?topic=" + encodeURIComponent(query.get("topic")) : "");
   }
+  return REDIRECTS[pathname];
+}
+
+/**
+ * The normalized form of a raw request path: A-Z lowercased (%XX escapes untouched), then any
+ * leading /en segment dropped (/en, /en/ -> /, /en/<path> -> /<path>; repeated, so /en/en/x is
+ * one hop too). URLs are all lowercase and English has no /en/ prefix.
+ */
+function normalizePath(raw) {
+  let p = raw.replace(/%[0-9A-Fa-f]{2}|[A-Z]+/g, (m) => (m[0] === "%" ? m : m.toLowerCase()));
+  while (p === "/en" || p.startsWith("/en/")) p = p.slice(3) || "/";
+  return p;
+}
+
+function page(req, res, pathname, query, search = "") {
+  const read = req.method === "GET" || req.method === "HEAD";
+  const to = redirectFor(pathname, query);
   if (to && read) {
     res.writeHead(301, { ...SECURITY_HEADERS, Location: to, "Cache-Control": "public, max-age=3600" });
     return res.end();
@@ -680,6 +696,20 @@ const server = http.createServer((req, res) => {
     url = new URL("http://localhost" + (req.url || "/"));
   } catch {
     return notFoundPage(req, res);
+  }
+  // GET/HEAD: uppercase or /en/... paths -> one 301 to the normalized path + the original query
+  // (with the REDIRECTS table / old ?lang=es rule applied in the same hop, so it never chains)
+  if (req.method === "GET" || req.method === "HEAD") {
+    const raw = String(req.url || "/"), q = raw.indexOf("?");
+    const rawPath = q < 0 ? raw : raw.slice(0, q), rawQuery = q < 0 ? "" : raw.slice(q);
+    const norm = normalizePath(rawPath);
+    if (rawPath.startsWith("/") && norm !== rawPath && norm !== "/api" && !norm.startsWith("/api/")) {
+      let normUrl;
+      try { normUrl = new URL("http://localhost" + norm + rawQuery); } catch { return notFoundPage(req, res); }
+      const to = redirectFor(normUrl.pathname, normUrl.searchParams) || norm + rawQuery;
+      res.writeHead(301, { ...SECURITY_HEADERS, Location: to, "Cache-Control": "public, max-age=3600" });
+      return res.end();
+    }
   }
   if (!url.pathname.startsWith("/api/")) return page(req, res, url.pathname, url.searchParams, url.search);
   if (url.pathname !== "/api/contact") return reply(res, 404, { ok: false, error: "not_found" });

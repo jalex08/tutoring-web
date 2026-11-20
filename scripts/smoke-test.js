@@ -79,6 +79,36 @@ srv.listen(0, async () => {
     assert.equal(r.headers.get("location"), "/es/?topic=calculus");
   });
 
+  console.log("path normalization (lowercase, no /en prefix): one 301, query kept");
+  for (const [p, to] of [
+    ["/en", "/"], ["/en/", "/"], ["/EN", "/"], ["/En/", "/"], ["/en/exams/?for=g10", "/exams/?for=g10"], ["/EN/Exams/", "/exams/"],
+    ["/en/exams", "/exams/"], ["/ES", "/es/"], ["/Es/Examenes/", "/es/examenes/"], ["/Privacy", "/privacy/"], ["/PRIVACY/", "/privacy/"],
+    ["/en/en/terms/", "/terms/"], ["/en?lang=es&topic=calculus", "/es/?topic=calculus"], ["/EN/?utm_campaign=Card&X=Y", "/?utm_campaign=Card&X=Y"],
+    ["/OG-IMAGE.PNG", "/og-image.png"], ["/en/does-not-exist", "/does-not-exist"], ["/Caf%C3%A9", "/caf%C3%A9"],
+  ]) {
+    await check(`${p} -> 301 ${to}`, async () => {
+      for (const method of ["GET", "HEAD"]) {
+        const r = await get(p, { method });
+        assert.equal(r.status, 301, method);
+        assert.equal(r.headers.get("location"), to, method);
+      }
+      // one hop: the target never redirects again for a visitor without a lang cookie
+      const next = await get(to);
+      assert.ok(next.status === 200 || next.status === 404, `${to} -> ${next.status} ${next.headers.get("location") || ""}`);
+    });
+  }
+  for (const p of ["/", "/es/", "/?utm_campaign=Card", "/exams/?for=g10", "/english/", "/es/en/", "/env"]) {
+    await check(`${p}: not normalized`, async () => {
+      const r = await get(p);
+      assert.notEqual(r.status, 301);
+    });
+  }
+  await check("POST /EN, POST /api/contact, GET /API/contact: no normalization redirect", async () => {
+    assert.equal((await get("/EN", { method: "POST" })).status, 404);
+    assert.equal((await get("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })).status, 400);
+    assert.notEqual((await get("/API/contact")).status, 301);
+  });
+
   console.log("language preference (cookie lang)");
   const withLang = (v, opts = {}) => ({ ...opts, headers: { cookie: `_ga=GA1.1.1; lang=${v}; _ga_X=GS1.1` } });
   for (const [p, cookieVal, status, to] of [
