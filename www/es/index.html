@@ -1666,16 +1666,21 @@ if ("IntersectionObserver" in window) {
   const copy = document.getElementById("share-copy"), status = document.getElementById("share-status");
   wa.href = "https://wa.me/?text=" + encodeURIComponent(text + " " + url);
   const fallbacks = () => { wa.hidden = false; copy.hidden = false; };
+  /* GA4 "share" event: one per completed share (no personal data). The WhatsApp button has no
+     wa-link / data-contact, so it never counts as a contact_click. */
+  const shareEvt = m => (window.dataLayer = window.dataLayer || []).push({ event: "share",
+    method: m, content_type: "page", item_id: "share_sheet", page_language: LANG });
 
   if (navigator.share && matchMedia("(pointer: coarse)").matches) {
     native.hidden = false; wa.hidden = true;
     native.addEventListener("click", async () => {
-      try { await navigator.share({ title: "Jose Diaz Tutoring", text, url }); }
+      try { await navigator.share({ title: "Jose Diaz Tutoring", text, url }); shareEvt("native"); }
       catch (e) { if (!e || e.name !== "AbortError") fallbacks(); }
     });
   } else {
     fallbacks();
   }
+  wa.addEventListener("click", () => shareEvt("whatsapp"));
 
   function legacyCopy(){
     const ta = document.createElement("textarea");
@@ -1690,6 +1695,7 @@ if ("IntersectionObserver" in window) {
     let ok = false;
     try { await navigator.clipboard.writeText(url); ok = true; } catch (_) { ok = legacyCopy(); }
     if (!ok) return;
+    shareEvt("copy_link");
     status.textContent = box.dataset.shareCopied;
     clearTimeout(timer); timer = setTimeout(() => { status.textContent = ""; }, 2000);
   });
