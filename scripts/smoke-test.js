@@ -79,6 +79,83 @@ srv.listen(0, async () => {
     assert.equal(r.headers.get("location"), "/es/?topic=calculus");
   });
 
+  console.log("path normalization (lowercase, no /en prefix): one 301, query kept");
+  for (const [p, to] of [
+    ["/en", "/"], ["/en/", "/"], ["/EN", "/"], ["/En/", "/"], ["/en/exams/?for=g10", "/exams/?for=g10"], ["/EN/Exams/", "/exams/"],
+    ["/en/exams", "/exams/"], ["/ES", "/es/"], ["/Es/Examenes/", "/es/examenes/"], ["/Privacy", "/privacy/"], ["/PRIVACY/", "/privacy/"],
+    ["/en/en/terms/", "/terms/"], ["/en?lang=es&topic=calculus", "/es/?topic=calculus"], ["/EN/?utm_campaign=Card&X=Y", "/?utm_campaign=Card&X=Y"],
+    ["/OG-IMAGE.PNG", "/og-image.png"], ["/en/does-not-exist", "/does-not-exist"], ["/Caf%C3%A9", "/caf%C3%A9"],
+  ]) {
+    await check(`${p} -> 301 ${to}`, async () => {
+      for (const method of ["GET", "HEAD"]) {
+        const r = await get(p, { method });
+        assert.equal(r.status, 301, method);
+        assert.equal(r.headers.get("location"), to, method);
+      }
+      // one hop: the target never redirects again for a visitor without a lang cookie
+      const next = await get(to);
+      assert.ok(next.status === 200 || next.status === 404, `${to} -> ${next.status} ${next.headers.get("location") || ""}`);
+    });
+  }
+  for (const p of ["/", "/es/", "/?utm_campaign=Card", "/exams/?for=g10", "/english/", "/es/en/", "/env"]) {
+    await check(`${p}: not normalized`, async () => {
+      const r = await get(p);
+      assert.notEqual(r.status, 301);
+    });
+  }
+  await check("POST /EN, POST /api/contact, GET /API/contact: no normalization redirect", async () => {
+    assert.equal((await get("/EN", { method: "POST" })).status, 404);
+    assert.equal((await get("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })).status, 400);
+    assert.notEqual((await get("/API/contact")).status, 301);
+  });
+
+  console.log("language preference (cookie lang)");
+  const withLang = (v, opts = {}) => ({ ...opts, headers: { cookie: `_ga=GA1.1.1; lang=${v}; _ga_X=GS1.1` } });
+  for (const [p, cookieVal, status, to] of [
+    ["/", null, 200], ["/", "en", 200], ["/", "es", 302, "/es/"], ["/?src=card&utm_source=x", "es", 302, "/es/?src=card&utm_source=x"],
+    ["/exams/", "es", 302, "/es/examenes/"], ["/exams/?for=hs9", "es", 302, "/es/examenes/?for=hs9"], ["/exams/", "en", 200], ["/exams/", null, 200],
+    ["/es/", "es", 200], ["/es/", "en", 200], ["/es/examenes/", "es", 200], ["/exams/algebra-1-eoc/", "es", 200],
+    ["/privacy/", "es", 200], ["/terms/", "es", 200], ["/?lang=es&topic=calculus", "en", 301, "/es/?topic=calculus"],
+  ]) {
+    await check(`${p} ${cookieVal ? "lang=" + cookieVal : "no cookie"} -> ${status}${to ? " " + to : ""}`, async () => {
+      for (const method of ["GET", "HEAD"]) {
+        const r = await get(p, cookieVal ? withLang(cookieVal, { method }) : { method });
+        assert.equal(r.status, status, method);
+        assert.equal(r.headers.get("location"), to || null, method);
+        if (status === 302) {
+          assert.equal(r.headers.get("cache-control"), "private, no-store");
+          assert.equal(r.headers.get("vary"), "Cookie");
+        }
+      }
+    });
+  }
+  // Fix for Safari's 7-day limit on JS-set cookies: every HTML page re-sends a valid lang cookie
+  const html = ["/", "/es/", "/exams/", "/exams/algebra-1-eoc/", "/es/examenes/", "/es/examenes/eoc-algebra-1/",
+    "/privacy/", "/terms/", "/accessibility/", "/es/privacidad/", "/es/terminos/", "/es/accesibilidad/", "/nope"];
+  const SET = (v) => `lang=${v}; Path=/; Max-Age=31536000; Secure; SameSite=Lax`;
+  for (const p of html) {
+    await check(`${p}: HTML private; Set-Cookie only echoes a valid lang cookie`, async () => {
+      for (const [c, want] of [[null, null], ["en", SET("en")], ["es", SET("es")], ["fr", null]]) {
+        if (c === "es" && (p === "/" || p === "/exams/")) continue; // those 302 (checked above)
+        const r = await get(p, c ? withLang(c) : {});
+        assert.match(r.headers.get("content-type"), /^text\/html/);
+        assert.match(r.headers.get("cache-control"), /^private/, `${p} ${c}`);
+        assert.equal(r.headers.get("set-cookie"), want, `${p} cookie ${c}`);
+      }
+    });
+  }
+  await check("non-HTML stays public and never sets the cookie", async () => {
+    for (const p of ["/llms.txt", "/exams/data.json", "/robots.txt", "/og-image.png", "/favicon.svg"]) {
+      const r = await get(p, withLang("es"));
+      assert.equal(r.headers.get("set-cookie"), null, p);
+      assert.ok(!/private/.test(r.headers.get("cache-control") || ""), p);
+    }
+  });
+  await check("lang=es doesn't touch /api/contact", async () => {
+    const r = await get("/api/contact", withLang("es", { method: "POST", headers: { cookie: "lang=es", "Content-Type": "application/json" }, body: "{}" }));
+    assert.equal(r.status, 400);
+  });
+
   console.log("booking form (email stubbed)");
   await check("GET /api/contact -> 405", async () => {
     const r = await get("/api/contact");
@@ -243,11 +320,12 @@ srv.listen(0, async () => {
       assert.match(pages[lang], /<p class="form-promise"><svg class="check" viewBox="0 0 24 24" aria-hidden="true">/);
     });
   }
-  await check("/, /es/, /llms.txt: served by the app, Cache-Control public, max-age=600", async () => {
+  await check("/llms.txt public, max-age=600; /es/ private, max-age=600; / private, no-cache, Vary: Cookie", async () => {
     for (const p of ["/", "/es/", "/llms.txt"]) {
       const r = await get(p);
       assert.equal(r.status, 200);
-      assert.equal(r.headers.get("cache-control"), "public, max-age=600");
+      assert.equal(r.headers.get("cache-control"), { "/": "private, no-cache", "/es/": "private, max-age=600", "/llms.txt": "public, max-age=600" }[p]);
+      assert.equal(r.headers.get("vary"), p === "/" ? "Cookie" : null);
       assert.ok(r.headers.get("strict-transport-security"));
     }
     assert.equal((await get("/", { method: "HEAD" })).status, 200);
@@ -306,7 +384,9 @@ srv.listen(0, async () => {
     { en: "/accessibility/", es: "/es/accesibilidad/", title: ["Accessibility Statement", "Declaración de accesibilidad"] },
   ];
   const main = (h) => h.slice(h.indexOf('<main id="main">'), h.indexOf("</main>"));
-  const sections = (h) => [...h.matchAll(/<section class="sec"[^>]*>\s*<h2 id="[^"]+">/g)].length;
+  const sections = (h) => [...h.matchAll(/<section class="sec"[^>]*>\s*<h2 id="[^"]+"[^>]*>/g)].length;
+  // each legal heading names its twin on the other-language page (the EN/ES toggle keeps the section)
+  const twins = (h) => [...h.matchAll(/<h2 id="([^"]+)" data-twin-id="([^"]+)">/g)].map((m) => [m[1], m[2]]);
   const all = { "/": pages.en, "/es/": pages.es };
   for (const page of LEGAL) {
     const html = { en: await (await get(page.en)).text(), es: await (await get(page.es)).text() };
@@ -340,6 +420,10 @@ srv.listen(0, async () => {
       assert.equal(sections(html.en), sections(html.es));
       const keys = (h) => [...h.matchAll(/<section class="sec" data-i18n="(\w+)"/g)].map((m) => m[1]).join();
       assert.equal(keys(html.en), keys(html.es));
+      // data-twin-id: every heading points at the heading in the same position on the other page
+      assert.equal(twins(html.en).length, sections(html.en));
+      assert.deepEqual(twins(html.en), twins(html.es).map(([a, b]) => [b, a]));
+      for (const h of [html.en, html.es]) assert.ok(h.includes("/* lang-switch:start"), "toggle script");
     });
   }
   await check("404 has the footer with policy links in both languages", async () => {
@@ -373,7 +457,9 @@ srv.listen(0, async () => {
       Object.assign(all, { [p]: h });
       await check(`${p}: 200, cached 10 min, head, toggle, footer`, () => {
         assert.equal(r.status, 200);
-        assert.equal(r.headers.get("cache-control"), "public, max-age=600");
+        assert.equal(r.headers.get("cache-control"), p === "/exams/" ? "private, no-cache" : "private, max-age=600");
+        assert.equal(r.headers.get("vary"), p === "/exams/" ? "Cookie" : null);
+        assert.ok(h.includes("/* lang-switch:start"), "toggle script");
         assert.ok(r.headers.get("strict-transport-security"));
         assert.match(h, new RegExp(`<html lang="${lang}">`));
         assert.equal(decode(h.match(/<title>([^<]*)<\/title>/)[1]), page.title[i]);

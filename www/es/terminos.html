@@ -54,6 +54,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   *{box-sizing:border-box}
   html{scroll-behavior:smooth;scroll-padding-top:68px} /* keeps anchors and keyboard focus clear of the sticky header */
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  section[id]{scroll-margin-top:12px} /* + the 68px scroll-padding above = header (69px) + ~12px, e.g. after the EN/ES switch lands on #rates */
   body{margin:0;background:var(--paper);color:var(--graphite);font:400 1.0625rem/1.6 var(--body);-webkit-font-smoothing:antialiased}
   img,svg{display:block;max-width:100%}
   a{color:var(--ink)}
@@ -157,6 +158,27 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   @media (max-width:1099px){.foot-grid{padding-bottom:96px}} /* room for the floating WhatsApp button: below ~1100px it can reach the fine print */
   @media (max-width:760px){.foot-grid{grid-template-columns:1fr}}
   /* ---- footer-css:end ---- */
+  /* language suggestion bar (built by the lang-switch script, never in the HTML). Fixed, so it shifts nothing */
+  .lang-bar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;align-items:center;gap:6px 12px;
+    background:var(--pad);border-top:1px solid #D3DCD8;padding:6px 6px calc(6px + env(safe-area-inset-bottom)) 16px;
+    font:400 .95rem/1.35 var(--body);color:var(--graphite)}
+  .lang-bar p{margin:0;flex:1}
+  .lang-bar button{min-height:44px;border-radius:8px;font:700 .95rem/1 var(--body);cursor:pointer}
+  .lang-bar-go{border:0;background:var(--ink);color:#fff;padding:0 16px}
+  .lang-bar-go:hover{background:var(--ink-dark)}
+  .lang-bar-x{min-width:44px;border:0;background:none;color:var(--graphite);font-size:1.6rem}
+  .lang-bar-x:hover{background:#DCE8D5}
+  .lang-bar button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+  @media (min-width:700px){.lang-bar{left:16px;right:16px;bottom:16px;max-width:640px;margin:0 auto;border:1px solid #D3DCD8;border-radius:12px;
+    padding:6px 6px 6px 18px;box-shadow:0 10px 24px -12px rgba(35,42,42,.35)}}
+  @media (prefers-reduced-motion:no-preference){.lang-bar{animation:lang-bar-in .25s ease-out}}
+  @keyframes lang-bar-in{from{opacity:0;transform:translateY(12px)}}
+  /* while it shows: the WhatsApp button sits above it, and the page can scroll its last lines clear of it */
+  .has-lang-bar .wa-float{bottom:calc(var(--lang-bar-h,64px) + 12px)}
+  @media (min-width:700px){.has-lang-bar .wa-float{bottom:18px}} /* centered bar (max 640px) leaves the corner free... */
+  @media (min-width:700px) and (max-width:1100px){.has-lang-bar .wa-float{bottom:calc(var(--lang-bar-h,64px) + 12px)}} /* ...only above ~1100px */
+  .has-lang-bar{scroll-padding-bottom:calc(var(--lang-bar-h,64px) + 8px)} /* focus and in-page scrolling stop above the bar */
+  .has-lang-bar body{padding-bottom:var(--lang-bar-h,64px)}
   /* ==== shared:end ==== */
 /* Legal pages (privacy, terms, accessibility; EN + ES). scripts/build.js inlines
    this after the shared site CSS from www/index.html. Design: docs/legal-pages-preview.html */
@@ -254,7 +276,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <ol><li><a href="/es/" data-i18n="crumbHome">Inicio</a></li><li aria-current="page" data-i18n="tosH1">Términos del servicio</li></ol>
     </nav>
     <h1 data-i18n="tosH1">Términos del servicio</h1>
-    <p class="updated"><span data-i18n="lastUpdated">Última actualización:</span> <time datetime="2026-11-19">19 de noviembre de 2026</time></p>
+    <p class="updated"><span data-i18n="lastUpdated">Última actualización:</span> <time datetime="2026-11-20">20 de noviembre de 2026</time></p>
   </div>
 </div>
 
@@ -293,18 +315,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="tosAbout">
-      <h2 id="sobre-el-servicio">Sobre el servicio</h2>
+      <h2 id="sobre-el-servicio" data-twin-id="about-the-service">Sobre el servicio</h2>
       <p>Jose Diaz Tutoring ofrece tutorías individuales y en grupos pequeños de matemáticas, física e ingeniería: en línea desde cualquier lugar, y en persona en Broward y Miami-Dade, en inglés o en español. La llamada de introducción gratis de 20 minutos no te compromete a nada. Al reservar una sesión, aceptas estos términos.</p>
     </section>
 
     <section class="sec" data-i18n="tosIndependent">
-      <h2 id="un-servicio-independiente">Un servicio independiente</h2>
+      <h2 id="un-servicio-independiente" data-twin-id="an-independent-service">Un servicio independiente</h2>
       <p>Jose Diaz Tutoring es un servicio de tutorías independiente. No tiene relación con ninguna escuela, <i lang="en">college</i> ni universidad mencionada en este sitio, ni cuenta con su aval; sus nombres se usan solo para describir los cursos en los que doy tutorías.</p>
       <p>AP y SAT son marcas registradas del College Board. ACT es una marca registrada de su titular. MCAT es una marca registrada de la AAMC. Ninguno de ellos tiene relación con este sitio ni lo avala.</p>
     </section>
 
     <section class="sec" data-i18n="tosRates">
-      <h2 id="tarifas-y-pagos">Tarifas y pagos</h2>
+      <h2 id="tarifas-y-pagos" data-twin-id="rates-and-payment">Tarifas y pagos</h2>
       <ul>
         <li>Las tarifas actuales están en la página principal y pueden cambiar en cualquier momento. Se aplica la tarifa vigente cuando reservas o pagas.</li>
         <li>Las sesiones sueltas se pagan antes de la sesión. Los planes y los repasos grupales se pagan completos por adelantado.</li>
@@ -314,7 +336,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="tosCancel">
-      <h2 id="cancelaciones-y-cambios-de-horario">Cancelaciones y cambios de horario</h2>
+      <h2 id="cancelaciones-y-cambios-de-horario" data-twin-id="cancellations-and-rescheduling">Cancelaciones y cambios de horario</h2>
       <ul>
         <li>Cancela o cambia tu sesión con al menos 24 horas de aviso, sin costo.</li>
         <li>Las cancelaciones con menos de 24 horas de aviso y las sesiones a las que no te conectes o no llegues se cobran completas.</li>
@@ -324,7 +346,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="tosPlans">
-      <h2 id="planes-y-reembolsos">Planes y reembolsos</h2>
+      <h2 id="planes-y-reembolsos" data-twin-id="plans-and-refunds">Planes y reembolsos</h2>
       <p>Garantía de la primera sesión: si eres estudiante nuevo y tu primera sesión individual no valió la pena para ti, avísame en las 24 horas siguientes y te devuelvo el pago completo, sin necesidad de explicar por qué. Una por familia. Si compraste un plan, te devuelvo el plan completo.</p>
       <ul>
         <li>Planes mensuales: las sesiones que no uses pasan al mes siguiente y luego vencen. Los planes semestrales son válidos durante el semestre en curso.</li>
@@ -334,7 +356,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="tosGroup">
-      <h2 id="repasos-grupales-para-examenes">Repasos grupales para exámenes</h2>
+      <h2 id="repasos-grupales-para-examenes" data-twin-id="group-exam-reviews">Repasos grupales para exámenes</h2>
       <ul>
         <li>Los repasos son en grupos pequeños y se pagan por adelantado.</li>
         <li>Si cancelas tu lugar con al menos 24 horas de aviso, te devuelvo el pago completo.</li>
@@ -343,7 +365,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="tosIntegrity">
-      <h2 id="integridad-academica">Integridad académica</h2>
+      <h2 id="integridad-academica" data-twin-id="academic-integrity">Integridad académica</h2>
       <p>Ayudo a los estudiantes a entender la materia y a aprender a resolverla por su cuenta. No:</p>
       <ul>
         <li>hago tareas, laboratorios ni proyectos que lleven nota;</li>
@@ -355,12 +377,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="tosGrades">
-      <h2 id="no-garantizo-notas">No garantizo notas</h2>
+      <h2 id="no-garantizo-notas" data-twin-id="no-guaranteed-grades">No garantizo notas</h2>
       <p>Llego a cada sesión preparado y doy lo mejor de mí. Pero las notas también dependen de la asistencia, la práctica y el propio curso, así que no puedo garantizar una nota ni un puntaje específico. Mi lema, "Mi meta no es enseñarte. Es que aprendas.", describe mi compromiso, no un resultado prometido.</p>
     </section>
 
     <section class="sec" data-i18n="tosMinors">
-      <h2 id="estudiantes-menores-de-18-anos">Estudiantes menores de 18 años</h2>
+      <h2 id="estudiantes-menores-de-18-anos" data-twin-id="students-under-18">Estudiantes menores de 18 años</h2>
       <ul>
         <li>El padre, la madre o el tutor legal acepta estos términos en nombre del estudiante y se hace cargo del pago.</li>
         <li>En las sesiones presenciales, el padre, la madre, el tutor legal o un adulto de su confianza debe estar en casa durante la sesión, o nos vemos en un lugar público, como una biblioteca.</li>
@@ -369,42 +391,42 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="tosRecording">
-      <h2 id="grabacion-de-sesiones">Grabación de sesiones</h2>
+      <h2 id="grabacion-de-sesiones" data-twin-id="recording-sessions">Grabación de sesiones</h2>
       <p>Las sesiones no se graban. Solo grabo una sesión si todos los que participan están de acuerdo antes, y si el estudiante es menor de 18 años, también uno de sus padres. La ley de Florida exige el consentimiento de todos para grabar una conversación.</p>
     </section>
 
     <section class="sec" data-i18n="tosMessages">
-      <h2 id="mensajes-sobre-tus-sesiones">Mensajes sobre tus sesiones</h2>
+      <h2 id="mensajes-sobre-tus-sesiones" data-twin-id="messages-about-your-sessions">Mensajes sobre tus sesiones</h2>
       <p>Al reservar, aceptas recibir mensajes sobre tus sesiones, como confirmaciones, recordatorios y cambios de horario, por correo o WhatsApp. Estos mensajes no son publicidad.</p>
     </section>
 
     <section class="sec" data-i18n="tosMaterials">
-      <h2 id="materiales">Materiales</h2>
+      <h2 id="materiales" data-twin-id="materials">Materiales</h2>
       <p>Las hojas de ejercicios, las soluciones y los apuntes que te doy son para tu estudio personal. Por favor, no los revendas ni los publiques.</p>
     </section>
 
     <section class="sec" data-i18n="tosFreeResources">
-      <h2 id="recursos-gratuitos-y-fechas-de-examenes">Recursos gratuitos y fechas de exámenes</h2>
+      <h2 id="recursos-gratuitos-y-fechas-de-examenes" data-twin-id="free-resources-and-exam-dates">Recursos gratuitos y fechas de exámenes</h2>
       <p>El calendario de exámenes, el verificador de notas y las demás guías gratuitas de este sitio son para planificar e informarte en general. Reviso las fechas en las fuentes oficiales, pero las escuelas, los distritos, el Departamento de Educación de Florida, College Board, ACT, la AAMC y las universidades pueden cambiar fechas, plazos y requisitos en cualquier momento. El calendario de tu escuela y las fuentes oficiales siempre tienen prioridad. Jose Diaz Tutoring no se hace responsable de plazos perdidos, cargos u otras consecuencias por usar estos recursos. El verificador de notas es una estimación; solo tu escuela puede confirmar que cumples un requisito. "Resumir con Claude" abre un servicio de IA de terceros cuyas respuestas pueden tener errores.</p>
     </section>
 
     <section class="sec" data-i18n="tosEnding">
-      <h2 id="fin-del-servicio">Fin del servicio</h2>
+      <h2 id="fin-del-servicio" data-twin-id="ending-the-service">Fin del servicio</h2>
       <p>Cualquiera de los dos puede terminar el servicio en cualquier momento. Las sesiones prepagadas que no hayas usado se reembolsan como explico en <a href="#planes-y-reembolsos">Planes y reembolsos</a>.</p>
     </section>
 
     <section class="sec" data-i18n="tosLiability">
-      <h2 id="limite-de-responsabilidad">Límite de responsabilidad</h2>
+      <h2 id="limite-de-responsabilidad" data-twin-id="limitation-of-liability">Límite de responsabilidad</h2>
       <p>Las tutorías son un apoyo educativo. En la medida en que la ley lo permita, mi responsabilidad total por cualquier reclamo sobre mis servicios se limita a lo que pagaste por las sesiones en cuestión. No garantizo resultados académicos específicos.</p>
     </section>
 
     <section class="sec" data-i18n="tosDisputes">
-      <h2 id="desacuerdos-y-ley-aplicable">Desacuerdos y ley aplicable</h2>
+      <h2 id="desacuerdos-y-ley-aplicable" data-twin-id="disputes-and-governing-law">Desacuerdos y ley aplicable</h2>
       <p>Si algo sale mal, escríbeme primero y buscamos una solución directamente. Estos términos se rigen por las leyes de Florida.</p>
     </section>
 
     <section class="sec" data-i18n="tosChanges">
-      <h2 id="cambios-e-idioma">Cambios e idioma</h2>
+      <h2 id="cambios-e-idioma" data-twin-id="changes-and-language">Cambios e idioma</h2>
       <p>Puedo actualizar estos términos; la fecha de "Última actualización" indica cuándo. Los cambios no afectan las sesiones que ya pagaste. Estos términos están en inglés y en español; si alguna vez no coinciden, prevalece la versión en inglés.</p>
     </section>
 
@@ -482,6 +504,108 @@ document.addEventListener("click", e => {
   else if (href.startsWith("mailto:")) track("contact_click", { contact_method: "email", link_location: where });
 });
 /* analytics:end */
+</script>
+<script>
+/* lang-switch:start (the legal and exam pages reuse this block)
+   switchLanguage(lang): the one place that switches language. It works out the section in view,
+   saves the choice in the cookie `lang` (server.js sends a returning lang=es visitor from / and
+   /exams/ to the Spanish page and re-sends the cookie from the server so Safari keeps it; the
+   privacy policy describes it), builds the other page's URL (query string kept, e.g. ?for=, utm_*,
+   plus #section) and goes there. Used by the EN/ES toggle and the language suggestion bar.
+   The toggle links stay plain <a href>s that work without this script; errors leave them as they are. */
+(function () {
+  var pageLang = document.documentElement.lang === "es" ? "es" : "en";
+  function link(lang) { return document.querySelector('.lang a[data-lang="' + lang + '"]'); }
+  function saveLang(lang) { document.cookie = "lang=" + lang + "; Path=/; Max-Age=31536000; Secure; SameSite=Lax"; }
+  function hasLangCookie() { return /(?:^|;\s*)lang=(en|es)(?:;|$)/.test(document.cookie); }
+
+  // The section in view: probe line = bottom of the sticky header (measured) + 25% of the rest of the
+  // viewport. The section[id] whose box contains the line; else the last one whose top is above it;
+  // none (still in the hero) -> "". Legal pages: the ids are on the headings (data-twin-id = the id on
+  // the other page), so their box is the heading's <section>.
+  function sectionHash() {
+    var head = document.querySelector(".site-head");
+    var top = head ? Math.max(0, head.getBoundingClientRect().bottom) : 0;
+    var probe = top + (window.innerHeight - top) * 0.25;
+    var els = document.querySelectorAll("main section[id], main [data-twin-id]"), inside = "", above = "";
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i], box = el.tagName === "SECTION" ? el : (el.closest("section") || el);
+      if (!box.getClientRects().length) continue; // hidden (e.g. #reviews before there are any)
+      var r = box.getBoundingClientRect(), id = el.getAttribute("data-twin-id") || el.id;
+      if (r.top <= probe && r.bottom > probe) inside = id;
+      if (r.top <= probe) above = id;
+    }
+    return (inside || above) ? "#" + (inside || above) : "";
+  }
+
+  // returns the URL; navigates unless navigate === false (the toggle lets its own link navigate)
+  function switchLanguage(lang, navigate) {
+    var a = link(lang);
+    if (!a || (lang !== "en" && lang !== "es")) return null;
+    saveLang(lang);
+    var q = new URLSearchParams(location.search);
+    q.delete("lang"); // an old ?lang=es would send the English page straight back to Spanish
+    q = q.toString();
+    var url = a.getAttribute("href").split(/[?#]/)[0] + (q ? "?" + q : "") + sectionHash();
+    if (navigate !== false) location.assign(url);
+    return url;
+  }
+  window.switchLanguage = switchLanguage;
+
+  try {
+    [].forEach.call(document.querySelectorAll(".lang a[data-lang]"), function (a) {
+      a.addEventListener("click", function () {
+        try { var url = switchLanguage(a.getAttribute("data-lang"), false); if (url) a.setAttribute("href", url); }
+        catch (err) { /* the link still goes to the other page */ }
+      });
+    });
+  } catch (err) {}
+
+  // Language suggestion bar: only with no lang cookie, when the browser's first "en"/"es" language
+  // isn't this page's. Rendered here (never in the HTML), never redirects, never takes focus.
+  // Accept -> switchLanguage; close (or Esc) -> lang = this page's language. Either way it's gone for good.
+  try {
+    if (hasLangCookie()) return;
+    var want = null, langs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ""];
+    for (var i = 0; i < langs.length && !want; i++) {
+      var l = String(langs[i]).toLowerCase().split("-")[0];
+      if (l === "en" || l === "es") want = l;
+    }
+    if (!want || want === pageLang || !link(want)) return;
+    var T = {
+      es: { label: "Sugerencia de idioma", text: "¿Prefieres ver esta página en español?", go: "Ver en español", close: "Cerrar" },
+      en: { label: "Language suggestion", text: "Prefer to read this page in English?", go: "View in English", close: "Close" }
+    }[want];
+    var bar = document.createElement("aside");
+    bar.className = "lang-bar"; bar.lang = want; bar.setAttribute("aria-label", T.label);
+    var p = document.createElement("p"); p.textContent = T.text;
+    var go = document.createElement("button"); go.type = "button"; go.className = "lang-bar-go"; go.textContent = T.go;
+    var x = document.createElement("button"); x.type = "button"; x.className = "lang-bar-x"; x.setAttribute("aria-label", T.close); x.innerHTML = '<span aria-hidden="true">&times;</span>';
+    bar.appendChild(p); bar.appendChild(go); bar.appendChild(x);
+    var root = document.documentElement;
+    // --lang-bar-h: the space the bar takes from the bottom edge (offsetTop ignores the entry animation)
+    var fit = function () { root.style.setProperty("--lang-bar-h", Math.max(0, window.innerHeight - bar.offsetTop) + "px"); };
+    var track = function (choice) { (window.dataLayer = window.dataLayer || []).push({ event: "select_content", content_type: "language_suggestion", item_id: choice, page_language: pageLang }); };
+    var onKey = function (e) { if (e.key === "Escape" && !e.defaultPrevented) close(); };
+    var close = function () {
+      saveLang(pageLang); track("dismiss");
+      bar.remove(); root.classList.remove("has-lang-bar"); root.style.removeProperty("--lang-bar-h");
+      document.removeEventListener("keydown", onKey); window.removeEventListener("resize", fit);
+    };
+    go.addEventListener("click", function () { track("accept"); switchLanguage(want); });
+    x.addEventListener("click", close);
+    var show = function () {
+      if (bar.isConnected || hasLangCookie()) return;
+      document.addEventListener("keydown", onKey);
+      window.addEventListener("resize", fit);
+      document.body.appendChild(bar);
+      fit(); root.classList.add("has-lang-bar");
+    };
+    // after the web fonts: the bar sits on the bottom edge, so a font swap changing its height would move it (CLS)
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(show, show); else show();
+  } catch (err) {}
+})();
+/* lang-switch:end */
 </script>
 </body>
 </html>

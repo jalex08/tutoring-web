@@ -54,6 +54,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   *{box-sizing:border-box}
   html{scroll-behavior:smooth;scroll-padding-top:68px} /* keeps anchors and keyboard focus clear of the sticky header */
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  section[id]{scroll-margin-top:12px} /* + the 68px scroll-padding above = header (69px) + ~12px, e.g. after the EN/ES switch lands on #rates */
   body{margin:0;background:var(--paper);color:var(--graphite);font:400 1.0625rem/1.6 var(--body);-webkit-font-smoothing:antialiased}
   img,svg{display:block;max-width:100%}
   a{color:var(--ink)}
@@ -157,6 +158,27 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   @media (max-width:1099px){.foot-grid{padding-bottom:96px}} /* room for the floating WhatsApp button: below ~1100px it can reach the fine print */
   @media (max-width:760px){.foot-grid{grid-template-columns:1fr}}
   /* ---- footer-css:end ---- */
+  /* language suggestion bar (built by the lang-switch script, never in the HTML). Fixed, so it shifts nothing */
+  .lang-bar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;align-items:center;gap:6px 12px;
+    background:var(--pad);border-top:1px solid #D3DCD8;padding:6px 6px calc(6px + env(safe-area-inset-bottom)) 16px;
+    font:400 .95rem/1.35 var(--body);color:var(--graphite)}
+  .lang-bar p{margin:0;flex:1}
+  .lang-bar button{min-height:44px;border-radius:8px;font:700 .95rem/1 var(--body);cursor:pointer}
+  .lang-bar-go{border:0;background:var(--ink);color:#fff;padding:0 16px}
+  .lang-bar-go:hover{background:var(--ink-dark)}
+  .lang-bar-x{min-width:44px;border:0;background:none;color:var(--graphite);font-size:1.6rem}
+  .lang-bar-x:hover{background:#DCE8D5}
+  .lang-bar button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+  @media (min-width:700px){.lang-bar{left:16px;right:16px;bottom:16px;max-width:640px;margin:0 auto;border:1px solid #D3DCD8;border-radius:12px;
+    padding:6px 6px 6px 18px;box-shadow:0 10px 24px -12px rgba(35,42,42,.35)}}
+  @media (prefers-reduced-motion:no-preference){.lang-bar{animation:lang-bar-in .25s ease-out}}
+  @keyframes lang-bar-in{from{opacity:0;transform:translateY(12px)}}
+  /* while it shows: the WhatsApp button sits above it, and the page can scroll its last lines clear of it */
+  .has-lang-bar .wa-float{bottom:calc(var(--lang-bar-h,64px) + 12px)}
+  @media (min-width:700px){.has-lang-bar .wa-float{bottom:18px}} /* centered bar (max 640px) leaves the corner free... */
+  @media (min-width:700px) and (max-width:1100px){.has-lang-bar .wa-float{bottom:calc(var(--lang-bar-h,64px) + 12px)}} /* ...only above ~1100px */
+  .has-lang-bar{scroll-padding-bottom:calc(var(--lang-bar-h,64px) + 8px)} /* focus and in-page scrolling stop above the bar */
+  .has-lang-bar body{padding-bottom:var(--lang-bar-h,64px)}
   /* ==== shared:end ==== */
 /* Legal pages (privacy, terms, accessibility; EN + ES). scripts/build.js inlines
    this after the shared site CSS from www/index.html. Design: docs/legal-pages-preview.html */
@@ -254,7 +276,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <ol><li><a href="/" data-i18n="crumbHome">Home</a></li><li aria-current="page" data-i18n="ppH1">Privacy Policy</li></ol>
     </nav>
     <h1 data-i18n="ppH1">Privacy Policy</h1>
-    <p class="updated"><span data-i18n="lastUpdated">Last updated:</span> <time datetime="2026-11-19">November 19, 2026</time></p>
+    <p class="updated"><span data-i18n="lastUpdated">Last updated:</span> <time datetime="2026-11-20">November 20, 2026</time></p>
   </div>
 </div>
 
@@ -288,13 +310,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="ppWho">
-      <h2 id="who-i-am">Who I am</h2>
+      <h2 id="who-i-am" data-twin-id="quien-soy">Who I am</h2>
       <p>Jose Diaz Tutoring is operated by Jose Alexis Diaz, a sole proprietor in Florida. In this policy, "I" and "me" mean me, the tutor.</p>
       <p>This policy covers josediaztutoring.com, its Spanish version, and the information I handle when you contact me or take sessions with me.</p>
     </section>
 
     <section class="sec" data-i18n="ppCollect">
-      <h2 id="what-i-collect">What I collect</h2>
+      <h2 id="what-i-collect" data-twin-id="que-informacion-recojo">What I collect</h2>
       <table>
         <thead><tr><th scope="col">Where it comes from</th><th scope="col">What</th></tr></thead>
         <tbody>
@@ -307,7 +329,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="ppUse">
-      <h2 id="how-i-use-it">How I use it</h2>
+      <h2 id="how-i-use-it" data-twin-id="para-que-la-uso">How I use it</h2>
       <ul>
         <li>To reply to your request and set up your intro call.</li>
         <li>To schedule and teach your sessions, and to send confirmations, reminders and schedule changes.</li>
@@ -319,7 +341,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="ppShare">
-      <h2 id="who-i-share-it-with">Who I share it with</h2>
+      <h2 id="who-i-share-it-with" data-twin-id="con-quien-la-comparto">Who I share it with</h2>
       <p>Only with the services that run my business, and only what each one needs:</p>
       <table>
         <thead><tr><th scope="col">Provider</th><th scope="col">What it does</th><th scope="col">What it receives</th></tr></thead>
@@ -336,21 +358,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="ppCookies">
-      <h2 id="cookies-and-analytics">Cookies and analytics</h2>
+      <h2 id="cookies-and-analytics" data-twin-id="cookies-y-analitica">Cookies and analytics</h2>
       <p>I use Google Analytics, loaded through Google Tag Manager, to count visits and see which pages and buttons get used.</p>
       <ul>
         <li>It sets two cookies on this site. They last up to 2 years and identify your browser, not you.</li>
         <li>Google uses your IP address to estimate your approximate location (city level). Google Analytics doesn't log or store IP addresses.</li>
         <li>Google signals and all advertising features are turned off. I never send your name, email or phone number to Analytics.</li>
-        <li>The site uses no other cookies, ad pixels or social-media trackers.</li>
+        <li>Apart from the language preference below, the site uses no other cookies, ad pixels or social-media trackers.</li>
       </ul>
+      <p><strong>Language preference:</strong> if you use the English/Español switch, the site saves a small cookie (lang) for one year so it opens in your language next time. It only contains "en" or "es" and isn't used for analytics or advertising.</p>
       <p><strong>Your choices:</strong> you can block or delete cookies in your browser settings, or install Google's <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener">Analytics opt-out add-on</a>. The site works the same either way. To learn more, see <a href="https://policies.google.com/technologies/partner-sites" rel="noopener">how Google uses information from sites that use its services</a>.</p>
       <h3>Do Not Track</h3>
       <p>Analytics measures visits over time on this site only. The site doesn't track you across other websites or show you ads, and I don't let other companies collect information here to follow you across other sites. For that reason, the site doesn't respond differently to Do Not Track signals.</p>
     </section>
 
     <section class="sec" data-i18n="ppChildren">
-      <h2 id="children-and-students-under-18">Children and students under 18</h2>
+      <h2 id="children-and-students-under-18" data-twin-id="menores-de-edad">Children and students under 18</h2>
       <ul>
         <li>My services are for high school students, college students and their parents. The site isn't directed to children under 13, and I don't knowingly collect information from them.</li>
         <li>If the student is under 18, a parent or guardian should send the form or be copied on it.</li>
@@ -360,12 +383,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="ppAi">
-      <h2 id="ai-tools">AI tools</h2>
+      <h2 id="ai-tools" data-twin-id="herramientas-de-ia">AI tools</h2>
       <p>I don't put students' names or contact details into AI tools. When I use AI to prepare practice material, I remove anything that identifies the student.</p>
     </section>
 
     <section class="sec" data-i18n="ppKeep">
-      <h2 id="how-long-i-keep-it">How long I keep it</h2>
+      <h2 id="how-long-i-keep-it" data-twin-id="cuanto-tiempo-la-guardo">How long I keep it</h2>
       <table>
         <thead><tr><th scope="col">Information</th><th scope="col">Kept for</th></tr></thead>
         <tbody>
@@ -379,12 +402,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="ppProtect">
-      <h2 id="how-i-protect-it">How I protect it</h2>
+      <h2 id="how-i-protect-it" data-twin-id="como-la-protejo">How I protect it</h2>
       <p>Every page uses HTTPS (with HSTS). Only I can access your information, and I chose my providers for their security. No system is perfectly secure; if a breach ever affects your information, I'll tell you, as the law requires.</p>
     </section>
 
     <section class="sec" data-i18n="ppRights">
-      <h2 id="your-choices-and-requests">Your choices and requests</h2>
+      <h2 id="your-choices-and-requests" data-twin-id="tus-opciones-y-solicitudes">Your choices and requests</h2>
       <p>Email me to:</p>
       <ul>
         <li>see the information I have about you;</li>
@@ -396,17 +419,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="ppLinks">
-      <h2 id="links-to-other-sites">Links to other sites</h2>
+      <h2 id="links-to-other-sites" data-twin-id="enlaces-a-otros-sitios">Links to other sites</h2>
       <p>This site links to WhatsApp, LinkedIn and Google. Their own privacy policies apply on their sites.</p>
     </section>
 
     <section class="sec" data-i18n="ppChanges">
-      <h2 id="changes-to-this-policy">Changes to this policy</h2>
+      <h2 id="changes-to-this-policy" data-twin-id="cambios-en-esta-politica">Changes to this policy</h2>
       <p>When I update this policy, I change the "Last updated" date at the top. If the change is important, such as a new kind of information or a new provider, I'll also post a notice on the home page for 30 days.</p>
     </section>
 
     <section class="sec" data-i18n="ppLang">
-      <h2 id="language">Language</h2>
+      <h2 id="language" data-twin-id="idioma">Language</h2>
       <p>This policy is available in English and Spanish, and both versions say the same thing. If they ever conflict, the English version controls.</p>
     </section>
 
@@ -485,6 +508,108 @@ document.addEventListener("click", e => {
   else if (href.startsWith("mailto:")) track("contact_click", { contact_method: "email", link_location: where });
 });
 /* analytics:end */
+</script>
+<script>
+/* lang-switch:start (the legal and exam pages reuse this block)
+   switchLanguage(lang): the one place that switches language. It works out the section in view,
+   saves the choice in the cookie `lang` (server.js sends a returning lang=es visitor from / and
+   /exams/ to the Spanish page and re-sends the cookie from the server so Safari keeps it; the
+   privacy policy describes it), builds the other page's URL (query string kept, e.g. ?for=, utm_*,
+   plus #section) and goes there. Used by the EN/ES toggle and the language suggestion bar.
+   The toggle links stay plain <a href>s that work without this script; errors leave them as they are. */
+(function () {
+  var pageLang = document.documentElement.lang === "es" ? "es" : "en";
+  function link(lang) { return document.querySelector('.lang a[data-lang="' + lang + '"]'); }
+  function saveLang(lang) { document.cookie = "lang=" + lang + "; Path=/; Max-Age=31536000; Secure; SameSite=Lax"; }
+  function hasLangCookie() { return /(?:^|;\s*)lang=(en|es)(?:;|$)/.test(document.cookie); }
+
+  // The section in view: probe line = bottom of the sticky header (measured) + 25% of the rest of the
+  // viewport. The section[id] whose box contains the line; else the last one whose top is above it;
+  // none (still in the hero) -> "". Legal pages: the ids are on the headings (data-twin-id = the id on
+  // the other page), so their box is the heading's <section>.
+  function sectionHash() {
+    var head = document.querySelector(".site-head");
+    var top = head ? Math.max(0, head.getBoundingClientRect().bottom) : 0;
+    var probe = top + (window.innerHeight - top) * 0.25;
+    var els = document.querySelectorAll("main section[id], main [data-twin-id]"), inside = "", above = "";
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i], box = el.tagName === "SECTION" ? el : (el.closest("section") || el);
+      if (!box.getClientRects().length) continue; // hidden (e.g. #reviews before there are any)
+      var r = box.getBoundingClientRect(), id = el.getAttribute("data-twin-id") || el.id;
+      if (r.top <= probe && r.bottom > probe) inside = id;
+      if (r.top <= probe) above = id;
+    }
+    return (inside || above) ? "#" + (inside || above) : "";
+  }
+
+  // returns the URL; navigates unless navigate === false (the toggle lets its own link navigate)
+  function switchLanguage(lang, navigate) {
+    var a = link(lang);
+    if (!a || (lang !== "en" && lang !== "es")) return null;
+    saveLang(lang);
+    var q = new URLSearchParams(location.search);
+    q.delete("lang"); // an old ?lang=es would send the English page straight back to Spanish
+    q = q.toString();
+    var url = a.getAttribute("href").split(/[?#]/)[0] + (q ? "?" + q : "") + sectionHash();
+    if (navigate !== false) location.assign(url);
+    return url;
+  }
+  window.switchLanguage = switchLanguage;
+
+  try {
+    [].forEach.call(document.querySelectorAll(".lang a[data-lang]"), function (a) {
+      a.addEventListener("click", function () {
+        try { var url = switchLanguage(a.getAttribute("data-lang"), false); if (url) a.setAttribute("href", url); }
+        catch (err) { /* the link still goes to the other page */ }
+      });
+    });
+  } catch (err) {}
+
+  // Language suggestion bar: only with no lang cookie, when the browser's first "en"/"es" language
+  // isn't this page's. Rendered here (never in the HTML), never redirects, never takes focus.
+  // Accept -> switchLanguage; close (or Esc) -> lang = this page's language. Either way it's gone for good.
+  try {
+    if (hasLangCookie()) return;
+    var want = null, langs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ""];
+    for (var i = 0; i < langs.length && !want; i++) {
+      var l = String(langs[i]).toLowerCase().split("-")[0];
+      if (l === "en" || l === "es") want = l;
+    }
+    if (!want || want === pageLang || !link(want)) return;
+    var T = {
+      es: { label: "Sugerencia de idioma", text: "¿Prefieres ver esta página en español?", go: "Ver en español", close: "Cerrar" },
+      en: { label: "Language suggestion", text: "Prefer to read this page in English?", go: "View in English", close: "Close" }
+    }[want];
+    var bar = document.createElement("aside");
+    bar.className = "lang-bar"; bar.lang = want; bar.setAttribute("aria-label", T.label);
+    var p = document.createElement("p"); p.textContent = T.text;
+    var go = document.createElement("button"); go.type = "button"; go.className = "lang-bar-go"; go.textContent = T.go;
+    var x = document.createElement("button"); x.type = "button"; x.className = "lang-bar-x"; x.setAttribute("aria-label", T.close); x.innerHTML = '<span aria-hidden="true">&times;</span>';
+    bar.appendChild(p); bar.appendChild(go); bar.appendChild(x);
+    var root = document.documentElement;
+    // --lang-bar-h: the space the bar takes from the bottom edge (offsetTop ignores the entry animation)
+    var fit = function () { root.style.setProperty("--lang-bar-h", Math.max(0, window.innerHeight - bar.offsetTop) + "px"); };
+    var track = function (choice) { (window.dataLayer = window.dataLayer || []).push({ event: "select_content", content_type: "language_suggestion", item_id: choice, page_language: pageLang }); };
+    var onKey = function (e) { if (e.key === "Escape" && !e.defaultPrevented) close(); };
+    var close = function () {
+      saveLang(pageLang); track("dismiss");
+      bar.remove(); root.classList.remove("has-lang-bar"); root.style.removeProperty("--lang-bar-h");
+      document.removeEventListener("keydown", onKey); window.removeEventListener("resize", fit);
+    };
+    go.addEventListener("click", function () { track("accept"); switchLanguage(want); });
+    x.addEventListener("click", close);
+    var show = function () {
+      if (bar.isConnected || hasLangCookie()) return;
+      document.addEventListener("keydown", onKey);
+      window.addEventListener("resize", fit);
+      document.body.appendChild(bar);
+      fit(); root.classList.add("has-lang-bar");
+    };
+    // after the web fonts: the bar sits on the bottom edge, so a font swap changing its height would move it (CLS)
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(show, show); else show();
+  } catch (err) {}
+})();
+/* lang-switch:end */
 </script>
 </body>
 </html>
