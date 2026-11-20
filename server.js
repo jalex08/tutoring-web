@@ -279,6 +279,9 @@ const CONFIRM = {
   },
 };
 
+// Where the lead came from (the page's ?src=, kept by the form): owner's email only, never the client's.
+const SOURCE_LABEL = { card: "business card", share: "share link", "": "website" };
+
 const oneLine = (s) => s.split(/\s+/).filter(Boolean).join(" ");
 
 async function buildMessages(d, lang) {
@@ -290,7 +293,8 @@ async function buildMessages(d, lang) {
     .filter((k) => d[k])
     .map((k) => `${L[k]}: ${oneLine(d[k])}`);
   if (d.message) lines.push(`\n${L.message}:\n${d.message}`);
-  lines.push(`\n(Form language: ${lang.toUpperCase()})`);
+  lines.push(`\nSource: ${SOURCE_LABEL[d.source] || SOURCE_LABEL[""]}`);
+  lines.push(`(Form language: ${lang.toUpperCase()})`);
   const toOwner = {
     from,
     to: owner,
@@ -382,6 +386,7 @@ async function contact(req, res) {
   const d = {};
   for (const [k, n] of Object.entries(LIMITS)) d[k] = String(raw[k] ?? "").trim().slice(0, n);
   const lang = raw.lang === "es" ? "es" : "en";
+  d.source = raw.source === "card" || raw.source === "share" ? raw.source : ""; // whitelist; anything else = website
   if (!d.name || !EMAIL_RE.test(d.email)) return reply(res, 400, { ok: false, error: "invalid" });
 
   const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
@@ -637,9 +642,12 @@ function notFoundPage(req, res) {
 
 /** The 301 target for a path (the REDIRECTS table, old ?lang=es links), or undefined. */
 function redirectFor(pathname, query) {
-  // old ?lang=es links -> /es/ (keeps ?topic=, the class picked in the hero)
+  // old ?lang=es links -> /es/, keeping the rest of the query (topic, src, utm_*); the browser keeps the #hash
   if ((pathname === "/" || pathname === "/index.html") && query.get("lang") === "es") {
-    return "/es/" + (query.get("topic") ? "?topic=" + encodeURIComponent(query.get("topic")) : "");
+    const q = new URLSearchParams(query);
+    q.delete("lang");
+    const rest = q.toString();
+    return "/es/" + (rest ? "?" + rest : "");
   }
   return REDIRECTS[pathname];
 }

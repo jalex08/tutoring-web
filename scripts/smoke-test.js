@@ -78,6 +78,11 @@ srv.listen(0, async () => {
     assert.equal(r.status, 301);
     assert.equal(r.headers.get("location"), "/es/?topic=calculus");
   });
+  await check("/?lang=es&src=card&utm_source=x -> 301 /es/ keeps src and utm_*", async () => {
+    const r = await get("/?lang=es&src=card&utm_source=x&topic=calculus");
+    assert.equal(r.status, 301);
+    assert.equal(r.headers.get("location"), "/es/?src=card&utm_source=x&topic=calculus");
+  });
 
   console.log("path normalization (lowercase, no /en prefix): one 301, query kept");
   for (const [p, to] of [
@@ -189,6 +194,15 @@ srv.listen(0, async () => {
     assert.ok(body.includes("You're receiving this because you sent a request on josediaztutoring.com."));
     assert.ok(body.includes("Privacy Policy: https://josediaztutoring.com/privacy/") && body.includes("Terms: https://josediaztutoring.com/terms/"));
   });
+  for (const [source, label] of [["card", "business card"], ["share", "share link"], ["", "website"], ["evil\nBcc: x@y", "website"], [undefined, "website"]]) {
+    await check(`source ${JSON.stringify(source)} -> owner email says "Source: ${label}", client email doesn't`, async () => {
+      sent = [];
+      await post({ ...form, email: `src-${label.replace(/\W/g, "")}-${sent.length}${Math.random().toString(36).slice(2, 7)}@example.test`, lang: "en", source });
+      assert.equal(sent.length, 1);
+      assert.ok(sent[0][0].text.includes(`\nSource: ${label}\n`), sent[0][0].text);
+      assert.ok(!/Source:/i.test(sent[0][1].text), "source leaked into the client's confirmation");
+    });
+  }
   await check("honeypot filled -> 200 but nothing sent", async () => {
     sent = [];
     const r = await post({ ...form, website: "http://spam.example" });

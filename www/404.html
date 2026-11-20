@@ -4,6 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- Google Tag Manager -->
+<script id="src-utm">/* ?src=card (business-card QR) / ?src=share (share links) -> utm_* tags, before GTM reads the URL, so
+   GA4 doesn't count them as Direct. Adds only the utm_* that are missing and only when there's no utm_source;
+   keeps src, the other params and the #hash; replaceState, so no reload and no extra request (the server's
+   logs still show the original ?src=). Other src values: nothing. Saves src as sessionStorage jdt_src for
+   the booking form (the lead's source in the owner's email). Shared by every page (scripts/build.js). */
+(function () {
+  try {
+    var q = new URLSearchParams(location.search), src = q.get("src");
+    var utm = src === "card" ? ["business_card", "qr", "business_card"] : src === "share" ? ["share_link", "share", "share_link"] : null;
+    if (!utm) return;
+    try { sessionStorage.setItem("jdt_src", src); } catch (e) {}
+    if (q.has("utm_source") || !history.replaceState) return;
+    ["utm_source", "utm_medium", "utm_campaign"].forEach(function (k, i) { if (!q.has(k)) q.set(k, utm[i]); });
+    history.replaceState(history.state, "", location.pathname + "?" + q.toString() + location.hash);
+  } catch (e) {}
+})();
+</script>
 <script>window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
