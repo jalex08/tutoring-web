@@ -681,6 +681,8 @@ function footer404() {
   return f;
 }
 let page404 = fs.readFileSync(PAGE404, "utf8");
+// the same GTM <head> snippet (with the src -> utm_* script) as every other page
+page404 = replaceOne(page404, /<!-- Google Tag Manager -->[\s\S]*?<!-- End Google Tag Manager -->/, () => PARTS.en.gtmHead, "404 GTM <head> snippet");
 page404 = page404.replace(/(<!-- footer:start[^>]*-->\n)[\s\S]*?(<!-- footer:end -->)/, (_, a, b) => `${a}${footer404()}\n${b}`);
 page404 = page404.replace(/(\/\* ---- footer-css:start[^\n]*\n)[\s\S]*?( {2}\/\* ---- footer-css:end ---- \*\/)/, (_, a, b) =>
   `${a}${PARTS.en.footerCss.replace(/^\/\* ---- footer-css:start[^\n]*\n/, "").replace(/\s*\/\* ---- footer-css:end ---- \*\/$/, "")}\n${b}`);
