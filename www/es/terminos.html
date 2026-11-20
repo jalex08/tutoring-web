@@ -54,6 +54,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   *{box-sizing:border-box}
   html{scroll-behavior:smooth;scroll-padding-top:68px} /* keeps anchors and keyboard focus clear of the sticky header */
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  section[id]{scroll-margin-top:12px} /* + the 68px scroll-padding above = header (69px) + ~12px, e.g. after the EN/ES switch lands on #rates */
   body{margin:0;background:var(--paper);color:var(--graphite);font:400 1.0625rem/1.6 var(--body);-webkit-font-smoothing:antialiased}
   img,svg{display:block;max-width:100%}
   a{color:var(--ink)}
@@ -293,18 +294,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="tosAbout">
-      <h2 id="sobre-el-servicio">Sobre el servicio</h2>
+      <h2 id="sobre-el-servicio" data-twin-id="about-the-service">Sobre el servicio</h2>
       <p>Jose Diaz Tutoring ofrece tutorías individuales y en grupos pequeños de matemáticas, física e ingeniería: en línea desde cualquier lugar, y en persona en Broward y Miami-Dade, en inglés o en español. La llamada de introducción gratis de 20 minutos no te compromete a nada. Al reservar una sesión, aceptas estos términos.</p>
     </section>
 
     <section class="sec" data-i18n="tosIndependent">
-      <h2 id="un-servicio-independiente">Un servicio independiente</h2>
+      <h2 id="un-servicio-independiente" data-twin-id="an-independent-service">Un servicio independiente</h2>
       <p>Jose Diaz Tutoring es un servicio de tutorías independiente. No tiene relación con ninguna escuela, <i lang="en">college</i> ni universidad mencionada en este sitio, ni cuenta con su aval; sus nombres se usan solo para describir los cursos en los que doy tutorías.</p>
       <p>AP y SAT son marcas registradas del College Board. ACT es una marca registrada de su titular. MCAT es una marca registrada de la AAMC. Ninguno de ellos tiene relación con este sitio ni lo avala.</p>
     </section>
 
     <section class="sec" data-i18n="tosRates">
-      <h2 id="tarifas-y-pagos">Tarifas y pagos</h2>
+      <h2 id="tarifas-y-pagos" data-twin-id="rates-and-payment">Tarifas y pagos</h2>
       <ul>
         <li>Las tarifas actuales están en la página principal y pueden cambiar en cualquier momento. Se aplica la tarifa vigente cuando reservas o pagas.</li>
         <li>Las sesiones sueltas se pagan antes de la sesión. Los planes y los repasos grupales se pagan completos por adelantado.</li>
@@ -314,7 +315,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="tosCancel">
-      <h2 id="cancelaciones-y-cambios-de-horario">Cancelaciones y cambios de horario</h2>
+      <h2 id="cancelaciones-y-cambios-de-horario" data-twin-id="cancellations-and-rescheduling">Cancelaciones y cambios de horario</h2>
       <ul>
         <li>Cancela o cambia tu sesión con al menos 24 horas de aviso, sin costo.</li>
         <li>Las cancelaciones con menos de 24 horas de aviso y las sesiones a las que no te conectes o no llegues se cobran completas.</li>
@@ -324,7 +325,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="tosPlans">
-      <h2 id="planes-y-reembolsos">Planes y reembolsos</h2>
+      <h2 id="planes-y-reembolsos" data-twin-id="plans-and-refunds">Planes y reembolsos</h2>
       <p>Garantía de la primera sesión: si eres estudiante nuevo y tu primera sesión individual no valió la pena para ti, avísame en las 24 horas siguientes y te devuelvo el pago completo, sin necesidad de explicar por qué. Una por familia. Si compraste un plan, te devuelvo el plan completo.</p>
       <ul>
         <li>Planes mensuales: las sesiones que no uses pasan al mes siguiente y luego vencen. Los planes semestrales son válidos durante el semestre en curso.</li>
@@ -334,7 +335,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="tosGroup">
-      <h2 id="repasos-grupales-para-examenes">Repasos grupales para exámenes</h2>
+      <h2 id="repasos-grupales-para-examenes" data-twin-id="group-exam-reviews">Repasos grupales para exámenes</h2>
       <ul>
         <li>Los repasos son en grupos pequeños y se pagan por adelantado.</li>
         <li>Si cancelas tu lugar con al menos 24 horas de aviso, te devuelvo el pago completo.</li>
@@ -343,7 +344,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="tosIntegrity">
-      <h2 id="integridad-academica">Integridad académica</h2>
+      <h2 id="integridad-academica" data-twin-id="academic-integrity">Integridad académica</h2>
       <p>Ayudo a los estudiantes a entender la materia y a aprender a resolverla por su cuenta. No:</p>
       <ul>
         <li>hago tareas, laboratorios ni proyectos que lleven nota;</li>
@@ -355,12 +356,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="tosGrades">
-      <h2 id="no-garantizo-notas">No garantizo notas</h2>
+      <h2 id="no-garantizo-notas" data-twin-id="no-guaranteed-grades">No garantizo notas</h2>
       <p>Llego a cada sesión preparado y doy lo mejor de mí. Pero las notas también dependen de la asistencia, la práctica y el propio curso, así que no puedo garantizar una nota ni un puntaje específico. Mi lema, "Mi meta no es enseñarte. Es que aprendas.", describe mi compromiso, no un resultado prometido.</p>
     </section>
 
     <section class="sec" data-i18n="tosMinors">
-      <h2 id="estudiantes-menores-de-18-anos">Estudiantes menores de 18 años</h2>
+      <h2 id="estudiantes-menores-de-18-anos" data-twin-id="students-under-18">Estudiantes menores de 18 años</h2>
       <ul>
         <li>El padre, la madre o el tutor legal acepta estos términos en nombre del estudiante y se hace cargo del pago.</li>
         <li>En las sesiones presenciales, el padre, la madre, el tutor legal o un adulto de su confianza debe estar en casa durante la sesión, o nos vemos en un lugar público, como una biblioteca.</li>
@@ -369,42 +370,42 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="tosRecording">
-      <h2 id="grabacion-de-sesiones">Grabación de sesiones</h2>
+      <h2 id="grabacion-de-sesiones" data-twin-id="recording-sessions">Grabación de sesiones</h2>
       <p>Las sesiones no se graban. Solo grabo una sesión si todos los que participan están de acuerdo antes, y si el estudiante es menor de 18 años, también uno de sus padres. La ley de Florida exige el consentimiento de todos para grabar una conversación.</p>
     </section>
 
     <section class="sec" data-i18n="tosMessages">
-      <h2 id="mensajes-sobre-tus-sesiones">Mensajes sobre tus sesiones</h2>
+      <h2 id="mensajes-sobre-tus-sesiones" data-twin-id="messages-about-your-sessions">Mensajes sobre tus sesiones</h2>
       <p>Al reservar, aceptas recibir mensajes sobre tus sesiones, como confirmaciones, recordatorios y cambios de horario, por correo o WhatsApp. Estos mensajes no son publicidad.</p>
     </section>
 
     <section class="sec" data-i18n="tosMaterials">
-      <h2 id="materiales">Materiales</h2>
+      <h2 id="materiales" data-twin-id="materials">Materiales</h2>
       <p>Las hojas de ejercicios, las soluciones y los apuntes que te doy son para tu estudio personal. Por favor, no los revendas ni los publiques.</p>
     </section>
 
     <section class="sec" data-i18n="tosFreeResources">
-      <h2 id="recursos-gratuitos-y-fechas-de-examenes">Recursos gratuitos y fechas de exámenes</h2>
+      <h2 id="recursos-gratuitos-y-fechas-de-examenes" data-twin-id="free-resources-and-exam-dates">Recursos gratuitos y fechas de exámenes</h2>
       <p>El calendario de exámenes, el verificador de notas y las demás guías gratuitas de este sitio son para planificar e informarte en general. Reviso las fechas en las fuentes oficiales, pero las escuelas, los distritos, el Departamento de Educación de Florida, College Board, ACT, la AAMC y las universidades pueden cambiar fechas, plazos y requisitos en cualquier momento. El calendario de tu escuela y las fuentes oficiales siempre tienen prioridad. Jose Diaz Tutoring no se hace responsable de plazos perdidos, cargos u otras consecuencias por usar estos recursos. El verificador de notas es una estimación; solo tu escuela puede confirmar que cumples un requisito. "Resumir con Claude" abre un servicio de IA de terceros cuyas respuestas pueden tener errores.</p>
     </section>
 
     <section class="sec" data-i18n="tosEnding">
-      <h2 id="fin-del-servicio">Fin del servicio</h2>
+      <h2 id="fin-del-servicio" data-twin-id="ending-the-service">Fin del servicio</h2>
       <p>Cualquiera de los dos puede terminar el servicio en cualquier momento. Las sesiones prepagadas que no hayas usado se reembolsan como explico en <a href="#planes-y-reembolsos">Planes y reembolsos</a>.</p>
     </section>
 
     <section class="sec" data-i18n="tosLiability">
-      <h2 id="limite-de-responsabilidad">Límite de responsabilidad</h2>
+      <h2 id="limite-de-responsabilidad" data-twin-id="limitation-of-liability">Límite de responsabilidad</h2>
       <p>Las tutorías son un apoyo educativo. En la medida en que la ley lo permita, mi responsabilidad total por cualquier reclamo sobre mis servicios se limita a lo que pagaste por las sesiones en cuestión. No garantizo resultados académicos específicos.</p>
     </section>
 
     <section class="sec" data-i18n="tosDisputes">
-      <h2 id="desacuerdos-y-ley-aplicable">Desacuerdos y ley aplicable</h2>
+      <h2 id="desacuerdos-y-ley-aplicable" data-twin-id="disputes-and-governing-law">Desacuerdos y ley aplicable</h2>
       <p>Si algo sale mal, escríbeme primero y buscamos una solución directamente. Estos términos se rigen por las leyes de Florida.</p>
     </section>
 
     <section class="sec" data-i18n="tosChanges">
-      <h2 id="cambios-e-idioma">Cambios e idioma</h2>
+      <h2 id="cambios-e-idioma" data-twin-id="changes-and-language">Cambios e idioma</h2>
       <p>Puedo actualizar estos términos; la fecha de "Última actualización" indica cuándo. Los cambios no afectan las sesiones que ya pagaste. Estos términos están en inglés y en español; si alguna vez no coinciden, prevalece la versión en inglés.</p>
     </section>
 
@@ -482,6 +483,42 @@ document.addEventListener("click", e => {
   else if (href.startsWith("mailto:")) track("contact_click", { contact_method: "email", link_location: where });
 });
 /* analytics:end */
+</script>
+<script>
+/* lang-switch:start (the legal and exam pages reuse this block)
+   EN/ES toggle. On click, and only then: (1) save the choice in the cookie `lang` (server.js sends a
+   returning lang=es visitor from / and /exams/ to the Spanish page; the privacy policy describes it),
+   (2) point the link at the same section on the other page, keeping the query string (?for=, utm_*).
+   The links stay plain <a href>s that work without this script; any error here leaves them as they are. */
+(function () {
+  function sectionHash() {
+    // the last section whose top is at or above 35% of the viewport; none (still in the hero) -> no hash.
+    // data-twin-id: the matching id on the other page, where it differs (legal page headings)
+    var line = window.innerHeight * 0.35, id = "";
+    var els = document.querySelectorAll("main section[id], main [data-twin-id]");
+    for (var i = 0; i < els.length; i++) {
+      if (!els[i].getClientRects().length) continue; // hidden (e.g. #reviews before there are any)
+      if (els[i].getBoundingClientRect().top <= line) id = els[i].getAttribute("data-twin-id") || els[i].id;
+    }
+    return id ? "#" + id : "";
+  }
+  function onClick(e) {
+    try {
+      var a = e.currentTarget, lang = a.getAttribute("data-lang");
+      if (lang !== "en" && lang !== "es") return;
+      document.cookie = "lang=" + lang + "; Path=/; Max-Age=31536000; Secure; SameSite=Lax";
+      var q = new URLSearchParams(location.search);
+      q.delete("lang"); // an old ?lang=es would send the English page straight back to Spanish
+      q = q.toString();
+      a.setAttribute("href", a.getAttribute("href").split(/[?#]/)[0] + (q ? "?" + q : "") + sectionHash());
+    } catch (err) { /* the link still goes to the other page */ }
+  }
+  try {
+    var links = document.querySelectorAll(".lang a[data-lang]");
+    for (var i = 0; i < links.length; i++) links[i].addEventListener("click", onClick);
+  } catch (err) {}
+})();
+/* lang-switch:end */
 </script>
 </body>
 </html>

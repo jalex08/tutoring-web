@@ -316,15 +316,23 @@ Mark `generate_lead` as a key event in GA4. Preview mode shows the events firing
 
 | Path | Cache | Notes |
 |---|---|---|
-| `/`, `/es/` | 10 min | static |
+| `/` | private, revalidated every visit (`Vary: Cookie`) | `server.js`; with the cookie `lang=es` it 302s to `/es/` (query string kept, the redirect is never cached) |
+| `/es/` | 10 min | `server.js` (prices filled in) |
+| `/exams/` | private, revalidated every visit (`Vary: Cookie`) | `server.js`; with `lang=es` it 302s to `/es/examenes/`. The other exam pages: 10 min |
 | `/privacy/`, `/terms/`, `/accessibility/`, `/es/privacidad/`, `/es/terminos/`, `/es/accesibilidad/` | 10 min | static |
 | the same without the trailing slash, or as `/privacy.html` | 1 hour | `server.js`: 301 to the slash URL |
 | `/og-image.png`, favicons | 7 days | static |
 | `/robots.txt`, `/sitemap.xml`, `/llms.txt` | 10 min | static |
 | `/index.html`, `/es`, `/es/index.html` | 1 hour | `server.js`: 301 to `/` or `/es/` |
-| `/?lang=es` | — | the static `/` can't see query strings; a script at the top of `index.html` sends it to `/es/` |
+| `/?lang=es` | 1 hour | `server.js`: 301 to `/es/` (keeps `?topic=`); the script at the top of `index.html` does the same as a fallback |
 | `/api/*` | never | `server.js` (unknown `/api/*` paths get a JSON 404) |
 | anything else | 10 min | `server.js`: 404 with `www/404.html`, `X-Robots-Tag: noindex` |
+
+**Language preference.** The EN/ES toggle (the `lang-switch` script in `www/index.html`, copied
+into the legal and exam pages by the build) saves the cookie `lang=en|es` (1 year, `Secure`,
+`SameSite=Lax`) only when it's clicked, and sends the visitor to the same section on the other
+page (`data-twin-id` maps the legal pages' headings, whose ids differ by language). Only `/` and
+`/exams/` read the cookie; the privacy policy's cookie section describes it.
 
 Every handler: `secure: always` (HTTP → 301 to HTTPS), `Strict-Transport-Security`,
 `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`.

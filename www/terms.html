@@ -54,6 +54,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   *{box-sizing:border-box}
   html{scroll-behavior:smooth;scroll-padding-top:68px} /* keeps anchors and keyboard focus clear of the sticky header */
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  section[id]{scroll-margin-top:12px} /* + the 68px scroll-padding above = header (69px) + ~12px, e.g. after the EN/ES switch lands on #rates */
   body{margin:0;background:var(--paper);color:var(--graphite);font:400 1.0625rem/1.6 var(--body);-webkit-font-smoothing:antialiased}
   img,svg{display:block;max-width:100%}
   a{color:var(--ink)}
@@ -293,18 +294,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="tosAbout">
-      <h2 id="about-the-service">About the service</h2>
+      <h2 id="about-the-service" data-twin-id="sobre-el-servicio">About the service</h2>
       <p>Jose Diaz Tutoring offers one-on-one and small-group tutoring in math, physics and engineering: online anywhere, and in person in Broward and Miami-Dade, in English or Spanish. The free 20-minute intro call doesn't commit you to anything. By booking a session, you agree to these terms.</p>
     </section>
 
     <section class="sec" data-i18n="tosIndependent">
-      <h2 id="an-independent-service">An independent service</h2>
+      <h2 id="an-independent-service" data-twin-id="un-servicio-independiente">An independent service</h2>
       <p>Jose Diaz Tutoring is an independent tutoring service. It isn't affiliated with or endorsed by any school, college or university named on this site; their names are used only to describe the courses I tutor.</p>
       <p>AP and SAT are trademarks registered by the College Board. ACT is a registered trademark of its owner. MCAT is a registered trademark of the AAMC. None of them is affiliated with or endorses this site.</p>
     </section>
 
     <section class="sec" data-i18n="tosRates">
-      <h2 id="rates-and-payment">Rates and payment</h2>
+      <h2 id="rates-and-payment" data-twin-id="tarifas-y-pagos">Rates and payment</h2>
       <ul>
         <li>Current rates are on the home page and can change at any time. The rate that applies is the one in effect when you book or pay.</li>
         <li>Single sessions are paid before the session. Plans and group reviews are paid in full upfront.</li>
@@ -314,7 +315,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="tosCancel">
-      <h2 id="cancellations-and-rescheduling">Cancellations and rescheduling</h2>
+      <h2 id="cancellations-and-rescheduling" data-twin-id="cancelaciones-y-cambios-de-horario">Cancellations and rescheduling</h2>
       <ul>
         <li>Cancel or reschedule at least 24 hours before a session, at no cost.</li>
         <li>Cancellations with less than 24 hours' notice, and missed sessions, are charged in full.</li>
@@ -324,7 +325,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="tosPlans">
-      <h2 id="plans-and-refunds">Plans and refunds</h2>
+      <h2 id="plans-and-refunds" data-twin-id="planes-y-reembolsos">Plans and refunds</h2>
       <p>First-session guarantee: if you're a new student and your first one-on-one session isn't worth it to you, tell me within 24 hours and I'll refund it in full, no reason needed. One per family. If you bought a plan, I'll refund the whole plan.</p>
       <ul>
         <li>Monthly plans: unused sessions carry over to the next month, then expire. Semester plans are valid for the current semester.</li>
@@ -334,7 +335,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="tosGroup">
-      <h2 id="group-exam-reviews">Group exam reviews</h2>
+      <h2 id="group-exam-reviews" data-twin-id="repasos-grupales-para-examenes">Group exam reviews</h2>
       <ul>
         <li>Group reviews are small groups, paid upfront.</li>
         <li>If you cancel your spot at least 24 hours before, you get a full refund.</li>
@@ -343,7 +344,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="tosIntegrity">
-      <h2 id="academic-integrity">Academic integrity</h2>
+      <h2 id="academic-integrity" data-twin-id="integridad-academica">Academic integrity</h2>
       <p>I help students understand the material and learn to do it on their own. I don't:</p>
       <ul>
         <li>do homework, labs or projects that will be graded;</li>
@@ -355,12 +356,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="tosGrades">
-      <h2 id="no-guaranteed-grades">No guaranteed grades</h2>
+      <h2 id="no-guaranteed-grades" data-twin-id="no-garantizo-notas">No guaranteed grades</h2>
       <p>I bring full preparation and effort to every session. Grades also depend on attendance, practice and the course itself, so I can't guarantee a specific grade or score. My motto, "I don't just teach. I make sure you learn.", describes my commitment, not a promised result.</p>
     </section>
 
     <section class="sec" data-i18n="tosMinors">
-      <h2 id="students-under-18">Students under 18</h2>
+      <h2 id="students-under-18" data-twin-id="estudiantes-menores-de-18-anos">Students under 18</h2>
       <ul>
         <li>A parent or guardian accepts these terms for the student and is responsible for payment.</li>
         <li>For in-person sessions, a parent, guardian or an adult they choose must be at home during the session, or we meet in a public place such as a library.</li>
@@ -369,42 +370,42 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="tosRecording">
-      <h2 id="recording-sessions">Recording sessions</h2>
+      <h2 id="recording-sessions" data-twin-id="grabacion-de-sesiones">Recording sessions</h2>
       <p>Sessions aren't recorded by default. I record a session only if everyone in it agrees beforehand, and for students under 18, a parent agrees too. Florida law requires everyone's consent to record a conversation.</p>
     </section>
 
     <section class="sec" data-i18n="tosMessages">
-      <h2 id="messages-about-your-sessions">Messages about your sessions</h2>
+      <h2 id="messages-about-your-sessions" data-twin-id="mensajes-sobre-tus-sesiones">Messages about your sessions</h2>
       <p>When you book, you agree to receive messages about your sessions, such as confirmations, reminders and schedule changes, by email or WhatsApp. These messages aren't marketing.</p>
     </section>
 
     <section class="sec" data-i18n="tosMaterials">
-      <h2 id="materials">Materials</h2>
+      <h2 id="materials" data-twin-id="materiales">Materials</h2>
       <p>Worksheets, solutions and notes I give you are for your own study. Please don't resell them or post them publicly.</p>
     </section>
 
     <section class="sec" data-i18n="tosFreeResources">
-      <h2 id="free-resources-and-exam-dates">Free resources and exam dates</h2>
+      <h2 id="free-resources-and-exam-dates" data-twin-id="recursos-gratuitos-y-fechas-de-examenes">Free resources and exam dates</h2>
       <p>The exam calendar, score checker and other free guides on this site are for general planning and information. I check dates against official sources, but schools, districts, the Florida Department of Education, College Board, ACT, the AAMC and colleges can change dates, deadlines and requirements at any time. Your school's calendar and the official sources always take priority. Jose Diaz Tutoring isn't responsible for missed deadlines, fees or other outcomes based on these resources. Score checks are an estimate; only your school can confirm that a requirement is met. "Summarize with Claude" opens a third-party AI service whose answers can contain mistakes.</p>
     </section>
 
     <section class="sec" data-i18n="tosEnding">
-      <h2 id="ending-the-service">Ending the service</h2>
+      <h2 id="ending-the-service" data-twin-id="fin-del-servicio">Ending the service</h2>
       <p>Either of us can stop at any time. Unused prepaid sessions are refunded as described in <a href="#plans-and-refunds">Plans and refunds</a>.</p>
     </section>
 
     <section class="sec" data-i18n="tosLiability">
-      <h2 id="limitation-of-liability">Limitation of liability</h2>
+      <h2 id="limitation-of-liability" data-twin-id="limite-de-responsabilidad">Limitation of liability</h2>
       <p>Tutoring is educational support. To the extent the law allows, my total liability for any claim about my services is limited to the amount you paid for the sessions involved. I make no warranty of specific academic results.</p>
     </section>
 
     <section class="sec" data-i18n="tosDisputes">
-      <h2 id="disputes-and-governing-law">Disputes and governing law</h2>
+      <h2 id="disputes-and-governing-law" data-twin-id="desacuerdos-y-ley-aplicable">Disputes and governing law</h2>
       <p>If something goes wrong, please contact me first, and we'll try to solve it directly. These terms are governed by Florida law.</p>
     </section>
 
     <section class="sec" data-i18n="tosChanges">
-      <h2 id="changes-and-language">Changes and language</h2>
+      <h2 id="changes-and-language" data-twin-id="cambios-e-idioma">Changes and language</h2>
       <p>I may update these terms; the "Last updated" date shows when. Changes don't affect sessions you've already paid for. These terms are available in English and Spanish; if the versions ever conflict, the English version controls.</p>
     </section>
 
@@ -482,6 +483,42 @@ document.addEventListener("click", e => {
   else if (href.startsWith("mailto:")) track("contact_click", { contact_method: "email", link_location: where });
 });
 /* analytics:end */
+</script>
+<script>
+/* lang-switch:start (the legal and exam pages reuse this block)
+   EN/ES toggle. On click, and only then: (1) save the choice in the cookie `lang` (server.js sends a
+   returning lang=es visitor from / and /exams/ to the Spanish page; the privacy policy describes it),
+   (2) point the link at the same section on the other page, keeping the query string (?for=, utm_*).
+   The links stay plain <a href>s that work without this script; any error here leaves them as they are. */
+(function () {
+  function sectionHash() {
+    // the last section whose top is at or above 35% of the viewport; none (still in the hero) -> no hash.
+    // data-twin-id: the matching id on the other page, where it differs (legal page headings)
+    var line = window.innerHeight * 0.35, id = "";
+    var els = document.querySelectorAll("main section[id], main [data-twin-id]");
+    for (var i = 0; i < els.length; i++) {
+      if (!els[i].getClientRects().length) continue; // hidden (e.g. #reviews before there are any)
+      if (els[i].getBoundingClientRect().top <= line) id = els[i].getAttribute("data-twin-id") || els[i].id;
+    }
+    return id ? "#" + id : "";
+  }
+  function onClick(e) {
+    try {
+      var a = e.currentTarget, lang = a.getAttribute("data-lang");
+      if (lang !== "en" && lang !== "es") return;
+      document.cookie = "lang=" + lang + "; Path=/; Max-Age=31536000; Secure; SameSite=Lax";
+      var q = new URLSearchParams(location.search);
+      q.delete("lang"); // an old ?lang=es would send the English page straight back to Spanish
+      q = q.toString();
+      a.setAttribute("href", a.getAttribute("href").split(/[?#]/)[0] + (q ? "?" + q : "") + sectionHash());
+    } catch (err) { /* the link still goes to the other page */ }
+  }
+  try {
+    var links = document.querySelectorAll(".lang a[data-lang]");
+    for (var i = 0; i < links.length; i++) links[i].addEventListener("click", onClick);
+  } catch (err) {}
+})();
+/* lang-switch:end */
 </script>
 </body>
 </html>

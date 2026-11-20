@@ -135,6 +135,8 @@ handlers:
 #   /index.html -> /,  /es and /es/index.html -> /es/   (301)
 #   /privacy, /privacy.html -> /privacy/ (and the other legal pages)   (301)
 #   /?lang=es -> /es/ (keeps ?topic=)   (301)
+#   / and /exams/ with the cookie lang=es (set by the EN/ES toggle) -> /es/ and /es/examenes/
+#                           (302, keeps the query string; both pages: Cache-Control private, Vary: Cookie)
 #   any other URL           -> 404 with www/404.html (/api/* -> JSON 404)
 - url: /.*
   script: auto

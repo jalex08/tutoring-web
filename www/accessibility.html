@@ -54,6 +54,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   *{box-sizing:border-box}
   html{scroll-behavior:smooth;scroll-padding-top:68px} /* keeps anchors and keyboard focus clear of the sticky header */
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  section[id]{scroll-margin-top:12px} /* + the 68px scroll-padding above = header (69px) + ~12px, e.g. after the EN/ES switch lands on #rates */
   body{margin:0;background:var(--paper);color:var(--graphite);font:400 1.0625rem/1.6 var(--body);-webkit-font-smoothing:antialiased}
   img,svg{display:block;max-width:100%}
   a{color:var(--ink)}
@@ -272,12 +273,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <p class="lead" data-i18n="accLead">I want everyone to be able to use this site, including people who use a screen reader, a keyboard, magnification or other assistive technology.</p>
 
     <section class="sec" data-i18n="accGoal">
-      <h2 id="my-goal">My goal</h2>
+      <h2 id="my-goal" data-twin-id="mi-objetivo">My goal</h2>
       <p>This site aims to meet the Web Content Accessibility Guidelines (WCAG) 2.2, Level AA. I check it with automated tools and by hand, and I fix problems as I find them.</p>
     </section>
 
     <section class="sec" data-i18n="accDone">
-      <h2 id="what-i-ve-done">What I've done</h2>
+      <h2 id="what-i-ve-done" data-twin-id="lo-que-he-hecho">What I've done</h2>
       <ul>
         <li>Clear headings and page structure, in English and Spanish, each marked with its language.</li>
         <li>Full keyboard navigation, with a visible focus outline and a "Skip to content" link.</li>
@@ -291,14 +292,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="accLimits">
-      <h2 id="known-limitations">Known limitations</h2>
+      <h2 id="known-limitations" data-twin-id="limitaciones-conocidas">Known limitations</h2>
       <ul>
         <li>Pages run by other companies, such as WhatsApp, LinkedIn and Google, aren't under my control.</li>
       </ul>
     </section>
 
     <section class="sec" data-i18n="accHelp">
-      <h2 id="need-help">Need help?</h2>
+      <h2 id="need-help" data-twin-id="necesitas-ayuda">Need help?</h2>
       <p>If any part of this site doesn't work for you, or you need its content in another format, contact me. Tell me which page and what happened, and I'll reply within 2 business days.</p>
     </section>
 
@@ -376,6 +377,42 @@ document.addEventListener("click", e => {
   else if (href.startsWith("mailto:")) track("contact_click", { contact_method: "email", link_location: where });
 });
 /* analytics:end */
+</script>
+<script>
+/* lang-switch:start (the legal and exam pages reuse this block)
+   EN/ES toggle. On click, and only then: (1) save the choice in the cookie `lang` (server.js sends a
+   returning lang=es visitor from / and /exams/ to the Spanish page; the privacy policy describes it),
+   (2) point the link at the same section on the other page, keeping the query string (?for=, utm_*).
+   The links stay plain <a href>s that work without this script; any error here leaves them as they are. */
+(function () {
+  function sectionHash() {
+    // the last section whose top is at or above 35% of the viewport; none (still in the hero) -> no hash.
+    // data-twin-id: the matching id on the other page, where it differs (legal page headings)
+    var line = window.innerHeight * 0.35, id = "";
+    var els = document.querySelectorAll("main section[id], main [data-twin-id]");
+    for (var i = 0; i < els.length; i++) {
+      if (!els[i].getClientRects().length) continue; // hidden (e.g. #reviews before there are any)
+      if (els[i].getBoundingClientRect().top <= line) id = els[i].getAttribute("data-twin-id") || els[i].id;
+    }
+    return id ? "#" + id : "";
+  }
+  function onClick(e) {
+    try {
+      var a = e.currentTarget, lang = a.getAttribute("data-lang");
+      if (lang !== "en" && lang !== "es") return;
+      document.cookie = "lang=" + lang + "; Path=/; Max-Age=31536000; Secure; SameSite=Lax";
+      var q = new URLSearchParams(location.search);
+      q.delete("lang"); // an old ?lang=es would send the English page straight back to Spanish
+      q = q.toString();
+      a.setAttribute("href", a.getAttribute("href").split(/[?#]/)[0] + (q ? "?" + q : "") + sectionHash());
+    } catch (err) { /* the link still goes to the other page */ }
+  }
+  try {
+    var links = document.querySelectorAll(".lang a[data-lang]");
+    for (var i = 0; i < links.length; i++) links[i].addEventListener("click", onClick);
+  } catch (err) {}
+})();
+/* lang-switch:end */
 </script>
 </body>
 </html>

@@ -54,6 +54,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   *{box-sizing:border-box}
   html{scroll-behavior:smooth;scroll-padding-top:68px} /* keeps anchors and keyboard focus clear of the sticky header */
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  section[id]{scroll-margin-top:12px} /* + the 68px scroll-padding above = header (69px) + ~12px, e.g. after the EN/ES switch lands on #rates */
   body{margin:0;background:var(--paper);color:var(--graphite);font:400 1.0625rem/1.6 var(--body);-webkit-font-smoothing:antialiased}
   img,svg{display:block;max-width:100%}
   a{color:var(--ink)}
@@ -288,13 +289,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="ppWho">
-      <h2 id="quien-soy">Quién soy</h2>
+      <h2 id="quien-soy" data-twin-id="who-i-am">Quién soy</h2>
       <p>Jose Diaz Tutoring es un negocio de Jose Alexis Diaz, que trabaja por cuenta propia (<i lang="en">sole proprietor</i>) en Florida. En esta política, "yo" soy yo, el tutor.</p>
       <p>Esta política cubre josediaztutoring.com, su versión en español y la información que manejo cuando me contactas o tomas sesiones conmigo.</p>
     </section>
 
     <section class="sec" data-i18n="ppCollect">
-      <h2 id="que-informacion-recojo">Qué información recojo</h2>
+      <h2 id="que-informacion-recojo" data-twin-id="what-i-collect">Qué información recojo</h2>
       <table>
         <thead><tr><th scope="col">De dónde viene</th><th scope="col">Qué es</th></tr></thead>
         <tbody>
@@ -307,7 +308,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="ppUse">
-      <h2 id="para-que-la-uso">Para qué la uso</h2>
+      <h2 id="para-que-la-uso" data-twin-id="how-i-use-it">Para qué la uso</h2>
       <ul>
         <li>Para responder tu solicitud y coordinar tu llamada de introducción.</li>
         <li>Para programar y dar tus sesiones, y enviarte confirmaciones, recordatorios y cambios de horario.</li>
@@ -319,7 +320,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="ppShare">
-      <h2 id="con-quien-la-comparto">Con quién la comparto</h2>
+      <h2 id="con-quien-la-comparto" data-twin-id="who-i-share-it-with">Con quién la comparto</h2>
       <p>Solo con los servicios que hacen funcionar mi negocio, y solo lo que cada uno necesita:</p>
       <table>
         <thead><tr><th scope="col">Proveedor</th><th scope="col">Para qué sirve</th><th scope="col">Qué recibe</th></tr></thead>
@@ -336,21 +337,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="ppCookies">
-      <h2 id="cookies-y-analitica">Cookies y analítica</h2>
+      <h2 id="cookies-y-analitica" data-twin-id="cookies-and-analytics">Cookies y analítica</h2>
       <p>Uso Google Analytics, que se carga mediante Google Tag Manager, para contar las visitas y ver qué páginas y botones se usan.</p>
       <ul>
         <li>Crea dos cookies de este sitio. Duran hasta 2 años e identifican tu navegador, no a ti.</li>
         <li>Google usa tu dirección IP para estimar tu ubicación aproximada (la ciudad). Google Analytics no registra ni guarda direcciones IP.</li>
         <li>Google Signals y todas las funciones de publicidad están desactivadas. Nunca envío tu nombre, correo ni teléfono a Analytics.</li>
-        <li>El sitio no usa otras cookies, píxeles de publicidad ni rastreadores de redes sociales.</li>
+        <li>Aparte de la preferencia de idioma (abajo), el sitio no usa otras cookies, píxeles de publicidad ni rastreadores de redes sociales.</li>
       </ul>
+      <p><strong>Preferencia de idioma:</strong> si usas el selector English/Español, el sitio guarda una pequeña cookie (lang) durante un año para abrirse en tu idioma la próxima vez. Solo contiene "en" o "es" y no se usa para analítica ni publicidad.</p>
       <p><strong>Tus opciones:</strong> puedes bloquear o borrar las cookies en la configuración de tu navegador, o instalar el <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener">complemento de Google para no ser medido por Analytics</a>. El sitio funciona igual en ambos casos. Para saber más, lee <a href="https://policies.google.com/technologies/partner-sites?hl=es" rel="noopener">cómo usa Google la información de los sitios que usan sus servicios</a>.</p>
       <h3>"No rastrear" (<span lang="en">Do Not Track</span>)</h3>
       <p>Analytics mide las visitas a lo largo del tiempo solo en este sitio. El sitio no te rastrea en otros sitios web ni te muestra anuncios, y no permito que otras empresas recojan información aquí para seguirte en otros sitios. Por eso, el sitio no responde de forma distinta a las señales de "No rastrear".</p>
     </section>
 
     <section class="sec" data-i18n="ppChildren">
-      <h2 id="menores-de-edad">Menores de edad</h2>
+      <h2 id="menores-de-edad" data-twin-id="children-and-students-under-18">Menores de edad</h2>
       <ul>
         <li>Mis servicios son para estudiantes de <i lang="en">high school</i>, estudiantes universitarios y sus padres. El sitio no está dirigido a niños menores de 13 años, y no recojo información de ellos a sabiendas.</li>
         <li>Si el estudiante es menor de 18 años, su padre, madre o tutor legal debe enviar el formulario o estar en copia.</li>
@@ -360,12 +362,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="ppAi">
-      <h2 id="herramientas-de-ia">Herramientas de IA</h2>
+      <h2 id="herramientas-de-ia" data-twin-id="ai-tools">Herramientas de IA</h2>
       <p>No pongo nombres ni datos de contacto de los estudiantes en herramientas de IA. Cuando uso IA para preparar material de práctica, quito todo lo que pueda identificar al estudiante.</p>
     </section>
 
     <section class="sec" data-i18n="ppKeep">
-      <h2 id="cuanto-tiempo-la-guardo">Cuánto tiempo la guardo</h2>
+      <h2 id="cuanto-tiempo-la-guardo" data-twin-id="how-long-i-keep-it">Cuánto tiempo la guardo</h2>
       <table>
         <thead><tr><th scope="col">Información</th><th scope="col">Tiempo</th></tr></thead>
         <tbody>
@@ -379,12 +381,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="ppProtect">
-      <h2 id="como-la-protejo">Cómo la protejo</h2>
+      <h2 id="como-la-protejo" data-twin-id="how-i-protect-it">Cómo la protejo</h2>
       <p>Todas las páginas usan HTTPS (con HSTS). Solo yo tengo acceso a tu información, y elegí mis proveedores por su seguridad. Ningún sistema es perfectamente seguro; si alguna vez una filtración afecta tu información, te avisaré, como exige la ley.</p>
     </section>
 
     <section class="sec" data-i18n="ppRights">
-      <h2 id="tus-opciones-y-solicitudes">Tus opciones y solicitudes</h2>
+      <h2 id="tus-opciones-y-solicitudes" data-twin-id="your-choices-and-requests">Tus opciones y solicitudes</h2>
       <p>Escríbeme para:</p>
       <ul>
         <li>ver la información que tengo sobre ti;</li>
@@ -396,17 +398,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="ppLinks">
-      <h2 id="enlaces-a-otros-sitios">Enlaces a otros sitios</h2>
+      <h2 id="enlaces-a-otros-sitios" data-twin-id="links-to-other-sites">Enlaces a otros sitios</h2>
       <p>Este sitio enlaza a WhatsApp, LinkedIn y Google. En sus sitios se aplican sus propias políticas de privacidad.</p>
     </section>
 
     <section class="sec" data-i18n="ppChanges">
-      <h2 id="cambios-en-esta-politica">Cambios en esta política</h2>
+      <h2 id="cambios-en-esta-politica" data-twin-id="changes-to-this-policy">Cambios en esta política</h2>
       <p>Cuando actualizo esta política, cambio la fecha de "Última actualización". Si el cambio es importante, como un nuevo tipo de información o un nuevo proveedor, también lo anuncio en la página principal durante 30 días.</p>
     </section>
 
     <section class="sec" data-i18n="ppLang">
-      <h2 id="idioma">Idioma</h2>
+      <h2 id="idioma" data-twin-id="language">Idioma</h2>
       <p>Esta política está en inglés y en español, y las dos versiones dicen lo mismo. Si alguna vez no coinciden, prevalece la versión en inglés.</p>
     </section>
 
@@ -485,6 +487,42 @@ document.addEventListener("click", e => {
   else if (href.startsWith("mailto:")) track("contact_click", { contact_method: "email", link_location: where });
 });
 /* analytics:end */
+</script>
+<script>
+/* lang-switch:start (the legal and exam pages reuse this block)
+   EN/ES toggle. On click, and only then: (1) save the choice in the cookie `lang` (server.js sends a
+   returning lang=es visitor from / and /exams/ to the Spanish page; the privacy policy describes it),
+   (2) point the link at the same section on the other page, keeping the query string (?for=, utm_*).
+   The links stay plain <a href>s that work without this script; any error here leaves them as they are. */
+(function () {
+  function sectionHash() {
+    // the last section whose top is at or above 35% of the viewport; none (still in the hero) -> no hash.
+    // data-twin-id: the matching id on the other page, where it differs (legal page headings)
+    var line = window.innerHeight * 0.35, id = "";
+    var els = document.querySelectorAll("main section[id], main [data-twin-id]");
+    for (var i = 0; i < els.length; i++) {
+      if (!els[i].getClientRects().length) continue; // hidden (e.g. #reviews before there are any)
+      if (els[i].getBoundingClientRect().top <= line) id = els[i].getAttribute("data-twin-id") || els[i].id;
+    }
+    return id ? "#" + id : "";
+  }
+  function onClick(e) {
+    try {
+      var a = e.currentTarget, lang = a.getAttribute("data-lang");
+      if (lang !== "en" && lang !== "es") return;
+      document.cookie = "lang=" + lang + "; Path=/; Max-Age=31536000; Secure; SameSite=Lax";
+      var q = new URLSearchParams(location.search);
+      q.delete("lang"); // an old ?lang=es would send the English page straight back to Spanish
+      q = q.toString();
+      a.setAttribute("href", a.getAttribute("href").split(/[?#]/)[0] + (q ? "?" + q : "") + sectionHash());
+    } catch (err) { /* the link still goes to the other page */ }
+  }
+  try {
+    var links = document.querySelectorAll(".lang a[data-lang]");
+    for (var i = 0; i < links.length; i++) links[i].addEventListener("click", onClick);
+  } catch (err) {}
+})();
+/* lang-switch:end */
 </script>
 </body>
 </html>

@@ -364,6 +364,8 @@ function parts(page) {
     footer: between(page, '<footer class="site-foot">', "</footer>", "footer", true),
     wa: between(page, '<a class="wa-float', "</a>", "WhatsApp button", true),
     analytics: between(page, "/* analytics:start", "/* analytics:end */", "analytics script", true),
+    // the EN/ES toggle's click handler (saves the choice, keeps the section)
+    langSwitch: between(page, "/* lang-switch:start", "/* lang-switch:end */", "language switch script", true),
     // exam pages only: the motto band (markup + CSS) and the fonts link with Kalam
     motto: between(page, '<figure class="wrap">', "</figure>", "motto band", true),
     mottoCss: between(page, "/* motto band */", "/* sections */", "motto CSS", true).replace(/\/\* sections \*\/$/, "").trim(),
@@ -504,6 +506,9 @@ const LANG = "${lang}";
 ${P.analytics}
 </script>
 <script>
+${P.langSwitch}
+</script>
+<script>
 ${clientJs}
 </script>
 </body>
@@ -532,8 +537,9 @@ const longDate = (iso, lang) =>
 const DATE_RE = /<time datetime="(\d{4}-\d\d-\d\d)">[^<]*<\/time>/;
 const visibleText = (h) => text(h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, " "));
 
-/** One legal page in one language. Returns { html, date, sections }. `old` = the file as it is now. */
-function legalPage(page, lang, old) {
+/** One legal page in one language. Returns { html, date, sections, ids }. `old` = the file as it is now,
+ *  `twin` = the other language's section ids in order (each heading gets data-twin-id, for the EN/ES toggle). */
+function legalPage(page, lang, old, twin) {
   const P = PARTS[lang];
   let body = fs.readFileSync(path.join(ROOT, page.src), "utf8").replace(/^<!--[\s\S]*?-->\s*/, "");
   if (lang === "es") body = localizeLinks(translate(body));
@@ -553,8 +559,9 @@ function legalPage(page, lang, old) {
     const id = slug(text(h));
     if (!id || ids.has(id)) fail(`${page.src} (${lang}): duplicate or empty section id "${id}"`);
     ids.add(id);
+    const t = twin && twin[toc.length];
     toc.push(`<li><a href="#${id}">${h}</a></li>`);
-    return `${open}<h2 id="${id}">${h}</h2>`;
+    return `${open}<h2 id="${id}"${t ? ` data-twin-id="${t}"` : ""}>${h}</h2>`;
   });
   if (!toc.length) fail(`${page.src}: no sections`);
   body = replaceOne(body, /<ol data-toc><\/ol>/, `<ol>\n      ${toc.join("\n      ")}\n    </ol>`, "table of contents");
@@ -626,6 +633,9 @@ ${staticFooter(P.footer, page[lang])}
 const LANG = "${lang}";
 ${P.analytics}
 </script>
+<script>
+${P.langSwitch}
+</script>
 </body>
 </html>
 `;
@@ -633,7 +643,7 @@ ${P.analytics}
   let date = today;
   const was = old && old.match(DATE_RE);
   if (was && old.replace(DATE_RE, "<time>") === render(today).replace(DATE_RE, "<time>")) date = was[1];
-  return { html: render(date), date, sections: toc.length };
+  return { html: render(date), date, sections: toc.length, ids: toc.map((li) => li.match(/href="#([^"]+)"/)[1]) };
 }
 
 const outputs = [];
@@ -643,8 +653,9 @@ const readOld = (f) => (fs.existsSync(f) ? fs.readFileSync(f, "utf8") : null);
 const outFile = (p) => path.join(ROOT, "www", p.replace(/^\/|\/$/g, "") + ".html");
 for (const page of LEGAL) {
   const built = {};
+  const ids = { en: legalPage(page, "en").ids, es: legalPage(page, "es").ids }; // the headings' ids, for data-twin-id
   for (const lang of ["en", "es"]) {
-    built[lang] = legalPage(page, lang, readOld(outFile(page[lang])));
+    built[lang] = legalPage(page, lang, readOld(outFile(page[lang])), ids[lang === "en" ? "es" : "en"]);
     outputs.push([outFile(page[lang]), built[lang].html]);
     lastmod[page[lang]] = built[lang].date;
   }

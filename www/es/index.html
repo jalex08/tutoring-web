@@ -57,6 +57,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   *{box-sizing:border-box}
   html{scroll-behavior:smooth;scroll-padding-top:68px} /* keeps anchors and keyboard focus clear of the sticky header */
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  section[id]{scroll-margin-top:12px} /* + the 68px scroll-padding above = header (69px) + ~12px, e.g. after the EN/ES switch lands on #rates */
   body{margin:0;background:var(--paper);color:var(--graphite);font:400 1.0625rem/1.6 var(--body);-webkit-font-smoothing:antialiased}
   img,svg{display:block;max-width:100%}
   a{color:var(--ink)}
@@ -1391,6 +1392,43 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </footer>
 
 <script>
+/* lang-switch:start (the legal and exam pages reuse this block)
+   EN/ES toggle. On click, and only then: (1) save the choice in the cookie `lang` (server.js sends a
+   returning lang=es visitor from / and /exams/ to the Spanish page; the privacy policy describes it),
+   (2) point the link at the same section on the other page, keeping the query string (?for=, utm_*).
+   The links stay plain <a href>s that work without this script; any error here leaves them as they are. */
+(function () {
+  function sectionHash() {
+    // the last section whose top is at or above 35% of the viewport; none (still in the hero) -> no hash.
+    // data-twin-id: the matching id on the other page, where it differs (legal page headings)
+    var line = window.innerHeight * 0.35, id = "";
+    var els = document.querySelectorAll("main section[id], main [data-twin-id]");
+    for (var i = 0; i < els.length; i++) {
+      if (!els[i].getClientRects().length) continue; // hidden (e.g. #reviews before there are any)
+      if (els[i].getBoundingClientRect().top <= line) id = els[i].getAttribute("data-twin-id") || els[i].id;
+    }
+    return id ? "#" + id : "";
+  }
+  function onClick(e) {
+    try {
+      var a = e.currentTarget, lang = a.getAttribute("data-lang");
+      if (lang !== "en" && lang !== "es") return;
+      document.cookie = "lang=" + lang + "; Path=/; Max-Age=31536000; Secure; SameSite=Lax";
+      var q = new URLSearchParams(location.search);
+      q.delete("lang"); // an old ?lang=es would send the English page straight back to Spanish
+      q = q.toString();
+      a.setAttribute("href", a.getAttribute("href").split(/[?#]/)[0] + (q ? "?" + q : "") + sectionHash());
+    } catch (err) { /* the link still goes to the other page */ }
+  }
+  try {
+    var links = document.querySelectorAll(".lang a[data-lang]");
+    for (var i = 0; i < links.length; i++) links[i].addEventListener("click", onClick);
+  } catch (err) {}
+})();
+/* lang-switch:end */
+</script>
+
+<script>
 /* ---- Site settings. After any change here, run `npm run build` (it also
    regenerates the Spanish page and the structured data), then deploy. ----
    Values in [brackets] are not set yet: whatever uses them stays hidden. */
@@ -1422,11 +1460,7 @@ const FORM_MSG = {
       busy:"Demasiadas solicitudes en este momento. Inténtalo más tarde o escríbeme por WhatsApp."}
 };
 
-/* language links keep the section you're on, and the class picked in the hero */
-document.querySelectorAll(".lang a").forEach(a => a.addEventListener("click", () => {
-  const topic = new URLSearchParams(location.search).get("topic");
-  a.href = a.getAttribute("href").split("#")[0] + (topic ? "?topic=" + encodeURIComponent(topic) : "") + location.hash;
-}));
+/* language links: see lang-switch above (keeps the query string, incl. the hero's ?topic=, and the section) */
 
 const WA_TEXT = {
   en: "Hi Jose, I found your website and I'm interested in tutoring for ",

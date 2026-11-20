@@ -54,6 +54,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   *{box-sizing:border-box}
   html{scroll-behavior:smooth;scroll-padding-top:68px} /* keeps anchors and keyboard focus clear of the sticky header */
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  section[id]{scroll-margin-top:12px} /* + the 68px scroll-padding above = header (69px) + ~12px, e.g. after the EN/ES switch lands on #rates */
   body{margin:0;background:var(--paper);color:var(--graphite);font:400 1.0625rem/1.6 var(--body);-webkit-font-smoothing:antialiased}
   img,svg{display:block;max-width:100%}
   a{color:var(--ink)}
@@ -288,13 +289,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="ppWho">
-      <h2 id="who-i-am">Who I am</h2>
+      <h2 id="who-i-am" data-twin-id="quien-soy">Who I am</h2>
       <p>Jose Diaz Tutoring is operated by Jose Alexis Diaz, a sole proprietor in Florida. In this policy, "I" and "me" mean me, the tutor.</p>
       <p>This policy covers josediaztutoring.com, its Spanish version, and the information I handle when you contact me or take sessions with me.</p>
     </section>
 
     <section class="sec" data-i18n="ppCollect">
-      <h2 id="what-i-collect">What I collect</h2>
+      <h2 id="what-i-collect" data-twin-id="que-informacion-recojo">What I collect</h2>
       <table>
         <thead><tr><th scope="col">Where it comes from</th><th scope="col">What</th></tr></thead>
         <tbody>
@@ -307,7 +308,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="ppUse">
-      <h2 id="how-i-use-it">How I use it</h2>
+      <h2 id="how-i-use-it" data-twin-id="para-que-la-uso">How I use it</h2>
       <ul>
         <li>To reply to your request and set up your intro call.</li>
         <li>To schedule and teach your sessions, and to send confirmations, reminders and schedule changes.</li>
@@ -319,7 +320,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="ppShare">
-      <h2 id="who-i-share-it-with">Who I share it with</h2>
+      <h2 id="who-i-share-it-with" data-twin-id="con-quien-la-comparto">Who I share it with</h2>
       <p>Only with the services that run my business, and only what each one needs:</p>
       <table>
         <thead><tr><th scope="col">Provider</th><th scope="col">What it does</th><th scope="col">What it receives</th></tr></thead>
@@ -336,21 +337,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="ppCookies">
-      <h2 id="cookies-and-analytics">Cookies and analytics</h2>
+      <h2 id="cookies-and-analytics" data-twin-id="cookies-y-analitica">Cookies and analytics</h2>
       <p>I use Google Analytics, loaded through Google Tag Manager, to count visits and see which pages and buttons get used.</p>
       <ul>
         <li>It sets two cookies on this site. They last up to 2 years and identify your browser, not you.</li>
         <li>Google uses your IP address to estimate your approximate location (city level). Google Analytics doesn't log or store IP addresses.</li>
         <li>Google signals and all advertising features are turned off. I never send your name, email or phone number to Analytics.</li>
-        <li>The site uses no other cookies, ad pixels or social-media trackers.</li>
+        <li>Apart from the language preference below, the site uses no other cookies, ad pixels or social-media trackers.</li>
       </ul>
+      <p><strong>Language preference:</strong> if you use the English/Español switch, the site saves a small cookie (lang) for one year so it opens in your language next time. It only contains "en" or "es" and isn't used for analytics or advertising.</p>
       <p><strong>Your choices:</strong> you can block or delete cookies in your browser settings, or install Google's <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener">Analytics opt-out add-on</a>. The site works the same either way. To learn more, see <a href="https://policies.google.com/technologies/partner-sites" rel="noopener">how Google uses information from sites that use its services</a>.</p>
       <h3>Do Not Track</h3>
       <p>Analytics measures visits over time on this site only. The site doesn't track you across other websites or show you ads, and I don't let other companies collect information here to follow you across other sites. For that reason, the site doesn't respond differently to Do Not Track signals.</p>
     </section>
 
     <section class="sec" data-i18n="ppChildren">
-      <h2 id="children-and-students-under-18">Children and students under 18</h2>
+      <h2 id="children-and-students-under-18" data-twin-id="menores-de-edad">Children and students under 18</h2>
       <ul>
         <li>My services are for high school students, college students and their parents. The site isn't directed to children under 13, and I don't knowingly collect information from them.</li>
         <li>If the student is under 18, a parent or guardian should send the form or be copied on it.</li>
@@ -360,12 +362,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="ppAi">
-      <h2 id="ai-tools">AI tools</h2>
+      <h2 id="ai-tools" data-twin-id="herramientas-de-ia">AI tools</h2>
       <p>I don't put students' names or contact details into AI tools. When I use AI to prepare practice material, I remove anything that identifies the student.</p>
     </section>
 
     <section class="sec" data-i18n="ppKeep">
-      <h2 id="how-long-i-keep-it">How long I keep it</h2>
+      <h2 id="how-long-i-keep-it" data-twin-id="cuanto-tiempo-la-guardo">How long I keep it</h2>
       <table>
         <thead><tr><th scope="col">Information</th><th scope="col">Kept for</th></tr></thead>
         <tbody>
@@ -379,12 +381,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="ppProtect">
-      <h2 id="how-i-protect-it">How I protect it</h2>
+      <h2 id="how-i-protect-it" data-twin-id="como-la-protejo">How I protect it</h2>
       <p>Every page uses HTTPS (with HSTS). Only I can access your information, and I chose my providers for their security. No system is perfectly secure; if a breach ever affects your information, I'll tell you, as the law requires.</p>
     </section>
 
     <section class="sec" data-i18n="ppRights">
-      <h2 id="your-choices-and-requests">Your choices and requests</h2>
+      <h2 id="your-choices-and-requests" data-twin-id="tus-opciones-y-solicitudes">Your choices and requests</h2>
       <p>Email me to:</p>
       <ul>
         <li>see the information I have about you;</li>
@@ -396,17 +398,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </section>
 
     <section class="sec" data-i18n="ppLinks">
-      <h2 id="links-to-other-sites">Links to other sites</h2>
+      <h2 id="links-to-other-sites" data-twin-id="enlaces-a-otros-sitios">Links to other sites</h2>
       <p>This site links to WhatsApp, LinkedIn and Google. Their own privacy policies apply on their sites.</p>
     </section>
 
     <section class="sec" data-i18n="ppChanges">
-      <h2 id="changes-to-this-policy">Changes to this policy</h2>
+      <h2 id="changes-to-this-policy" data-twin-id="cambios-en-esta-politica">Changes to this policy</h2>
       <p>When I update this policy, I change the "Last updated" date at the top. If the change is important, such as a new kind of information or a new provider, I'll also post a notice on the home page for 30 days.</p>
     </section>
 
     <section class="sec" data-i18n="ppLang">
-      <h2 id="language">Language</h2>
+      <h2 id="language" data-twin-id="idioma">Language</h2>
       <p>This policy is available in English and Spanish, and both versions say the same thing. If they ever conflict, the English version controls.</p>
     </section>
 
@@ -485,6 +487,42 @@ document.addEventListener("click", e => {
   else if (href.startsWith("mailto:")) track("contact_click", { contact_method: "email", link_location: where });
 });
 /* analytics:end */
+</script>
+<script>
+/* lang-switch:start (the legal and exam pages reuse this block)
+   EN/ES toggle. On click, and only then: (1) save the choice in the cookie `lang` (server.js sends a
+   returning lang=es visitor from / and /exams/ to the Spanish page; the privacy policy describes it),
+   (2) point the link at the same section on the other page, keeping the query string (?for=, utm_*).
+   The links stay plain <a href>s that work without this script; any error here leaves them as they are. */
+(function () {
+  function sectionHash() {
+    // the last section whose top is at or above 35% of the viewport; none (still in the hero) -> no hash.
+    // data-twin-id: the matching id on the other page, where it differs (legal page headings)
+    var line = window.innerHeight * 0.35, id = "";
+    var els = document.querySelectorAll("main section[id], main [data-twin-id]");
+    for (var i = 0; i < els.length; i++) {
+      if (!els[i].getClientRects().length) continue; // hidden (e.g. #reviews before there are any)
+      if (els[i].getBoundingClientRect().top <= line) id = els[i].getAttribute("data-twin-id") || els[i].id;
+    }
+    return id ? "#" + id : "";
+  }
+  function onClick(e) {
+    try {
+      var a = e.currentTarget, lang = a.getAttribute("data-lang");
+      if (lang !== "en" && lang !== "es") return;
+      document.cookie = "lang=" + lang + "; Path=/; Max-Age=31536000; Secure; SameSite=Lax";
+      var q = new URLSearchParams(location.search);
+      q.delete("lang"); // an old ?lang=es would send the English page straight back to Spanish
+      q = q.toString();
+      a.setAttribute("href", a.getAttribute("href").split(/[?#]/)[0] + (q ? "?" + q : "") + sectionHash());
+    } catch (err) { /* the link still goes to the other page */ }
+  }
+  try {
+    var links = document.querySelectorAll(".lang a[data-lang]");
+    for (var i = 0; i < links.length; i++) links[i].addEventListener("click", onClick);
+  } catch (err) {}
+})();
+/* lang-switch:end */
 </script>
 </body>
 </html>

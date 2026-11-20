@@ -238,8 +238,9 @@ module.exports = {
         <li>Crea dos cookies de este sitio. Duran hasta 2 años e identifican tu navegador, no a ti.</li>
         <li>Google usa tu dirección IP para estimar tu ubicación aproximada (la ciudad). Google Analytics no registra ni guarda direcciones IP.</li>
         <li>Google Signals y todas las funciones de publicidad están desactivadas. Nunca envío tu nombre, correo ni teléfono a Analytics.</li>
-        <li>El sitio no usa otras cookies, píxeles de publicidad ni rastreadores de redes sociales.</li>
+        <li>Aparte de la preferencia de idioma (abajo), el sitio no usa otras cookies, píxeles de publicidad ni rastreadores de redes sociales.</li>
       </ul>
+      <p><strong>Preferencia de idioma:</strong> si usas el selector English/Español, el sitio guarda una pequeña cookie (lang) durante un año para abrirse en tu idioma la próxima vez. Solo contiene "en" o "es" y no se usa para analítica ni publicidad.</p>
       <p><strong>Tus opciones:</strong> puedes bloquear o borrar las cookies en la configuración de tu navegador, o instalar el <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener">complemento de Google para no ser medido por Analytics</a>. El sitio funciona igual en ambos casos. Para saber más, lee <a href="https://policies.google.com/technologies/partner-sites?hl=es" rel="noopener">cómo usa Google la información de los sitios que usan sus servicios</a>.</p>
       <h3>"No rastrear" (<span lang="en">Do Not Track</span>)</h3>
       <p>Analytics mide las visitas a lo largo del tiempo solo en este sitio. El sitio no te rastrea en otros sitios web ni te muestra anuncios, y no permito que otras empresas recojan información aquí para seguirte en otros sitios. Por eso, el sitio no responde de forma distinta a las señales de "No rastrear".</p>

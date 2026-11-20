@@ -79,6 +79,31 @@ srv.listen(0, async () => {
     assert.equal(r.headers.get("location"), "/es/?topic=calculus");
   });
 
+  console.log("language preference (cookie lang)");
+  const withLang = (v, opts = {}) => ({ ...opts, headers: { cookie: `_ga=GA1.1.1; lang=${v}; _ga_X=GS1.1` } });
+  for (const [p, cookieVal, status, to] of [
+    ["/", null, 200], ["/", "en", 200], ["/", "es", 302, "/es/"], ["/?src=card&utm_source=x", "es", 302, "/es/?src=card&utm_source=x"],
+    ["/exams/", "es", 302, "/es/examenes/"], ["/exams/?for=hs9", "es", 302, "/es/examenes/?for=hs9"], ["/exams/", "en", 200], ["/exams/", null, 200],
+    ["/es/", "es", 200], ["/es/", "en", 200], ["/es/examenes/", "es", 200], ["/exams/algebra-1-eoc/", "es", 200],
+    ["/privacy/", "es", 200], ["/terms/", "es", 200], ["/?lang=es&topic=calculus", "en", 301, "/es/?topic=calculus"],
+  ]) {
+    await check(`${p} ${cookieVal ? "lang=" + cookieVal : "no cookie"} -> ${status}${to ? " " + to : ""}`, async () => {
+      for (const method of ["GET", "HEAD"]) {
+        const r = await get(p, cookieVal ? withLang(cookieVal, { method }) : { method });
+        assert.equal(r.status, status, method);
+        assert.equal(r.headers.get("location"), to || null, method);
+        if (status === 302) {
+          assert.equal(r.headers.get("cache-control"), "private, no-store");
+          assert.equal(r.headers.get("vary"), "Cookie");
+        }
+      }
+    });
+  }
+  await check("lang=es doesn't touch /api/contact", async () => {
+    const r = await get("/api/contact", withLang("es", { method: "POST", headers: { cookie: "lang=es", "Content-Type": "application/json" }, body: "{}" }));
+    assert.equal(r.status, 400);
+  });
+
   console.log("booking form (email stubbed)");
   await check("GET /api/contact -> 405", async () => {
     const r = await get("/api/contact");
@@ -243,11 +268,12 @@ srv.listen(0, async () => {
       assert.match(pages[lang], /<p class="form-promise"><svg class="check" viewBox="0 0 24 24" aria-hidden="true">/);
     });
   }
-  await check("/, /es/, /llms.txt: served by the app, Cache-Control public, max-age=600", async () => {
+  await check("/es/, /llms.txt: served by the app, Cache-Control public, max-age=600; / private, Vary: Cookie", async () => {
     for (const p of ["/", "/es/", "/llms.txt"]) {
       const r = await get(p);
       assert.equal(r.status, 200);
-      assert.equal(r.headers.get("cache-control"), "public, max-age=600");
+      assert.equal(r.headers.get("cache-control"), p === "/" ? "private, no-cache" : "public, max-age=600");
+      assert.equal(r.headers.get("vary"), p === "/" ? "Cookie" : null);
       assert.ok(r.headers.get("strict-transport-security"));
     }
     assert.equal((await get("/", { method: "HEAD" })).status, 200);
@@ -306,7 +332,9 @@ srv.listen(0, async () => {
     { en: "/accessibility/", es: "/es/accesibilidad/", title: ["Accessibility Statement", "Declaración de accesibilidad"] },
   ];
   const main = (h) => h.slice(h.indexOf('<main id="main">'), h.indexOf("</main>"));
-  const sections = (h) => [...h.matchAll(/<section class="sec"[^>]*>\s*<h2 id="[^"]+">/g)].length;
+  const sections = (h) => [...h.matchAll(/<section class="sec"[^>]*>\s*<h2 id="[^"]+"[^>]*>/g)].length;
+  // each legal heading names its twin on the other-language page (the EN/ES toggle keeps the section)
+  const twins = (h) => [...h.matchAll(/<h2 id="([^"]+)" data-twin-id="([^"]+)">/g)].map((m) => [m[1], m[2]]);
   const all = { "/": pages.en, "/es/": pages.es };
   for (const page of LEGAL) {
     const html = { en: await (await get(page.en)).text(), es: await (await get(page.es)).text() };
@@ -340,6 +368,10 @@ srv.listen(0, async () => {
       assert.equal(sections(html.en), sections(html.es));
       const keys = (h) => [...h.matchAll(/<section class="sec" data-i18n="(\w+)"/g)].map((m) => m[1]).join();
       assert.equal(keys(html.en), keys(html.es));
+      // data-twin-id: every heading points at the heading in the same position on the other page
+      assert.equal(twins(html.en).length, sections(html.en));
+      assert.deepEqual(twins(html.en), twins(html.es).map(([a, b]) => [b, a]));
+      for (const h of [html.en, html.es]) assert.ok(h.includes("/* lang-switch:start"), "toggle script");
     });
   }
   await check("404 has the footer with policy links in both languages", async () => {
@@ -373,7 +405,9 @@ srv.listen(0, async () => {
       Object.assign(all, { [p]: h });
       await check(`${p}: 200, cached 10 min, head, toggle, footer`, () => {
         assert.equal(r.status, 200);
-        assert.equal(r.headers.get("cache-control"), "public, max-age=600");
+        assert.equal(r.headers.get("cache-control"), p === "/exams/" ? "private, no-cache" : "public, max-age=600");
+        assert.equal(r.headers.get("vary"), p === "/exams/" ? "Cookie" : null);
+        assert.ok(h.includes("/* lang-switch:start"), "toggle script");
         assert.ok(r.headers.get("strict-transport-security"));
         assert.match(h, new RegExp(`<html lang="${lang}">`));
         assert.equal(decode(h.match(/<title>([^<]*)<\/title>/)[1]), page.title[i]);

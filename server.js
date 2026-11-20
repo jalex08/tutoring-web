@@ -13,6 +13,9 @@
  * code and gets a 301 (/index.html, /es, /es/index.html, legal pages without
  * the trailing slash) or a real 404 page.
  *
+ * Language preference: / and /exams/ send a visitor with the cookie lang=es (saved by the EN/ES
+ * toggle) to /es/ and /es/examenes/ (302). See LANG_ENTRY below.
+ *
  * Exam calendar: /exams/, /exams/algebra-1-eoc/, /es/examenes/, /es/examenes/eoc-algebra-1/ are
  * built templates (www/exams.html, ...) filled here at request time from the JSON secret
  * `site-exams` (cached EXAMS_TTL = 10 minutes; see exam-calendar.js), with dates worked out for
@@ -460,7 +463,7 @@ async function pricedPage(req, res, pathname) {
   res.writeHead(200, {
     ...SECURITY_HEADERS,
     "Content-Type": pg.type,
-    "Cache-Control": "public, max-age=600",
+    ...(LANG_ENTRY[pathname] ? LANG_ENTRY_CACHE : { "Cache-Control": "public, max-age=600" }),
   });
   res.end(req.method === "HEAD" ? undefined : body);
 }
@@ -550,7 +553,11 @@ async function examPage(req, res, pathname) {
       body = examTemplate(pathname);
     }
   }
-  res.writeHead(200, { ...SECURITY_HEADERS, "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=600" });
+  res.writeHead(200, {
+    ...SECURITY_HEADERS,
+    "Content-Type": "text/html; charset=utf-8",
+    ...(LANG_ENTRY[pathname] ? LANG_ENTRY_CACHE : { "Cache-Control": "public, max-age=600" }),
+  });
   res.end(req.method === "HEAD" ? undefined : body);
 }
 
@@ -582,6 +589,22 @@ for (const p of Object.keys(EXAM_PAGES).map((u) => u.slice(0, -1))) {
 }
 let page404 = null;
 
+// --- language preference (cookie lang, set only by the EN/ES toggle's script) -------------------
+// A visitor whose cookie says lang=es is sent from the English entry pages to their Spanish twins
+// (302, query string kept; the browser keeps the #hash). Nothing else redirects: not lang=en, not a
+// missing cookie, not the Spanish pages (so there's no loop), not the guides or legal pages.
+// Accept-Language and IP are never used. These two pages depend on the cookie, so no shared cache
+// may keep them (private + Vary: Cookie), and the redirect itself is never stored.
+const LANG_ENTRY = { "/": "/es/", "/exams/": "/es/examenes/" };
+const LANG_ENTRY_CACHE = { "Cache-Control": "private, no-cache", Vary: "Cookie" };
+function cookie(req, name) {
+  for (const part of String(req.headers.cookie || "").split(";")) {
+    const i = part.indexOf("=");
+    if (i > 0 && part.slice(0, i).trim() === name) return part.slice(i + 1).trim();
+  }
+  return null;
+}
+
 function notFoundPage(req, res) {
   try {
     page404 ??= fs.readFileSync(path.join(__dirname, "www/404.html"));
@@ -597,7 +620,7 @@ function notFoundPage(req, res) {
   res.end(req.method === "HEAD" ? undefined : page404);
 }
 
-function page(req, res, pathname, query) {
+function page(req, res, pathname, query, search = "") {
   const read = req.method === "GET" || req.method === "HEAD";
   let to = REDIRECTS[pathname];
   // old ?lang=es links -> /es/ (keeps ?topic=, the class picked in the hero)
@@ -606,6 +629,10 @@ function page(req, res, pathname, query) {
   }
   if (to && read) {
     res.writeHead(301, { ...SECURITY_HEADERS, Location: to, "Cache-Control": "public, max-age=3600" });
+    return res.end();
+  }
+  if (LANG_ENTRY[pathname] && read && cookie(req, "lang") === "es") {
+    res.writeHead(302, { ...SECURITY_HEADERS, Location: LANG_ENTRY[pathname] + search, "Cache-Control": "private, no-store", Vary: "Cookie" });
     return res.end();
   }
   if (EXAM_PAGES[pathname] && read) {
@@ -636,7 +663,7 @@ const server = http.createServer((req, res) => {
   } catch {
     return notFoundPage(req, res);
   }
-  if (!url.pathname.startsWith("/api/")) return page(req, res, url.pathname, url.searchParams);
+  if (!url.pathname.startsWith("/api/")) return page(req, res, url.pathname, url.searchParams, url.search);
   if (url.pathname !== "/api/contact") return reply(res, 404, { ok: false, error: "not_found" });
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
