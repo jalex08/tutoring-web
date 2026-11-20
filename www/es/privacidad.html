@@ -158,6 +158,27 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   @media (max-width:1099px){.foot-grid{padding-bottom:96px}} /* room for the floating WhatsApp button: below ~1100px it can reach the fine print */
   @media (max-width:760px){.foot-grid{grid-template-columns:1fr}}
   /* ---- footer-css:end ---- */
+  /* language suggestion bar (built by the lang-switch script, never in the HTML). Fixed, so it shifts nothing */
+  .lang-bar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;align-items:center;gap:6px 12px;
+    background:var(--pad);border-top:1px solid #D3DCD8;padding:6px 6px calc(6px + env(safe-area-inset-bottom)) 16px;
+    font:400 .95rem/1.35 var(--body);color:var(--graphite)}
+  .lang-bar p{margin:0;flex:1}
+  .lang-bar button{min-height:44px;border-radius:8px;font:700 .95rem/1 var(--body);cursor:pointer}
+  .lang-bar-go{border:0;background:var(--ink);color:#fff;padding:0 16px}
+  .lang-bar-go:hover{background:var(--ink-dark)}
+  .lang-bar-x{min-width:44px;border:0;background:none;color:var(--graphite);font-size:1.6rem}
+  .lang-bar-x:hover{background:#DCE8D5}
+  .lang-bar button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+  @media (min-width:700px){.lang-bar{left:16px;right:16px;bottom:16px;max-width:640px;margin:0 auto;border:1px solid #D3DCD8;border-radius:12px;
+    padding:6px 6px 6px 18px;box-shadow:0 10px 24px -12px rgba(35,42,42,.35)}}
+  @media (prefers-reduced-motion:no-preference){.lang-bar{animation:lang-bar-in .25s ease-out}}
+  @keyframes lang-bar-in{from{opacity:0;transform:translateY(12px)}}
+  /* while it shows: the WhatsApp button sits above it, and the page can scroll its last lines clear of it */
+  .has-lang-bar .wa-float{bottom:calc(var(--lang-bar-h,64px) + 12px)}
+  @media (min-width:700px){.has-lang-bar .wa-float{bottom:18px}} /* centered bar (max 640px) leaves the corner free... */
+  @media (min-width:700px) and (max-width:1100px){.has-lang-bar .wa-float{bottom:calc(var(--lang-bar-h,64px) + 12px)}} /* ...only above ~1100px */
+  .has-lang-bar{scroll-padding-bottom:calc(var(--lang-bar-h,64px) + 8px)} /* focus and in-page scrolling stop above the bar */
+  .has-lang-bar body{padding-bottom:var(--lang-bar-h,64px)}
   /* ==== shared:end ==== */
 /* Legal pages (privacy, terms, accessibility; EN + ES). scripts/build.js inlines
    this after the shared site CSS from www/index.html. Design: docs/legal-pages-preview.html */
@@ -255,7 +276,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <ol><li><a href="/es/" data-i18n="crumbHome">Inicio</a></li><li aria-current="page" data-i18n="ppH1">Política de privacidad</li></ol>
     </nav>
     <h1 data-i18n="ppH1">Política de privacidad</h1>
-    <p class="updated"><span data-i18n="lastUpdated">Última actualización:</span> <time datetime="2026-11-19">19 de noviembre de 2026</time></p>
+    <p class="updated"><span data-i18n="lastUpdated">Última actualización:</span> <time datetime="2026-11-20">20 de noviembre de 2026</time></p>
   </div>
 </div>
 
@@ -490,36 +511,102 @@ document.addEventListener("click", e => {
 </script>
 <script>
 /* lang-switch:start (the legal and exam pages reuse this block)
-   EN/ES toggle. On click, and only then: (1) save the choice in the cookie `lang` (server.js sends a
-   returning lang=es visitor from / and /exams/ to the Spanish page; the privacy policy describes it),
-   (2) point the link at the same section on the other page, keeping the query string (?for=, utm_*).
-   The links stay plain <a href>s that work without this script; any error here leaves them as they are. */
+   switchLanguage(lang): the one place that switches language. It works out the section in view,
+   saves the choice in the cookie `lang` (server.js sends a returning lang=es visitor from / and
+   /exams/ to the Spanish page and re-sends the cookie from the server so Safari keeps it; the
+   privacy policy describes it), builds the other page's URL (query string kept, e.g. ?for=, utm_*,
+   plus #section) and goes there. Used by the EN/ES toggle and the language suggestion bar.
+   The toggle links stay plain <a href>s that work without this script; errors leave them as they are. */
 (function () {
+  var pageLang = document.documentElement.lang === "es" ? "es" : "en";
+  function link(lang) { return document.querySelector('.lang a[data-lang="' + lang + '"]'); }
+  function saveLang(lang) { document.cookie = "lang=" + lang + "; Path=/; Max-Age=31536000; Secure; SameSite=Lax"; }
+  function hasLangCookie() { return /(?:^|;\s*)lang=(en|es)(?:;|$)/.test(document.cookie); }
+
+  // The section in view: probe line = bottom of the sticky header (measured) + 25% of the rest of the
+  // viewport. The section[id] whose box contains the line; else the last one whose top is above it;
+  // none (still in the hero) -> "". Legal pages: the ids are on the headings (data-twin-id = the id on
+  // the other page), so their box is the heading's <section>.
   function sectionHash() {
-    // the last section whose top is at or above 35% of the viewport; none (still in the hero) -> no hash.
-    // data-twin-id: the matching id on the other page, where it differs (legal page headings)
-    var line = window.innerHeight * 0.35, id = "";
-    var els = document.querySelectorAll("main section[id], main [data-twin-id]");
+    var head = document.querySelector(".site-head");
+    var top = head ? Math.max(0, head.getBoundingClientRect().bottom) : 0;
+    var probe = top + (window.innerHeight - top) * 0.25;
+    var els = document.querySelectorAll("main section[id], main [data-twin-id]"), inside = "", above = "";
     for (var i = 0; i < els.length; i++) {
-      if (!els[i].getClientRects().length) continue; // hidden (e.g. #reviews before there are any)
-      if (els[i].getBoundingClientRect().top <= line) id = els[i].getAttribute("data-twin-id") || els[i].id;
+      var el = els[i], box = el.tagName === "SECTION" ? el : (el.closest("section") || el);
+      if (!box.getClientRects().length) continue; // hidden (e.g. #reviews before there are any)
+      var r = box.getBoundingClientRect(), id = el.getAttribute("data-twin-id") || el.id;
+      if (r.top <= probe && r.bottom > probe) inside = id;
+      if (r.top <= probe) above = id;
     }
-    return id ? "#" + id : "";
+    return (inside || above) ? "#" + (inside || above) : "";
   }
-  function onClick(e) {
-    try {
-      var a = e.currentTarget, lang = a.getAttribute("data-lang");
-      if (lang !== "en" && lang !== "es") return;
-      document.cookie = "lang=" + lang + "; Path=/; Max-Age=31536000; Secure; SameSite=Lax";
-      var q = new URLSearchParams(location.search);
-      q.delete("lang"); // an old ?lang=es would send the English page straight back to Spanish
-      q = q.toString();
-      a.setAttribute("href", a.getAttribute("href").split(/[?#]/)[0] + (q ? "?" + q : "") + sectionHash());
-    } catch (err) { /* the link still goes to the other page */ }
+
+  // returns the URL; navigates unless navigate === false (the toggle lets its own link navigate)
+  function switchLanguage(lang, navigate) {
+    var a = link(lang);
+    if (!a || (lang !== "en" && lang !== "es")) return null;
+    saveLang(lang);
+    var q = new URLSearchParams(location.search);
+    q.delete("lang"); // an old ?lang=es would send the English page straight back to Spanish
+    q = q.toString();
+    var url = a.getAttribute("href").split(/[?#]/)[0] + (q ? "?" + q : "") + sectionHash();
+    if (navigate !== false) location.assign(url);
+    return url;
   }
+  window.switchLanguage = switchLanguage;
+
   try {
-    var links = document.querySelectorAll(".lang a[data-lang]");
-    for (var i = 0; i < links.length; i++) links[i].addEventListener("click", onClick);
+    [].forEach.call(document.querySelectorAll(".lang a[data-lang]"), function (a) {
+      a.addEventListener("click", function () {
+        try { var url = switchLanguage(a.getAttribute("data-lang"), false); if (url) a.setAttribute("href", url); }
+        catch (err) { /* the link still goes to the other page */ }
+      });
+    });
+  } catch (err) {}
+
+  // Language suggestion bar: only with no lang cookie, when the browser's first "en"/"es" language
+  // isn't this page's. Rendered here (never in the HTML), never redirects, never takes focus.
+  // Accept -> switchLanguage; close (or Esc) -> lang = this page's language. Either way it's gone for good.
+  try {
+    if (hasLangCookie()) return;
+    var want = null, langs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ""];
+    for (var i = 0; i < langs.length && !want; i++) {
+      var l = String(langs[i]).toLowerCase().split("-")[0];
+      if (l === "en" || l === "es") want = l;
+    }
+    if (!want || want === pageLang || !link(want)) return;
+    var T = {
+      es: { label: "Sugerencia de idioma", text: "¿Prefieres ver esta página en español?", go: "Ver en español", close: "Cerrar" },
+      en: { label: "Language suggestion", text: "Prefer to read this page in English?", go: "View in English", close: "Close" }
+    }[want];
+    var bar = document.createElement("aside");
+    bar.className = "lang-bar"; bar.lang = want; bar.setAttribute("aria-label", T.label);
+    var p = document.createElement("p"); p.textContent = T.text;
+    var go = document.createElement("button"); go.type = "button"; go.className = "lang-bar-go"; go.textContent = T.go;
+    var x = document.createElement("button"); x.type = "button"; x.className = "lang-bar-x"; x.setAttribute("aria-label", T.close); x.innerHTML = '<span aria-hidden="true">&times;</span>';
+    bar.appendChild(p); bar.appendChild(go); bar.appendChild(x);
+    var root = document.documentElement;
+    // --lang-bar-h: the space the bar takes from the bottom edge (offsetTop ignores the entry animation)
+    var fit = function () { root.style.setProperty("--lang-bar-h", Math.max(0, window.innerHeight - bar.offsetTop) + "px"); };
+    var track = function (choice) { (window.dataLayer = window.dataLayer || []).push({ event: "select_content", content_type: "language_suggestion", item_id: choice, page_language: pageLang }); };
+    var onKey = function (e) { if (e.key === "Escape" && !e.defaultPrevented) close(); };
+    var close = function () {
+      saveLang(pageLang); track("dismiss");
+      bar.remove(); root.classList.remove("has-lang-bar"); root.style.removeProperty("--lang-bar-h");
+      document.removeEventListener("keydown", onKey); window.removeEventListener("resize", fit);
+    };
+    go.addEventListener("click", function () { track("accept"); switchLanguage(want); });
+    x.addEventListener("click", close);
+    var show = function () {
+      if (bar.isConnected || hasLangCookie()) return;
+      document.addEventListener("keydown", onKey);
+      window.addEventListener("resize", fit);
+      document.body.appendChild(bar);
+      fit(); root.classList.add("has-lang-bar");
+    };
+    // after the web fonts: the bar sits on the bottom edge, so a font swap changing its height would move it (CLS)
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(show, show); else show();
   } catch (err) {}
 })();
 /* lang-switch:end */

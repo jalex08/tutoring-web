@@ -317,12 +317,13 @@ Mark `generate_lead` as a key event in GA4. Preview mode shows the events firing
 | Path | Cache | Notes |
 |---|---|---|
 | `/` | private, revalidated every visit (`Vary: Cookie`) | `server.js`; with the cookie `lang=es` it 302s to `/es/` (query string kept, the redirect is never cached) |
-| `/es/` | 10 min | `server.js` (prices filled in) |
+| `/es/` | private, 10 min | `server.js` (prices filled in) |
 | `/exams/` | private, revalidated every visit (`Vary: Cookie`) | `server.js`; with `lang=es` it 302s to `/es/examenes/`. The other exam pages: 10 min |
-| `/privacy/`, `/terms/`, `/accessibility/`, `/es/privacidad/`, `/es/terminos/`, `/es/accesibilidad/` | 10 min | static |
+| `/privacy/`, `/terms/`, `/accessibility/`, `/es/privacidad/`, `/es/terminos/`, `/es/accesibilidad/` | private, 10 min | `server.js` (built files; not static, so they can re-send the `lang` cookie) |
 | the same without the trailing slash, or as `/privacy.html` | 1 hour | `server.js`: 301 to the slash URL |
 | `/og-image.png`, favicons | 7 days | static |
-| `/robots.txt`, `/sitemap.xml`, `/llms.txt` | 10 min | static |
+| `/robots.txt`, `/sitemap.xml` | 10 min | static |
+| `/llms.txt`, `/exams/data.json` | 10 min, public | `server.js` |
 | `/index.html`, `/es`, `/es/index.html` | 1 hour | `server.js`: 301 to `/` or `/es/` |
 | `/?lang=es` | 1 hour | `server.js`: 301 to `/es/` (keeps `?topic=`); the script at the top of `index.html` does the same as a fallback |
 | `/api/*` | never | `server.js` (unknown `/api/*` paths get a JSON 404) |
@@ -332,7 +333,12 @@ Mark `generate_lead` as a key event in GA4. Preview mode shows the events firing
 into the legal and exam pages by the build) saves the cookie `lang=en|es` (1 year, `Secure`,
 `SameSite=Lax`) only when it's clicked, and sends the visitor to the same section on the other
 page (`data-twin-id` maps the legal pages' headings, whose ids differ by language). Only `/` and
-`/exams/` read the cookie; the privacy policy's cookie section describes it.
+`/exams/` act on the cookie; the privacy policy's cookie section describes it. Every HTML page (all
+served by `server.js`, all `Cache-Control: private`) re-sends a valid `lang` cookie as a server-set
+cookie, because Safari deletes cookies set by JavaScript after 7 days; a request without the cookie
+never gets one. The same script shows a language suggestion bar (no cookie yet, and the browser's
+first `en`/`es` language isn't the page's): accept = `switchLanguage()`, close or Esc = `lang` set to
+the page's language. Only the script builds it, so crawlers and no-JS visitors never see it.
 
 Every handler: `secure: always` (HTTP → 301 to HTTPS), `Strict-Transport-Security`,
 `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`.

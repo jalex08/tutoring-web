@@ -99,6 +99,28 @@ srv.listen(0, async () => {
       }
     });
   }
+  // Fix for Safari's 7-day limit on JS-set cookies: every HTML page re-sends a valid lang cookie
+  const html = ["/", "/es/", "/exams/", "/exams/algebra-1-eoc/", "/es/examenes/", "/es/examenes/eoc-algebra-1/",
+    "/privacy/", "/terms/", "/accessibility/", "/es/privacidad/", "/es/terminos/", "/es/accesibilidad/", "/nope"];
+  const SET = (v) => `lang=${v}; Path=/; Max-Age=31536000; Secure; SameSite=Lax`;
+  for (const p of html) {
+    await check(`${p}: HTML private; Set-Cookie only echoes a valid lang cookie`, async () => {
+      for (const [c, want] of [[null, null], ["en", SET("en")], ["es", SET("es")], ["fr", null]]) {
+        if (c === "es" && (p === "/" || p === "/exams/")) continue; // those 302 (checked above)
+        const r = await get(p, c ? withLang(c) : {});
+        assert.match(r.headers.get("content-type"), /^text\/html/);
+        assert.match(r.headers.get("cache-control"), /^private/, `${p} ${c}`);
+        assert.equal(r.headers.get("set-cookie"), want, `${p} cookie ${c}`);
+      }
+    });
+  }
+  await check("non-HTML stays public and never sets the cookie", async () => {
+    for (const p of ["/llms.txt", "/exams/data.json", "/robots.txt", "/og-image.png", "/favicon.svg"]) {
+      const r = await get(p, withLang("es"));
+      assert.equal(r.headers.get("set-cookie"), null, p);
+      assert.ok(!/private/.test(r.headers.get("cache-control") || ""), p);
+    }
+  });
   await check("lang=es doesn't touch /api/contact", async () => {
     const r = await get("/api/contact", withLang("es", { method: "POST", headers: { cookie: "lang=es", "Content-Type": "application/json" }, body: "{}" }));
     assert.equal(r.status, 400);
@@ -268,11 +290,11 @@ srv.listen(0, async () => {
       assert.match(pages[lang], /<p class="form-promise"><svg class="check" viewBox="0 0 24 24" aria-hidden="true">/);
     });
   }
-  await check("/es/, /llms.txt: served by the app, Cache-Control public, max-age=600; / private, Vary: Cookie", async () => {
+  await check("/llms.txt public, max-age=600; /es/ private, max-age=600; / private, no-cache, Vary: Cookie", async () => {
     for (const p of ["/", "/es/", "/llms.txt"]) {
       const r = await get(p);
       assert.equal(r.status, 200);
-      assert.equal(r.headers.get("cache-control"), p === "/" ? "private, no-cache" : "public, max-age=600");
+      assert.equal(r.headers.get("cache-control"), { "/": "private, no-cache", "/es/": "private, max-age=600", "/llms.txt": "public, max-age=600" }[p]);
       assert.equal(r.headers.get("vary"), p === "/" ? "Cookie" : null);
       assert.ok(r.headers.get("strict-transport-security"));
     }
@@ -405,7 +427,7 @@ srv.listen(0, async () => {
       Object.assign(all, { [p]: h });
       await check(`${p}: 200, cached 10 min, head, toggle, footer`, () => {
         assert.equal(r.status, 200);
-        assert.equal(r.headers.get("cache-control"), p === "/exams/" ? "private, no-cache" : "public, max-age=600");
+        assert.equal(r.headers.get("cache-control"), p === "/exams/" ? "private, no-cache" : "private, max-age=600");
         assert.equal(r.headers.get("vary"), p === "/exams/" ? "Cookie" : null);
         assert.ok(h.includes("/* lang-switch:start"), "toggle script");
         assert.ok(r.headers.get("strict-transport-security"));

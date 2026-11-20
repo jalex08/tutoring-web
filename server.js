@@ -463,7 +463,7 @@ async function pricedPage(req, res, pathname) {
   res.writeHead(200, {
     ...SECURITY_HEADERS,
     "Content-Type": pg.type,
-    ...(LANG_ENTRY[pathname] ? LANG_ENTRY_CACHE : { "Cache-Control": "public, max-age=600" }),
+    ...(pg.type.startsWith("text/html") ? htmlHeaders(req, pathname) : { "Cache-Control": "public, max-age=600" }),
   });
   res.end(req.method === "HEAD" ? undefined : body);
 }
@@ -553,11 +553,7 @@ async function examPage(req, res, pathname) {
       body = examTemplate(pathname);
     }
   }
-  res.writeHead(200, {
-    ...SECURITY_HEADERS,
-    "Content-Type": "text/html; charset=utf-8",
-    ...(LANG_ENTRY[pathname] ? LANG_ENTRY_CACHE : { "Cache-Control": "public, max-age=600" }),
-  });
+  res.writeHead(200, { ...SECURITY_HEADERS, "Content-Type": "text/html; charset=utf-8", ...htmlHeaders(req, pathname) });
   res.end(req.method === "HEAD" ? undefined : body);
 }
 
@@ -589,6 +585,15 @@ for (const p of Object.keys(EXAM_PAGES).map((u) => u.slice(0, -1))) {
 }
 let page404 = null;
 
+// legal pages (built files, no filling). Served here, not as static files, so they can re-send the lang cookie.
+const LEGAL_PAGES = {};
+for (const p of ["privacy", "terms", "accessibility", "es/privacidad", "es/terminos", "es/accesibilidad"]) LEGAL_PAGES[`/${p}/`] = `www/${p}.html`;
+function legalPage(req, res, pathname) {
+  if (!pageFiles.has(pathname)) pageFiles.set(pathname, fs.readFileSync(path.join(__dirname, LEGAL_PAGES[pathname])));
+  res.writeHead(200, { ...SECURITY_HEADERS, "Content-Type": "text/html; charset=utf-8", ...htmlHeaders(req, pathname) });
+  res.end(req.method === "HEAD" ? undefined : pageFiles.get(pathname));
+}
+
 // --- language preference (cookie lang, set only by the EN/ES toggle's script) -------------------
 // A visitor whose cookie says lang=es is sent from the English entry pages to their Spanish twins
 // (302, query string kept; the browser keeps the #hash). Nothing else redirects: not lang=en, not a
@@ -597,6 +602,16 @@ let page404 = null;
 // may keep them (private + Vary: Cookie), and the redirect itself is never stored.
 const LANG_ENTRY = { "/": "/es/", "/exams/": "/es/examenes/" };
 const LANG_ENTRY_CACHE = { "Cache-Control": "private, no-cache", Vary: "Cookie" };
+// Every HTML page re-sends a valid lang cookie from the server (Safari deletes cookies set by
+// JavaScript after 7 days, not server-set ones). Never created here: no cookie in, none out. A page
+// that can carry Set-Cookie is never cached publicly: private, still 10 minutes in the browser.
+const LANG_COOKIE_AGE = 31536000;
+function htmlHeaders(req, pathname) {
+  const h = LANG_ENTRY[pathname] ? { ...LANG_ENTRY_CACHE } : { "Cache-Control": "private, max-age=600" };
+  const lang = cookie(req, "lang");
+  if (lang === "en" || lang === "es") h["Set-Cookie"] = `lang=${lang}; Path=/; Max-Age=${LANG_COOKIE_AGE}; Secure; SameSite=Lax`;
+  return h;
+}
 function cookie(req, name) {
   for (const part of String(req.headers.cookie || "").split(";")) {
     const i = part.indexOf("=");
@@ -614,7 +629,7 @@ function notFoundPage(req, res) {
   res.writeHead(404, {
     ...SECURITY_HEADERS,
     "Content-Type": "text/html; charset=utf-8",
-    "Cache-Control": "public, max-age=600",
+    ...htmlHeaders(req, null),
     "X-Robots-Tag": "noindex",
   });
   res.end(req.method === "HEAD" ? undefined : page404);
@@ -640,6 +655,9 @@ function page(req, res, pathname, query, search = "") {
       console.error(err);
       if (!res.headersSent) notFoundPage(req, res);
     });
+  }
+  if (LEGAL_PAGES[pathname] && read) {
+    try { return legalPage(req, res, pathname); } catch (err) { console.error(err); if (!res.headersSent) return notFoundPage(req, res); return; }
   }
   if (pathname === EXAM_DATA_URL && read) {
     return examData(req, res).catch((err) => {
