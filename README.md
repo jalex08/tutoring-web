@@ -91,11 +91,26 @@ www/
    git add seo/published-pages.json www/sitemap.xml && git commit -m "IndexNow: record published pages"
    ```
 
-   The build compares each page's HTML (SHA-256, ignoring the footer © year) with
-   `seo/published-pages.json`; pages that differ get today's date as sitemap
-   `lastmod` and are listed in `seo/pending-indexnow.json`. `npm run indexnow`
-   checks that the live key file matches, submits just those URLs, and on HTTP
-   200/202 records them in `seo/published-pages.json`. If nothing changed it says
+   **Always commit `seo/published-pages.json` after `npm run indexnow`**: the build
+   reads every date from it, so without it a fresh clone can't tell old pages from
+   changed ones.
+
+   The build hashes each page's own content (SHA-256 of its `<title>`, meta
+   description and `<main>`, without scripts, the shared WhatsApp button and motto
+   band, the "Last updated" date and the © year; never the `<head>`, GTM, header,
+   footer or shared CSS) and compares it with `seo/published-pages.json`. A page that
+   matches keeps its date. A page that differs is listed in
+   `seo/pending-indexnow.json` and dated from git: today if its source files
+   (`pages/*.html`, `pages/exams/*.html`, `www/index.html`, plus `i18n/es.js` for the
+   Spanish pages) have an uncommitted content change, else the date of the last
+   commit that changed its content. The build stops in a shallow clone when it needs
+   that history (`git fetch --unshallow`). The exam pages' date is the later of that
+   and the date of the bundled exam data's current revision (its `changelog`).
+   The sitemap `lastmod` and the legal pages' "Last updated" are the same date.
+   `npm run build -- --from-history` re-derives every date from git and rewrites
+   `seo/published-pages.json` (only when the current pages are live).
+   `npm run indexnow` checks that the live key file matches, submits just the
+   pending URLs, and on HTTP 200/202 records them in `seo/published-pages.json`. If nothing changed it says
    "IndexNow: nothing changed". On any error (400 bad request, 403 key not valid,
    422 URL/key mismatch, 429 too many requests, network) it prints the reason, keeps
    the pending list for the next run and still exits 0, so it never breaks a deploy.
@@ -118,8 +133,9 @@ each section is one entry). The build wraps them in the site's real header,
 footer, `<head>` (GTM included) and CSS, both taken from `www/index.html`, and
 writes the table of contents as static HTML. Change both languages together.
 
-- **"Last updated" / "Last reviewed"** is the date (America/New_York) of the build
-  that last changed that page's text, so run `npm run build` on the day you deploy a change.
+- **"Last updated" / "Last reviewed"** is the date (America/New_York) the page's own
+  text last changed: the same date as its sitemap `lastmod` (see step 7 above). Header,
+  footer, GTM or CSS changes don't move it.
   The sitemap `lastmod` dates and the footer © year use the same time zone.
 - The build stops if a legal page has leftover `[placeholder]` text, if the
   Terms page has a price, amount or package size (rates live only on the home

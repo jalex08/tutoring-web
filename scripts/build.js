@@ -16,13 +16,22 @@
  *                          www/es/examenes.html, www/es/examenes/eoc-algebra-1.html
  *                                           exam calendar page templates, from pages/exams/
  *                                           (server.js fills them at request time, see below)
- *                          www/sitemap.xml  (lastmod = date the page last changed)
+ *                          www/sitemap.xml  (lastmod = date the page's own content last changed)
  *                          www/llms.txt     its price lines (between the pricing markers)
- *                          seo/pending-indexnow.json  pages whose HTML differs from
+ *                          seo/pending-indexnow.json  pages whose content differs from
  *                                    seo/published-pages.json (for scripts/indexnow.js)
  *
- * The legal pages show a "Last updated" date: the build date (America/New_York) of the
- * last build that changed the page's text, so it is the date of the first deploy with that text.
+ * Dates: a page's "content" is its <title>, meta description and <main>, without scripts, the
+ * shared WhatsApp button / motto band and the "Last updated" date itself; never the <head>,
+ * GTM, header, footer, shared CSS or © year. The sitemap lastmod and the legal pages' "Last
+ * updated" are the same date: the day that content last changed (America/New_York), taken from
+ * seo/published-pages.json (committed) while the content hash matches. A changed page gets the
+ * date from git: today if its source files have uncommitted content changes, else the date of
+ * the last commit that changed its content (see gitDate). Exam pages: the later of that and the
+ * date of the bundled exam data's current revision (its changelog).
+ *
+ *   npm run build -- --from-history   re-derive every date from git and rewrite
+ *                                     seo/published-pages.json (needs a full clone)
  *
  * Prices: every price on the home pages and in llms.txt comes from pricing.js. The build writes
  * the built-in fallback values (pricing.FALLBACK) into the files; on App Engine, server.js
@@ -50,6 +59,7 @@ const PAGE404 = path.join(ROOT, "www/404.html");
 const SITE = "https://josediaztutoring.com";
 const URLS = { en: `${SITE}/`, es: `${SITE}/es/` };
 const CHECK = process.argv.includes("--check");
+const FROM_HISTORY = process.argv.includes("--from-history");
 
 // Bundled exam data: the fallback when the site-exams secret is missing or invalid. Next school year:
 // add data/exams/2027-28.json and change this one line (then build + deploy).
@@ -539,7 +549,7 @@ const visibleText = (h) => text(h.replace(/<script[\s\S]*?<\/script>|<style[\s\S
 
 /** One legal page in one language. Returns { html, date, sections, ids }. `old` = the file as it is now,
  *  `twin` = the other language's section ids in order (each heading gets data-twin-id, for the EN/ES toggle). */
-function legalPage(page, lang, old, twin) {
+function legalPage(page, lang, twin) {
   const P = PARTS[lang];
   let body = fs.readFileSync(path.join(ROOT, page.src), "utf8").replace(/^<!--[\s\S]*?-->\s*/, "");
   if (lang === "es") body = localizeLinks(translate(body));
@@ -639,15 +649,124 @@ ${P.langSwitch}
 </body>
 </html>
 `;
-  // keep the date unless the page itself changed
-  let date = today;
-  const was = old && old.match(DATE_RE);
-  if (was && old.replace(DATE_RE, "<time>") === render(today).replace(DATE_RE, "<time>")) date = was[1];
-  return { html: render(date), date, sections: toc.length, ids: toc.map((li) => li.match(/href="#([^"]+)"/)[1]) };
+  // the date is decided by the caller from the page's content (pageDate), the same as the sitemap lastmod
+  return { render, sections: toc.length, ids: toc.map((li) => li.match(/href="#([^"]+)"/)[1]) };
+}
+
+// --- dates: content hash, published state, git history -----------------------------------
+// seo/published-pages.json (committed): { url: { hash, lastmod[, changed, rev] } } as of the last
+// successful IndexNow submission (written by scripts/indexnow.js, or by --from-history).
+// hash = SHA-256 of the page's content (pageContent). lastmod = the sitemap date; exam pages also
+// keep `changed` (their content date) and `rev` (the exam data revision).
+const PUBLISHED = path.join(ROOT, "seo/published-pages.json");
+const PENDING = path.join(ROOT, "seo/pending-indexnow.json");
+const readJson = (f, dflt) => (fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, "utf8")) : dflt);
+const published = FROM_HISTORY ? null : readJson(PUBLISHED, null);
+const oldPending = FROM_HISTORY ? {} : Object.fromEntries(readJson(PENDING, []).map((p) => [p.url, p]));
+const sha = (s) => require("node:crypto").createHash("sha256").update(s).digest("hex");
+
+/** A page's own content: <title>, meta description and <main>, minus scripts, the shared WhatsApp
+ *  button, the motto band (except on the home page, where it is that page's content), the "Last
+ *  updated" date and the © year. Used for built pages and for the home page source in git history. */
+function pageContent(h, { home = false } = {}) {
+  const one = (re, what) => { const m = h.match(re); if (!m) fail(`page content: ${what} not found`); return m[0]; };
+  let main = one(/<main id="main">[\s\S]*<\/main>/, "<main>")
+    .replace(/<script\b[\s\S]*?<\/script>/g, "")
+    .replace(/<a class="wa-float[\s\S]*?<\/a>/g, "")
+    .replace(/<time datetime="\d{4}-\d\d-\d\d">[^<]*<\/time>|<time data-build-date><\/time>/g, "<time></time>")
+    .replace(/(<span id="yr">)\d{4}(<\/span>)/g, "$1$2");
+  if (!home) main = main.replace(/<figure class="wrap">[\s\S]*?<\/figure>/g, "");
+  return [one(/<title>[^<]*<\/title>/, "<title>"), one(/<meta name="description" content="[^"]*">/, "meta description"), main.replace(/[ \t]+$/gm, "")].join("\n");
+}
+
+// git history (only for pages whose content isn't in seo/published-pages.json, and --from-history)
+const git = (...a) => require("node:child_process").execFileSync("git", a, { cwd: ROOT, encoding: "utf8", maxBuffer: 64 << 20, stdio: ["ignore", "pipe", "pipe"] });
+let gitChecked = false;
+function gitReady() {
+  if (gitChecked) return;
+  let shallow;
+  try { shallow = git("rev-parse", "--is-shallow-repository").trim(); } catch (e) { fail(`dates need git history, and git failed: ${e.message.split("\n")[0]}`); }
+  if (shallow !== "false") fail("dates need the full git history, but this clone is shallow. Run `git fetch --unshallow`, then build again.");
+  gitChecked = true;
+}
+const floridaDate = (iso) => new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
+/** A file at a commit (null if it didn't exist), or in the working tree (rev = null). */
+function fileAt(rev, f) {
+  if (rev === null) return fs.existsSync(path.join(ROOT, f)) ? fs.readFileSync(path.join(ROOT, f), "utf8") : null;
+  try { return git("show", `${rev}:${f}`); } catch { return null; }
+}
+const esAt = new Map();
+function spanishAt(rev) {
+  if (!esAt.has(rev)) {
+    const src = fileAt(rev, "i18n/es.js");
+    const mod = { exports: {} };
+    if (src) vm.runInNewContext(src, { module: mod, exports: mod.exports });
+    esAt.set(rev, mod.exports);
+  }
+  return esAt.get(rev);
+}
+/** The page's source files, and its source content at a revision: what pageContent covers, read
+ *  from the sources (the Spanish pages: the English source + the i18n/es.js entries it uses). */
+function sourcesOf(p) {
+  if (p === "/" || p === "/es/") return { files: p === "/" ? ["www/index.html"] : ["www/index.html", "i18n/es.js"], src: "www/index.html", home: true, es: p === "/es/" };
+  const page = [...LEGAL, ...EXAM_PAGES].find((x) => x.en === p || x.es === p);
+  const es = page.es === p;
+  return { files: es ? [page.src, "i18n/es.js"] : [page.src], src: page.src, home: false, es };
+}
+function sourceContent(p, rev) {
+  const S = sourcesOf(p);
+  const h = fileAt(rev, S.src);
+  if (h === null) return null;
+  const own = S.home ? pageContent(h, { home: true }) : h.replace(/^<!--[\s\S]*?-->\s*/, "").replace(/<script\b[\s\S]*?<\/script>/g, "");
+  if (!S.es) return own;
+  const ES_ = spanishAt(rev), keys = new Set(S.home ? ["metaTitle", "metaDesc"] : []);
+  for (const m of own.matchAll(/data-i18n(?:-ph)?="([^"]+)"/g)) keys.add(m[1]);
+  for (const m of own.matchAll(/data-i18n-attr="([^"]+)"/g)) for (const pair of m[1].split(";")) keys.add(pair.split(":")[1]);
+  return own + "\n" + JSON.stringify([...keys].sort().map((k) => [k, ES_[k] ?? null]));
+}
+/** When the page's content last changed, from its source files: today if the working tree differs
+ *  from HEAD, else the (Florida) date of the newest commit that changed it. */
+function gitDate(p) {
+  gitReady();
+  const files = sourcesOf(p).files;
+  const now = sourceContent(p, null);
+  const log = git("log", "--format=%H %cI", "--", ...files).trim().split("\n").filter(Boolean).map((l) => l.split(" "));
+  if (!log.length) return { date: today, basis: `${files.join(" + ")}: not committed yet` };
+  if (now !== sourceContent(p, "HEAD")) return { date: today, basis: `${files.join(" + ")}: uncommitted change` };
+  for (let i = 0; i < log.length; i++) {
+    const [hash, iso] = log[i];
+    const older = i + 1 < log.length ? sourceContent(p, log[i + 1][0]) : null;
+    if (sourceContent(p, hash) !== older) return { date: floridaDate(iso), basis: `${hash.slice(0, 7)} ${files.join(" + ")}` };
+  }
+  fail(`${p}: no commit changed its content`);
+}
+
+// exam pages: the bundled data's current revision and its date (from the changelog)
+const examRaw = JSON.parse(fs.readFileSync(path.join(ROOT, EXAM_DATA), "utf8"));
+const examRev = examRaw.revision;
+const examRevDate = ((examRaw.changelog || []).find((c) => c.revision === examRev) || {}).date;
+if (!/^\d{4}-\d\d-\d\d$/.test(examRevDate || "")) fail(`${EXAM_DATA}: no changelog entry with a date for revision ${examRev}`);
+const isExamPage = (p) => EXAM_PAGES.some((x) => x.en === p || x.es === p);
+
+const lastmod = {}, basis = {}, pending = [], seed = {};
+/** The date for page p whose built content hashes to `hash`: lastmod (sitemap, "Last updated"). */
+function pageDate(p, hash) {
+  const url = SITE + p, pub = published && published[url], op = oldPending[url];
+  const exam = isExamPage(p);
+  let changed;
+  if (pub && pub.hash === hash) { changed = pub.changed || pub.lastmod; basis[p] = "seo/published-pages.json"; }
+  else if (op && op.hash === hash) { changed = op.changed || op.lastmod; basis[p] = "earlier build (pending)"; }
+  else { const g = gitDate(p); changed = g.date; basis[p] = g.basis; }
+  const date = exam && examRevDate > changed ? examRevDate : changed;
+  if (exam && examRevDate > changed) basis[p] += `; exam data revision ${examRev} (${examRevDate})`;
+  const entry = exam ? { hash, lastmod: date, changed, rev: examRev } : { hash, lastmod: date };
+  seed[url] = entry;
+  if (!pub || pub.hash !== hash || (exam && pub.rev !== examRev)) pending.push({ url, ...entry });
+  lastmod[p] = date;
+  return date;
 }
 
 const outputs = [];
-const lastmod = {}; // url path -> date
 const readOld = (f) => (fs.existsSync(f) ? fs.readFileSync(f, "utf8") : null);
 // /privacy/ -> www/privacy.html, /es/privacidad/ -> www/es/privacidad.html (app.yaml maps the URL to the file)
 const outFile = (p) => path.join(ROOT, "www", p.replace(/^\/|\/$/g, "") + ".html");
@@ -655,9 +774,9 @@ for (const page of LEGAL) {
   const built = {};
   const ids = { en: legalPage(page, "en").ids, es: legalPage(page, "es").ids }; // the headings' ids, for data-twin-id
   for (const lang of ["en", "es"]) {
-    built[lang] = legalPage(page, lang, readOld(outFile(page[lang])), ids[lang === "en" ? "es" : "en"]);
-    outputs.push([outFile(page[lang]), built[lang].html]);
-    lastmod[page[lang]] = built[lang].date;
+    built[lang] = legalPage(page, lang, ids[lang === "en" ? "es" : "en"]);
+    const date = pageDate(page[lang], sha(pageContent(built[lang].render("2000-01-01"))));
+    outputs.push([outFile(page[lang]), built[lang].render(date)]);
   }
   if (built.en.sections !== built.es.sections) fail(`${page.src}: English has ${built.en.sections} sections, Spanish ${built.es.sections}`);
 }
@@ -688,43 +807,14 @@ page404 = page404.replace(/(\/\* ---- footer-css:start[^\n]*\n)[\s\S]*?( {2}\/\*
   `${a}${PARTS.en.footerCss.replace(/^\/\* ---- footer-css:start[^\n]*\n/, "").replace(/\s*\/\* ---- footer-css:end ---- \*\/$/, "")}\n${b}`);
 if (!page404.includes('<footer class="site-foot">') || !page404.includes(".site-foot{")) fail("www/404.html: footer markers missing");
 
-// --- change detection (IndexNow) + sitemap lastmod ------------------------------------
-// seo/published-pages.json: { url: { hash, lastmod } } as of the last successful IndexNow
-// submission (written only by scripts/indexnow.js). A page whose built HTML hashes differently
-// is "pending": lastmod = today, listed in seo/pending-indexnow.json (gitignored) for the ping.
-const PUBLISHED = path.join(ROOT, "seo/published-pages.json");
-const PENDING = path.join(ROOT, "seo/pending-indexnow.json");
-const readJson = (f, dflt) => (fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, "utf8")) : dflt);
-// The footer © year changes every Jan 1 on every page; that isn't a content change.
-const pageHash = (h) => require("node:crypto").createHash("sha256").update(h.replace(/(<span id="yr">)\d{4}(<\/span>)/g, "$1$2")).digest("hex");
-const pageHtml = { "/": enHtml, "/es/": es };
-for (const [file, content] of outputs) pageHtml["/" + path.relative(path.join(ROOT, "www"), file).replace(/\.html$/, "/")] = content;
+// --- sitemap lastmod (home + exam pages; the legal pages got theirs above) ------------------
+for (const [p, h] of [["/", enHtml], ["/es/", es]]) pageDate(p, sha(pageContent(h, { home: true })));
+for (const [file, content] of outputs) {
+  const p = "/" + path.relative(path.join(ROOT, "www"), file).replace(/\.html$/, "/");
+  if (isExamPage(p)) pageDate(p, sha(pageContent(content)));
+}
 const pairs = [{ en: "/", es: "/es/" }, ...LEGAL, ...EXAM_PAGES];
-const pagePaths = pairs.flatMap((p) => [p.en, p.es]);
-const published = readJson(PUBLISHED, null);
-const oldPending = Object.fromEntries(readJson(PENDING, []).map((p) => [p.url, p]));
-
-/** First run only: Florida date of the last commit that changed the page's built HTML (committed,
- *  so this is when its content last changed; a shared-source edit that didn't change it doesn't count). */
-function gitDate(p) {
-  const file = p === "/" ? "www/index.html" : p === "/es/" ? "www/es/index.html" : path.relative(ROOT, outFile(p));
-  try {
-    const iso = require("node:child_process").execFileSync("git", ["log", "-1", "--format=%cI", "--", file], { cwd: ROOT, encoding: "utf8" }).trim();
-    return iso ? new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso)) : null;
-  } catch { return null; }
-}
-
-const pending = [];
-for (const p of pagePaths) {
-  if (!pageHtml[p]) fail(`no built HTML for ${p}`);
-  const url = SITE + p, hash = pageHash(pageHtml[p]);
-  const pub = published && published[url];
-  if (pub && pub.hash === hash) { lastmod[p] = pub.lastmod; continue; }
-  // changed (or never submitted): keep the date from an earlier build of this same HTML
-  const prev = oldPending[url] && oldPending[url].hash === hash ? oldPending[url].lastmod : null;
-  lastmod[p] = prev || (published ? today : gitDate(p) || today);
-  pending.push({ url, hash, lastmod: lastmod[p] });
-}
+for (const p of pairs.flatMap((x) => [x.en, x.es])) if (!lastmod[p]) fail(`no date for ${p}`);
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${pairs.flatMap((pair) => ["en", "es"].map((l) => `  <url>
@@ -753,6 +843,16 @@ if (CHECK) {
 } else {
   console.log(stale.length ? `build: wrote ${stale.join(", ")}` : "build: nothing changed");
   fs.mkdirSync(path.dirname(PENDING), { recursive: true });
-  fs.writeFileSync(PENDING, JSON.stringify(pending, null, 2) + "\n");
-  console.log(`build: IndexNow pending: ${pending.length ? pending.map((p) => p.url.slice(SITE.length)).join(" ") : "none"}`);
+  const order = pairs.flatMap((x) => [x.en, x.es]).map((p) => SITE + p);
+  if (FROM_HISTORY) {
+    // the pages as they are now are the published ones (run this only when they're live)
+    fs.writeFileSync(PUBLISHED, JSON.stringify(Object.fromEntries(order.map((u) => [u, seed[u]])), null, 2) + "\n");
+    fs.writeFileSync(PENDING, "[]\n");
+    console.log("build: dates re-derived from git history; wrote seo/published-pages.json\n");
+    console.log("| URL | lastmod | based on |\n|---|---|---|");
+    for (const u of order) console.log(`| ${u.slice(SITE.length)} | ${lastmod[u.slice(SITE.length)]} | ${basis[u.slice(SITE.length)]} |`);
+  } else {
+    fs.writeFileSync(PENDING, JSON.stringify(pending, null, 2) + "\n");
+    console.log(`build: IndexNow pending: ${pending.length ? pending.map((p) => p.url.slice(SITE.length)).join(" ") : "none"}`);
+  }
 }

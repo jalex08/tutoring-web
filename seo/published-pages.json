@@ -1,0 +1,58 @@
+{
+  "https://josediaztutoring.com/": {
+    "hash": "e94bc474ade72783c60637ca0862d88cb94da7bc02d50deb201fb891f7c145fa",
+    "lastmod": "2026-11-19"
+  },
+  "https://josediaztutoring.com/es/": {
+    "hash": "c674e31aa594821cbec346eb294f333052361fcba09de7fa7b7166f676c97236",
+    "lastmod": "2026-11-19"
+  },
+  "https://josediaztutoring.com/privacy/": {
+    "hash": "60706d01c6e0f4b38d0e07ff68ea1bc57f95a3ede8a239d38cf76c9c3fc7283f",
+    "lastmod": "2026-11-20"
+  },
+  "https://josediaztutoring.com/es/privacidad/": {
+    "hash": "f8ec92befa83a6b19165603e7dc11b003cca3a9d392ef713bab55547aebe9e87",
+    "lastmod": "2026-11-20"
+  },
+  "https://josediaztutoring.com/terms/": {
+    "hash": "47c682a1173e6888d690ac8a6bf28219e9a769e54155f61135682924931432f0",
+    "lastmod": "2026-11-19"
+  },
+  "https://josediaztutoring.com/es/terminos/": {
+    "hash": "db317c84af85a45e584106148f909aec9631361da6445809b59e56fd234792b9",
+    "lastmod": "2026-11-19"
+  },
+  "https://josediaztutoring.com/accessibility/": {
+    "hash": "6d9aaa66726f954eebd67c1d1f73fcf7f48ea511e36fc6fa1f42356de795e060",
+    "lastmod": "2026-11-17"
+  },
+  "https://josediaztutoring.com/es/accesibilidad/": {
+    "hash": "b5ee48880ecc244fdec8b907c91462a53f2d050f4fc7e336ada515a6ad85de47",
+    "lastmod": "2026-11-17"
+  },
+  "https://josediaztutoring.com/exams/": {
+    "hash": "d7327f2d34380520bd9dfe51c082ad3370c65bf602c1603225df2c55e91558e4",
+    "lastmod": "2026-11-19",
+    "changed": "2026-11-19",
+    "rev": 4
+  },
+  "https://josediaztutoring.com/es/examenes/": {
+    "hash": "02af9f653b1dfeff5d894b55aa2dd4591df3597dffaac12c9a64d075898a34e2",
+    "lastmod": "2026-11-19",
+    "changed": "2026-11-19",
+    "rev": 4
+  },
+  "https://josediaztutoring.com/exams/algebra-1-eoc/": {
+    "hash": "5cd62860328572f79a3edfbd5dc72607f7390d499ad2c00cb2d225ff13541251",
+    "lastmod": "2026-11-19",
+    "changed": "2026-11-19",
+    "rev": 4
+  },
+  "https://josediaztutoring.com/es/examenes/eoc-algebra-1/": {
+    "hash": "eecb69641aa851b259f1414651c2f74b2a94e7aa5569a03f121c49fcb2991726",
+    "lastmod": "2026-11-19",
+    "changed": "2026-11-19",
+    "rev": 4
+  }
+}
