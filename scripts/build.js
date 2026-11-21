@@ -726,14 +726,10 @@ for (const p of pagePaths) {
   pending.push({ url, hash, lastmod: lastmod[p] });
 }
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${pairs.flatMap((pair) => ["en", "es"].map((l) => `  <url>
     <loc>${SITE}${pair[l]}</loc>
     <lastmod>${lastmod[pair[l]]}</lastmod>
-    <xhtml:link rel="alternate" hreflang="en" href="${SITE}${pair.en}"/>
-    <xhtml:link rel="alternate" hreflang="es" href="${SITE}${pair.es}"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="${SITE}${pair.en}"/>
   </url>`)).join("\n")}
 </urlset>
 `;

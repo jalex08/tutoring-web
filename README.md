@@ -354,7 +354,10 @@ toggle, the form and the WhatsApp button.
 ## Custom domain / DNS
 
 `josediaztutoring.com` and `www.josediaztutoring.com` are mapped in
-App Engine → Settings → Custom domains, with Google-managed SSL.
+App Engine → Settings → Custom domains, with Google-managed SSL. server.js sends every
+GET/HEAD on `www.` (except `/api/*`) to `https://josediaztutoring.com` with one 301 (path
+normalized, query kept). The static files in app.yaml (robots.txt, sitemap.xml, images) never
+reach server.js, so on `www.` they are still served as-is (200).
 
 DNS at the registrar for josediaztutoring.com:
 
