@@ -114,6 +114,31 @@ srv.listen(0, async () => {
     assert.notEqual((await get("/API/contact")).status, 301);
   });
 
+  console.log("www.josediaztutoring.com -> josediaztutoring.com: one 301, path + query kept");
+  const viaHost = (p, host, method = "GET") => new Promise((resolve, reject) => {
+    const r = require("node:http").request(base + p, { method, headers: { host } }, (res) => { res.resume(); resolve(res); });
+    r.on("error", reject);
+    r.end();
+  });
+  for (const [p, to] of [
+    ["/", "/"], ["/exams/?for=g10", "/exams/?for=g10"], ["/EN/Exams/", "/exams/"], ["/es/", "/es/"], ["/privacy", "/privacy/"],
+    ["/?lang=es&topic=calculus", "/es/?topic=calculus"], ["/does-not-exist", "/does-not-exist"],
+  ]) {
+    await check(`www ${p} -> 301 https://josediaztutoring.com${to}`, async () => {
+      for (const host of ["www.josediaztutoring.com", "WWW.JosediazTutoring.com:443"]) {
+        for (const method of ["GET", "HEAD"]) {
+          const r = await viaHost(p, host, method);
+          assert.equal(r.statusCode, 301, `${host} ${method}`);
+          assert.equal(r.headers.location, "https://josediaztutoring.com" + to, `${host} ${method}`);
+        }
+      }
+    });
+  }
+  await check("www POST /api/contact and the main host: no www redirect", async () => {
+    assert.notEqual((await viaHost("/api/contact", "www.josediaztutoring.com", "POST")).statusCode, 301);
+    assert.equal((await viaHost("/exams/", "josediaztutoring.com")).statusCode, 200);
+  });
+
   console.log("language preference (cookie lang)");
   const withLang = (v, opts = {}) => ({ ...opts, headers: { cookie: `_ga=GA1.1.1; lang=${v}; _ga_X=GS1.1` } });
   for (const [p, cookieVal, status, to] of [
@@ -685,10 +710,11 @@ srv.listen(0, async () => {
       }
     }
   });
-  await check("sitemap lists all 12 pages with hreflang", async () => {
+  await check("sitemap lists all 12 pages, sitemap namespace only (hreflang lives in each page's <head>)", async () => {
     const xml = await (await get("/sitemap.xml")).text();
     assert.equal((xml.match(/<loc>/g) || []).length, 12);
-    assert.equal((xml.match(/hreflang=/g) || []).length, 36);
+    assert.doesNotMatch(xml, /xhtml|hreflang|changefreq|priority/);
+    assert.deepEqual([...new Set(xml.match(/<\/?[a-z]+/g).map((t) => t.replace(/[<\/]/g, "")))].sort(), ["lastmod", "loc", "url", "urlset"]);
     assert.ok(xml.includes("<loc>https://josediaztutoring.com/es/terminos/</loc>"));
     for (const p of ["/exams/", "/es/examenes/", "/exams/algebra-1-eoc/", "/es/examenes/eoc-algebra-1/"])
       assert.match(xml, new RegExp(`<loc>https://josediaztutoring.com${p}</loc>\\n    <lastmod>\\d{4}-\\d\\d-\\d\\d</lastmod>`), p);

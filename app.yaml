@@ -113,6 +113,8 @@ handlers:
 #   every HTML page:        a request with a valid lang cookie (en|es) gets it back as a
 #                           server-set cookie (Safari keeps those; it drops JS-set ones after 7 days);
 #                           HTML is Cache-Control: private, never public
+#   www.josediaztutoring.com/<path> -> https://josediaztutoring.com/<normalized path> (301, query kept;
+#                           not /api/*; the static files above are not covered)
 #   /index.html -> /,  /es and /es/index.html -> /es/   (301)
 #   /privacy, /privacy.html -> /privacy/ (and the other legal pages)   (301)
 #   /?lang=es -> /es/ (keeps ?topic=)   (301)

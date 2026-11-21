@@ -1,88 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://josediaztutoring.com/</loc>
-    <lastmod>2026-11-20</lastmod>
-    <xhtml:link rel="alternate" hreflang="en" href="https://josediaztutoring.com/"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://josediaztutoring.com/es/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://josediaztutoring.com/"/>
+    <lastmod>2026-11-19</lastmod>
   </url>
   <url>
     <loc>https://josediaztutoring.com/es/</loc>
-    <lastmod>2026-11-20</lastmod>
-    <xhtml:link rel="alternate" hreflang="en" href="https://josediaztutoring.com/"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://josediaztutoring.com/es/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://josediaztutoring.com/"/>
+    <lastmod>2026-11-19</lastmod>
   </url>
   <url>
     <loc>https://josediaztutoring.com/privacy/</loc>
     <lastmod>2026-11-20</lastmod>
-    <xhtml:link rel="alternate" hreflang="en" href="https://josediaztutoring.com/privacy/"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://josediaztutoring.com/es/privacidad/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://josediaztutoring.com/privacy/"/>
   </url>
   <url>
     <loc>https://josediaztutoring.com/es/privacidad/</loc>
     <lastmod>2026-11-20</lastmod>
-    <xhtml:link rel="alternate" hreflang="en" href="https://josediaztutoring.com/privacy/"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://josediaztutoring.com/es/privacidad/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://josediaztutoring.com/privacy/"/>
   </url>
   <url>
     <loc>https://josediaztutoring.com/terms/</loc>
-    <lastmod>2026-11-20</lastmod>
-    <xhtml:link rel="alternate" hreflang="en" href="https://josediaztutoring.com/terms/"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://josediaztutoring.com/es/terminos/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://josediaztutoring.com/terms/"/>
+    <lastmod>2026-11-19</lastmod>
   </url>
   <url>
     <loc>https://josediaztutoring.com/es/terminos/</loc>
-    <lastmod>2026-11-20</lastmod>
-    <xhtml:link rel="alternate" hreflang="en" href="https://josediaztutoring.com/terms/"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://josediaztutoring.com/es/terminos/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://josediaztutoring.com/terms/"/>
+    <lastmod>2026-11-19</lastmod>
   </url>
   <url>
     <loc>https://josediaztutoring.com/accessibility/</loc>
-    <lastmod>2026-11-20</lastmod>
-    <xhtml:link rel="alternate" hreflang="en" href="https://josediaztutoring.com/accessibility/"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://josediaztutoring.com/es/accesibilidad/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://josediaztutoring.com/accessibility/"/>
+    <lastmod>2026-11-17</lastmod>
   </url>
   <url>
     <loc>https://josediaztutoring.com/es/accesibilidad/</loc>
-    <lastmod>2026-11-20</lastmod>
-    <xhtml:link rel="alternate" hreflang="en" href="https://josediaztutoring.com/accessibility/"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://josediaztutoring.com/es/accesibilidad/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://josediaztutoring.com/accessibility/"/>
+    <lastmod>2026-11-17</lastmod>
   </url>
   <url>
     <loc>https://josediaztutoring.com/exams/</loc>
-    <lastmod>2026-11-20</lastmod>
-    <xhtml:link rel="alternate" hreflang="en" href="https://josediaztutoring.com/exams/"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://josediaztutoring.com/es/examenes/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://josediaztutoring.com/exams/"/>
+    <lastmod>2026-11-19</lastmod>
   </url>
   <url>
     <loc>https://josediaztutoring.com/es/examenes/</loc>
-    <lastmod>2026-11-20</lastmod>
-    <xhtml:link rel="alternate" hreflang="en" href="https://josediaztutoring.com/exams/"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://josediaztutoring.com/es/examenes/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://josediaztutoring.com/exams/"/>
+    <lastmod>2026-11-19</lastmod>
   </url>
   <url>
     <loc>https://josediaztutoring.com/exams/algebra-1-eoc/</loc>
-    <lastmod>2026-11-20</lastmod>
-    <xhtml:link rel="alternate" hreflang="en" href="https://josediaztutoring.com/exams/algebra-1-eoc/"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://josediaztutoring.com/es/examenes/eoc-algebra-1/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://josediaztutoring.com/exams/algebra-1-eoc/"/>
+    <lastmod>2026-11-19</lastmod>
   </url>
   <url>
     <loc>https://josediaztutoring.com/es/examenes/eoc-algebra-1/</loc>
-    <lastmod>2026-11-20</lastmod>
-    <xhtml:link rel="alternate" hreflang="en" href="https://josediaztutoring.com/exams/algebra-1-eoc/"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://josediaztutoring.com/es/examenes/eoc-algebra-1/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://josediaztutoring.com/exams/algebra-1-eoc/"/>
+    <lastmod>2026-11-19</lastmod>
   </url>
 </urlset>

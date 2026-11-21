@@ -8,8 +8,10 @@
  *                                             that doesn't alter the built HTML)
  *   npm run indexnow -- --dry-run             print the payload, send nothing
  *
- * On 200/202 the submitted pages' hash + lastmod go into seo/published-pages.json (commit it)
- * and leave the pending list. On any failure the pending list is kept for the next run.
+ * On 200/202 the submitted pages' entries (content hash + lastmod, and for the exam pages the
+ * content date + exam data revision) go into seo/published-pages.json and leave the pending list.
+ * Commit seo/published-pages.json afterwards: the build reads the dates from it, so a fresh clone
+ * builds the same dates. On any failure the pending list is kept for the next run.
  * It never retries and always exits 0 on a failed ping, so it can't break a deploy
  * (exit 1 only for bad --urls arguments).
  */
@@ -103,7 +105,7 @@ async function main() {
   // success: record what was submitted, drop it from the pending list
   const sent = new Set(urls);
   const published = readJson(PUBLISHED, {});
-  for (const p of pending) if (sent.has(p.url)) published[p.url] = { hash: p.hash, lastmod: p.lastmod };
+  for (const { url, ...entry } of pending) if (sent.has(url)) published[url] = entry;
   const sorted = Object.fromEntries([...allowed].filter((u) => published[u]).map((u) => [u, published[u]]));
   writeJson(PUBLISHED, sorted);
   writeJson(PENDING, pending.filter((p) => !sent.has(p.url)));

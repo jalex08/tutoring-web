@@ -640,6 +640,10 @@ function notFoundPage(req, res) {
   res.end(req.method === "HEAD" ? undefined : page404);
 }
 
+// www.josediaztutoring.com -> https://josediaztutoring.com (301, path + query kept)
+const WWW_HOST = "www.josediaztutoring.com";
+const MAIN_ORIGIN = "https://josediaztutoring.com";
+
 /** The 301 target for a path (the REDIRECTS table, old ?lang=es links), or undefined. */
 function redirectFor(pathname, query) {
   // old ?lang=es links -> /es/, keeping the rest of the query (topic, src, utm_*); the browser keeps the #hash
@@ -705,16 +709,18 @@ const server = http.createServer((req, res) => {
   } catch {
     return notFoundPage(req, res);
   }
-  // GET/HEAD: uppercase or /en/... paths -> one 301 to the normalized path + the original query
-  // (with the REDIRECTS table / old ?lang=es rule applied in the same hop, so it never chains)
+  // GET/HEAD: www.josediaztutoring.com, uppercase or /en/... paths -> one 301 to the main host +
+  // normalized path + the original query (with the REDIRECTS table / old ?lang=es rule applied in
+  // the same hop, so it never chains). /api/* is never redirected.
   if (req.method === "GET" || req.method === "HEAD") {
     const raw = String(req.url || "/"), q = raw.indexOf("?");
     const rawPath = q < 0 ? raw : raw.slice(0, q), rawQuery = q < 0 ? "" : raw.slice(q);
     const norm = normalizePath(rawPath);
-    if (rawPath.startsWith("/") && norm !== rawPath && norm !== "/api" && !norm.startsWith("/api/")) {
+    const www = String(req.headers.host || "").toLowerCase().replace(/:\d+$/, "") === WWW_HOST;
+    if (rawPath.startsWith("/") && (www || norm !== rawPath) && norm !== "/api" && !norm.startsWith("/api/")) {
       let normUrl;
       try { normUrl = new URL("http://localhost" + norm + rawQuery); } catch { return notFoundPage(req, res); }
-      const to = redirectFor(normUrl.pathname, normUrl.searchParams) || norm + rawQuery;
+      const to = (www ? MAIN_ORIGIN : "") + (redirectFor(normUrl.pathname, normUrl.searchParams) || norm + rawQuery);
       res.writeHead(301, { ...SECURITY_HEADERS, Location: to, "Cache-Control": "public, max-age=3600" });
       return res.end();
     }
