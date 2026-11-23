@@ -22,6 +22,7 @@ const T = {
     home: "Home", resources: "Resources", allResources: "All resources",
     homeLabel: "Jose Diaz Tutoring, home",
     copy: "Copy link", copied: "Copied", copyFailed: "Couldn't copy. Copy the address bar instead.",
+    tools: "Tools", share: "Share", more: "More options", otherLang: "Español",
     fullscreen: "Full screen", exitFullscreen: "Exit full screen",
     cue: "How it works", howTo: "How to use it", keyIdeas: "Key ideas", faq: "Questions",
     related: "Related resources", seeAlso: "See also",
@@ -44,6 +45,7 @@ const T = {
     home: "Inicio", resources: "Recursos", allResources: "Todos los recursos",
     homeLabel: "Jose Diaz Tutoring, inicio",
     copy: "Copiar enlace", copied: "Copiado", copyFailed: "No se pudo copiar. Copia la barra de direcciones.",
+    tools: "Herramientas", share: "Compartir", more: "Más opciones", otherLang: "English",
     fullscreen: "Pantalla completa", exitFullscreen: "Salir de pantalla completa",
     cue: "Cómo funciona", howTo: "Cómo usarla", keyIdeas: "Ideas clave", faq: "Preguntas",
     related: "Recursos relacionados", seeAlso: "Mira también",
@@ -136,6 +138,8 @@ function homeCards(docs, lang) {
 
 const ICON = {
   grid: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg>',
+  share: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>',
+  dots: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>',
   link: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/></svg>',
   expand: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
   down: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M6 13l6 6 6-6"/></svg>',
@@ -206,15 +210,29 @@ function resourcePage({ doc, lang, shell, all = [], preview = false, frameBase =
     `<a href="${M.pathOf(doc, l)}" hreflang="${l}" lang="${l}" data-lang="${l}"${l === lang ? ' aria-current="page"' : ""}>${l.toUpperCase()}</a>`).join("\n      ");
 
   const body = `<header class="res-bar">
-    <a class="res-mark" href="${homeOf(lang)}" aria-label="${esc(S.homeLabel)}"><span class="res-mark-full">Jose Diaz</span><span class="res-mark-short" aria-hidden="true">JD</span></a>
+    <a class="res-back" href="${libPath}"><span aria-hidden="true">←</span> ${esc(S.tools)}</a>
+    <a class="res-mark" href="${homeOf(lang)}" aria-label="${esc(S.homeLabel)}">Jose Diaz</a>
     <span class="res-title">${esc(title)}</span>
-    <a class="res-btn res-all" href="${libPath}">${ICON.grid}<span class="res-lbl">${esc(S.allResources)}</span></a>
-    <nav class="lang" aria-label="${lang === "es" ? "Idioma" : "Language"}">
-      ${langLinks}
-    </nav>
-    <button class="res-btn" type="button" id="res-copy" data-copied="${esc(S.copied)}" data-failed="${esc(S.copyFailed)}">${ICON.link}<span class="res-lbl">${esc(S.copy)}</span></button>
-    <button class="res-btn" type="button" id="res-fs" hidden data-exit="${esc(S.exitFullscreen)}" aria-label="${esc(S.fullscreen)}" title="${esc(S.fullscreen)}">${ICON.expand}</button>
-    <a class="btn btn-primary res-cta" href="${book}" data-loc="bar"><span class="cta-full">${shell.s.ctaShort}</span><span class="cta-mini">${shell.s.ctaMini}</span></a>
+    <span class="res-actions">
+      <a class="res-btn res-all" href="${libPath}" aria-label="${esc(S.allResources)}" title="${esc(S.allResources)}">${ICON.grid}<span class="res-lbl">${esc(S.allResources)}</span></a>
+      <nav class="lang" aria-label="${lang === "es" ? "Idioma" : "Language"}">
+        ${langLinks}
+      </nav>
+      <span class="res-share-wrap">
+        <button class="res-btn" type="button" id="res-share" aria-label="${esc(S.share)}" title="${esc(S.share)}" data-copied="${esc(S.copied)}" data-failed="${esc(S.copyFailed)}">${ICON.share}<span class="res-lbl">${esc(S.share)}</span></button>
+        <span class="res-toast" id="res-toast" hidden>${esc(S.copied)}</span>
+      </span>
+      <button class="res-btn res-fs" type="button" id="res-fs" hidden data-enter="${esc(S.fullscreen)}" data-exit="${esc(S.exitFullscreen)}" aria-label="${esc(S.fullscreen)}" title="${esc(S.fullscreen)}">${ICON.expand}</button>
+      <a class="btn btn-primary res-cta" href="${book}" data-loc="bar"><span class="cta-full">${shell.s.ctaShort}</span><span class="cta-mini">${shell.s.ctaMini}</span></a>
+      <span class="res-more">
+        <button class="res-btn" type="button" id="res-more" aria-expanded="false" aria-controls="res-menu" aria-label="${esc(S.more)}" title="${esc(S.more)}">${ICON.dots}</button>
+        <span class="res-menu" id="res-menu" hidden>
+          <a href="${homeOf(lang)}">${esc(S.home)}</a>
+          <a href="${M.pathOf(doc, o)}" hreflang="${o}" lang="${o}" data-lang="${o}">${esc(S.otherLang)}</a>
+          <button type="button" id="res-menu-fs" hidden data-enter="${esc(S.fullscreen)}" data-exit="${esc(S.exitFullscreen)}">${esc(S.fullscreen)}</button>
+        </span>
+      </span>
+    </span>
     <p class="sr-only" id="res-status" role="status" aria-live="polite"></p>
   </header>
 ${preview ? `  <p class="res-preview">${esc(S.preview)}</p>\n` : ""}

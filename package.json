@@ -9,7 +9,7 @@
     "build": "node scripts/build.js",
     "dev": "node scripts/dev-server.js",
     "admin:dev": "cd admin && DEV_NO_IAP=1 RESOURCES_DIR=../.dev-data/resources node server.js",
-    "test": "node scripts/build.js --check && node scripts/smoke-test.js && node scripts/resources-test.js && node scripts/admin-ui-test.js",
+    "test": "node scripts/build.js --check && node scripts/smoke-test.js && node scripts/resources-test.js && node scripts/admin-ui-test.js && node scripts/resource-bar-test.js",
     "indexnow": "node scripts/indexnow.js",
     "check-exams": "node scripts/check-exams.js data/exams/2026-27.json"
   },

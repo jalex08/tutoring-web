@@ -2,43 +2,61 @@
    www/resources-shell.json, after the site's shared CSS from www/index.html (tokens, buttons, .pad,
    header, footer, .tool-card). Never the highlighter in the bar; the page's one highlighter is the
    guarantee line at the bottom. */
-:root{--bar:44px}
-@media (min-width:700px){:root{--bar:48px}}
 .crumbs ol{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-wrap:wrap;font-size:.9rem;color:var(--muted)}
 .crumbs li + li::before{content:"/";padding:0 .45em}
 .crumbs a{color:var(--muted)}
 
-/* ---- tool page: thin bar ---- */
+/* ---- tool page: thin bar. Three layouts, never crowded:
+   < 600px      "← Tools" · Share (icon) · CTA (short) · ⋯ menu (Home, other language, Full screen)
+   600–1099px   wordmark · All resources (icon) · EN/ES · Share (icon) · Full screen (icon) · CTA
+   1100px +     wordmark · title · All resources · EN/ES · Share · Full screen (icon) · CTA
+   8px between items, 44px targets, bar 48px. ---- */
 .res-page{background:var(--paper)}
-.res-bar{position:sticky;top:0;z-index:20;height:var(--bar);display:flex;align-items:center;gap:4px;padding:0 8px;
-  background:var(--pad);border-bottom:1px solid var(--grid)}
-.res-mark{font:800 1.05rem/1 var(--display);color:var(--graphite);text-decoration:none;letter-spacing:-.02em;white-space:nowrap;
-  min-height:44px;display:inline-flex;align-items:center;padding:0 6px}
-.res-mark-short{display:none}
-.res-title{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:700 .95rem/1.2 var(--body);color:var(--muted);padding:0 8px}
+:root{--bar:48px}
+.res-bar{position:sticky;top:0;z-index:20;height:var(--bar);display:flex;align-items:center;gap:8px;padding:0 8px;
+  background:var(--pad);border-bottom:1px solid var(--grid);white-space:nowrap}
+.res-back,.res-mark{flex:none;min-height:44px;display:inline-flex;align-items:center;text-decoration:none;border-radius:8px}
+.res-back{gap:6px;padding:0 8px 0 4px;font:700 .95rem/1 var(--body);color:var(--ink)}
+.res-mark{padding:0 6px;font:800 1.05rem/1 var(--display);color:var(--graphite);letter-spacing:-.02em}
+.res-title{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;font:700 .95rem/1.2 var(--body);color:var(--muted)}
+.res-actions{flex:none;margin-left:auto;display:flex;align-items:center;gap:8px}
 .res-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:44px;min-height:44px;padding:0 10px;
-  font:700 .9rem/1 var(--body);color:var(--ink);background:transparent;border:0;border-radius:8px;text-decoration:none;cursor:pointer;white-space:nowrap}
+  font:700 .9rem/1 var(--body);color:var(--ink);background:transparent;border:0;border-radius:8px;text-decoration:none;cursor:pointer}
 .res-btn svg{width:20px;height:20px;flex:none}
 .res-btn[hidden]{display:none}
-@media (hover:hover){.res-btn:hover{background:#fff;color:var(--ink-dark)}}
-.res-btn:focus-visible,.res-mark:focus-visible,.res-cue:focus-visible{outline:3px solid var(--ink);outline-offset:-3px}
-.res-bar .lang{border-width:1.5px;flex:none}
-.res-bar .lang a{min-height:41px;display:inline-flex;align-items:center;justify-content:center;min-width:41px;padding:0 9px}
-.res-cta{flex:none;min-height:44px;padding:0 14px;font-size:.92rem;margin-left:4px}
+@media (hover:hover){.res-btn:hover,.res-back:hover{background:#fff;color:var(--ink-dark)}}
+.res-btn:focus-visible,.res-back:focus-visible,.res-mark:focus-visible,.res-cue:focus-visible,.res-menu a:focus-visible,.res-menu button:focus-visible{outline:3px solid var(--ink);outline-offset:-3px}
+.res-bar .lang{flex:none;border-width:1.5px}
+.res-bar .lang a{min-height:41px;min-width:41px;display:inline-flex;align-items:center;justify-content:center;padding:0 9px}
+.res-cta{flex:none;min-height:44px;padding:0 14px;font-size:.92rem}
 .res-cta .cta-mini{display:none}
-@media (min-width:700px){.res-bar{padding:0 12px;gap:6px}.res-cta{min-height:40px}}
-@media (max-width:899px){.res-title{visibility:hidden;padding:0}.res-lbl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}}
+.res-share-wrap,.res-more{position:relative;display:inline-flex}
+.res-toast{position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);padding:6px 10px;border-radius:6px;
+  background:var(--graphite);color:#fff;font:700 .85rem/1 var(--body);pointer-events:none;z-index:31}
+.res-toast[hidden]{display:none}
+/* the ⋯ menu */
+.res-more{display:none}
+.res-menu{position:absolute;top:calc(100% + 6px);right:0;z-index:30;min-width:210px;display:flex;flex-direction:column;padding:6px;
+  background:var(--pad);border:1px solid var(--grid);border-radius:10px;box-shadow:0 8px 24px rgba(35,42,42,.16)}
+.res-menu[hidden]{display:none}
+.res-menu a,.res-menu button{display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:7px;border:0;background:transparent;
+  font:700 .98rem/1 var(--body);color:var(--ink);text-decoration:none;text-align:left;cursor:pointer;width:100%}
+.res-menu [hidden]{display:none}
+@media (hover:hover){.res-menu a:hover,.res-menu button:hover{background:#fff;color:var(--ink-dark)}}
+/* under 1100px: no title, icon-only buttons */
+@media (max-width:1099px){
+  .res-title{display:none}
+  .res-lbl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+}
+@media (min-width:600px){.res-back{display:none}.res-bar{padding:0 12px}.res-cta{min-height:40px}}
+/* under 600px: back link · Share · short CTA · ⋯ */
 @media (max-width:599px){
-  .res-bar .lang a[aria-current]{display:none}           /* one toggle: the other language */
-  .res-bar .lang a{min-width:41px}
+  .res-mark,.res-all,.res-bar .lang,.res-fs{display:none !important}
+  .res-more{display:inline-flex}
   .res-cta .cta-full{display:none}.res-cta .cta-mini{display:inline}
-  .res-cta{padding:0 12px;font-size:.88rem}
+  .res-cta{padding:0 12px;font-size:.9rem}
 }
-@media (max-width:419px){
-  .res-bar{gap:2px;padding:0 4px}
-  .res-mark-full{display:none}.res-mark-short{display:inline}
-  .res-cta{padding:0 10px;font-size:.85rem;margin-left:2px}
-}
+@media (max-width:379px){.res-back{gap:4px;padding:0 2px;font-size:.88rem}.res-cta{padding:0 9px;font-size:.85rem}}
 .res-preview{margin:0;padding:8px 12px;background:var(--graphite);color:#fff;font-weight:700;font-size:.9rem;text-align:center}
 
 /* ---- tool page: the tool fills the rest of the screen ---- */

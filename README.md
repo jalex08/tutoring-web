@@ -353,7 +353,7 @@ The page pushes these events to the `dataLayer` (no names, emails or messages):
 |---|---|---|
 | `generate_lead` | booking form sent successfully | `form_name`, `student_level`, `page_language` |
 | `contact_click` | WhatsApp, phone or email link clicked | `contact_method`, `link_location`, `page_language` |
-| `resource_link_copy` | Copy link on a tool page | `resource_id`, `has_state`, `page_language` |
+| `resource_link_copy` | Share on a tool page (share sheet or copied link) | `resource_id`, `has_state`, `method` (`share`/`copy`), `page_language` |
 | `resource_fullscreen` | Full screen on a tool page | `resource_id`, `page_language` |
 | `resource_book_click` | "Book a free intro" on a tool page (bar or bottom) | `resource_id`, `link_location` (`bar`/`cta`), `page_language` |
 

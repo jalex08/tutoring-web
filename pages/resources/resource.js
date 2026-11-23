@@ -40,54 +40,98 @@
     frame.src = frame.src.split("#")[0] + h;
   });
 
-  // Copy link: this page with the tool's current setup
-  var copy = document.getElementById("res-copy");
-  if (copy) {
-    var label = copy.querySelector(".res-lbl"), idle = label ? label.textContent : "";
-    var done = function (ok) {
-      var msg = ok ? copy.getAttribute("data-copied") : copy.getAttribute("data-failed");
-      if (label && ok) { label.textContent = msg; setTimeout(function () { label.textContent = idle; }, 2000); }
-      copy.classList.toggle("is-done", ok);
+  // Share: the share sheet where there is one (phones), else copy the link. Either way the URL carries
+  // the tool's setup (#hash). One event, resource_link_copy, with method: share | copy.
+  var share = document.getElementById("res-share"), toast = document.getElementById("res-toast");
+  if (share) {
+    var label = share.querySelector(".res-lbl"), idle = label ? label.textContent : "", timer = null;
+    var copied = function (ok) {
+      var msg = ok ? share.getAttribute("data-copied") : share.getAttribute("data-failed");
       say(msg);
+      if (!ok) return;
+      if (label) label.textContent = msg;
+      if (toast) toast.hidden = false;
+      clearTimeout(timer);
+      timer = setTimeout(function () { if (label) label.textContent = idle; if (toast) toast.hidden = true; }, 2000);
+      track("resource_link_copy", { resource_id: id, has_state: !!toolHash, method: "copy" });
     };
-    copy.addEventListener("click", function () {
-      var url = location.origin + baseUrl() + toolHash;
+    var copy = function (url) {
       var fallback = function () {
         try {
           var ta = document.createElement("textarea");
           ta.value = url; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
           document.body.appendChild(ta); ta.select();
-          var ok = document.execCommand("copy"); ta.remove(); done(ok);
-        } catch (err) { done(false); }
+          var ok = document.execCommand("copy"); ta.remove(); copied(ok);
+        } catch (err) { copied(false); }
       };
-      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(function () { done(true); }, fallback);
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(function () { copied(true); }, fallback);
       else fallback();
-      track("resource_link_copy", { resource_id: id, has_state: !!toolHash });
+    };
+    share.addEventListener("click", function () {
+      var url = location.origin + baseUrl() + toolHash;
+      if (navigator.share) {
+        navigator.share({ title: document.title, url: url }).then(function () {
+          track("resource_link_copy", { resource_id: id, has_state: !!toolHash, method: "share" });
+        }, function (err) { if (!err || err.name !== "AbortError") copy(url); }); // closed the sheet: nothing
+      } else copy(url);
     });
   }
 
-  // Full screen: the tool area (hidden where the Fullscreen API isn't available, e.g. iPhone)
-  var fs = document.getElementById("res-fs"), stage = document.getElementById("tool");
+  // Full screen: the tool area. Offered only where the Fullscreen API works for it (not iPhone Safari):
+  // the icon in the bar (600px+) and the item in the ⋯ menu (under 600px).
+  var stage = document.getElementById("tool"), fsBtns = [document.getElementById("res-fs"), document.getElementById("res-menu-fs")].filter(Boolean);
   var req = stage && (stage.requestFullscreen || stage.webkitRequestFullscreen);
-  var enabled = document.fullscreenEnabled || document.webkitFullscreenEnabled;
-  if (fs && req && enabled) {
-    fs.hidden = false;
-    var enter = fs.getAttribute("aria-label"), exit = fs.getAttribute("data-exit");
-    var current = function () { return document.fullscreenElement || document.webkitFullscreenElement; };
-    fs.addEventListener("click", function () {
-      if (current()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
-      try { var p = req.call(stage); if (p && p.catch) p.catch(function () {}); } catch (err) {}
-      track("resource_fullscreen", { resource_id: id });
-    });
-    var sync = function () { var on = !!current(); fs.setAttribute("aria-label", on ? exit : enter); fs.title = on ? exit : enter; };
-    document.addEventListener("fullscreenchange", sync);
-    document.addEventListener("webkitfullscreenchange", sync);
+  var fsOk = !!(req && (document.fullscreenEnabled || document.webkitFullscreenEnabled));
+  var inFs = function () { return document.fullscreenElement || document.webkitFullscreenElement; };
+  var toggleFs = function () {
+    if (inFs()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+    try { var p = req.call(stage); if (p && p.catch) p.catch(function () {}); } catch (err) {}
+    track("resource_fullscreen", { resource_id: id });
+  };
+  if (fsOk) {
+    var syncFs = function () {
+      fsBtns.forEach(function (b) {
+        var t = inFs() ? b.getAttribute("data-exit") : b.getAttribute("data-enter");
+        if (b.id === "res-menu-fs") b.textContent = t; else { b.setAttribute("aria-label", t); b.title = t; }
+      });
+    };
+    fsBtns.forEach(function (b) { b.hidden = false; b.addEventListener("click", toggleFs); });
+    document.addEventListener("fullscreenchange", syncFs);
+    document.addEventListener("webkitfullscreenchange", syncFs);
   }
 
-  // EN/ES: the lang-switch block's own click handler runs first and adds a #section; this one runs
-  // after it and puts the tool's setup there instead (the two pages show the same tool).
-  [].forEach.call(document.querySelectorAll(".res-bar .lang a[data-lang]"), function (a) {
+  // ⋯ menu (under 600px): a disclosure button + panel. Esc, a tap outside or a choice closes it;
+  // arrows move between the items; focus goes back to the button when it closes from the keyboard.
+  var more = document.getElementById("res-more"), menu = document.getElementById("res-menu");
+  if (more && menu) {
+    var items = function () { return [].filter.call(menu.querySelectorAll("a, button"), function (el) { return !el.hidden; }); };
+    var open = function () { menu.hidden = false; more.setAttribute("aria-expanded", "true"); var f = items()[0]; if (f) f.focus(); };
+    var close = function (refocus) { if (menu.hidden) return; menu.hidden = true; more.setAttribute("aria-expanded", "false"); if (refocus) more.focus(); };
+    more.addEventListener("click", function () { if (menu.hidden) open(); else close(false); });
+    menu.addEventListener("click", function (e) { if (e.target.closest("a, button")) close(false); });
+    document.addEventListener("keydown", function (e) {
+      if (menu.hidden) return;
+      if (e.key === "Escape") { e.preventDefault(); close(true); return; }
+      if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Home" || e.key === "End") {
+        var list = items(), i = list.indexOf(document.activeElement);
+        if (i < 0 && document.activeElement !== more) return;
+        e.preventDefault();
+        var n = e.key === "Home" ? 0 : e.key === "End" ? list.length - 1 : (i + (e.key === "ArrowDown" ? 1 : -1) + list.length) % list.length;
+        list[n].focus();
+      }
+    });
+    document.addEventListener("pointerdown", function (e) { if (!menu.hidden && !e.target.closest(".res-more")) close(false); });
+    // a tap on the tool happens inside its iframe (no pointerdown here): the page loses focus instead
+    window.addEventListener("blur", function () { close(false); });
+    menu.addEventListener("focusout", function (e) { if (!menu.hidden && e.relatedTarget && !e.relatedTarget.closest(".res-more")) close(false); });
+    if (window.matchMedia) { var mq = matchMedia("(min-width: 600px)"); var onMq = function () { if (mq.matches) close(false); }; mq.addEventListener ? mq.addEventListener("change", onMq) : mq.addListener(onMq); }
+  }
+
+  // EN/ES (the switch from 600px, the ⋯ menu below): save the choice like the site's switch does, then go
+  // to the other page with the tool's setup (#hash) instead of a #section (the two pages show the same tool).
+  [].forEach.call(document.querySelectorAll(".res-bar a[data-lang]"), function (a) {
     a.addEventListener("click", function () {
+      try { if (window.switchLanguage) window.switchLanguage(a.getAttribute("data-lang"), false); } catch (err) {}
       var q = new URLSearchParams(location.search);
       q.delete("lang");
       q = q.toString();
