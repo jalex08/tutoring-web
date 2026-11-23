@@ -14,7 +14,7 @@ server.js         booking form, redirects and 404 page (Node.js, no framework)
 resources.js      free interactive tools: /resources/, /es/recursos/, /frame/..., sitemap (see "Resources")
 lib/resources/    shared by the site and the admin: data model, rendering, sandbox, store <- edit
 pages/resources/  CSS + scripts for the resource pages and the library                 <- edit
-admin/            App Engine service `admin` (upload + publish tools, behind IAP); admin/lib/
+admin/            App Engine service `admin` (upload + publish tools, Google sign-in); admin/lib/
                   is a copy of lib/resources made by `npm run build`
 package.json      Node dependencies (just nodemailer) and npm scripts
 package-lock.json
