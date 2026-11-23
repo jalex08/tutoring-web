@@ -8,7 +8,7 @@ Names used below (change them in `app.yaml` and `admin/admin.yaml` too if you pi
 
 | Thing | Name |
 |---|---|
-| Bucket | `gs://jalex-hub-resources` (us-east1, private) |
+| Bucket | `gs://josediaz-tutoring-res` (us-east1, private) |
 | Firestore database | `(default)`, or `resources` (see step 2) |
 | Public site's service account | `jalex-hub@appspot.gserviceaccount.com` (App Engine default, already exists) |
 | Admin's service account | `resources-admin@jalex-hub.iam.gserviceaccount.com` (step 4) |
@@ -54,9 +54,19 @@ No indexes are needed (the site reads the whole `resources` collection, which is
 
 ## 3. The private bucket
 
+The bucket `gs://josediaz-tutoring-res` already exists. Check that it's private:
+
 ```bash
-gcloud storage buckets create gs://jalex-hub-resources --location=us-east1 --uniform-bucket-level-access --public-access-prevention --project=jalex-hub
+gcloud storage buckets describe gs://josediaz-tutoring-res --format="table(location,uniform_bucket_level_access,public_access_prevention)"
 ```
+
+You want `uniform_bucket_level_access` = `True` and `public_access_prevention` = `enforced`. If either isn't:
+
+```bash
+gcloud storage buckets update gs://josediaz-tutoring-res --uniform-bucket-level-access --public-access-prevention
+```
+
+(Starting over in another project: `gcloud storage buckets create gs://NAME --location=us-east1 --uniform-bucket-level-access --public-access-prevention --project=jalex-hub`, then put NAME in `RESOURCES_BUCKET` in both yaml files.)
 
 Objects are never public: the site streams them (`/frame/...`, `/resources/og/...`).
 
@@ -71,7 +81,7 @@ gcloud iam service-accounts create resources-admin --display-name="Resources adm
 Public site (default App Engine account): read the bucket and Firestore.
 
 ```bash
-gcloud storage buckets add-iam-policy-binding gs://jalex-hub-resources --member=serviceAccount:jalex-hub@appspot.gserviceaccount.com --role=roles/storage.objectViewer
+gcloud storage buckets add-iam-policy-binding gs://josediaz-tutoring-res --member=serviceAccount:jalex-hub@appspot.gserviceaccount.com --role=roles/storage.objectViewer
 ```
 
 ```bash
@@ -81,7 +91,7 @@ gcloud projects add-iam-policy-binding jalex-hub --member=serviceAccount:jalex-h
 Admin: write the bucket and Firestore.
 
 ```bash
-gcloud storage buckets add-iam-policy-binding gs://jalex-hub-resources --member=serviceAccount:resources-admin@jalex-hub.iam.gserviceaccount.com --role=roles/storage.objectAdmin
+gcloud storage buckets add-iam-policy-binding gs://josediaz-tutoring-res --member=serviceAccount:resources-admin@jalex-hub.iam.gserviceaccount.com --role=roles/storage.objectAdmin
 ```
 
 ```bash

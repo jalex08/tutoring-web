@@ -324,7 +324,7 @@ sitemap. **No deploy.** Setup: `docs/resources-setup.md`. What to ask the AI for
 `docs/resources-tool-guide.md`.
 
 - Data: Firestore (`resources` collection, `meta/resources` change marker) + the private bucket
-  `jalex-hub-resources` (`resources/<id>/v<N>.html`, `og/<id>-<lang>-<hash>.png`). `resources.js` re-checks
+  `josediaz-tutoring-res` (`resources/<id>/v<N>.html`, `og/<id>-<lang>-<hash>.png`). `resources.js` re-checks
   the marker at most every 15 s and keeps the last good data if Firestore is down.
 - Isolation: the tool is served at `/frame/<id>/v<N>` with `Content-Security-Policy: sandbox …` (never
   `allow-same-origin`) and `frame-ancestors 'self'`, and loaded in an `<iframe sandbox>`. It can't read

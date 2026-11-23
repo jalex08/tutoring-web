@@ -19,7 +19,7 @@ default_expiration: "10m"
 # for the tool files and preview cards, and the Firestore database ("(default)", or the named database
 # created for them if the project already has a Datastore-mode database).
 env_variables:
-  RESOURCES_BUCKET: "jalex-hub-resources"
+  RESOURCES_BUCKET: "josediaz-tutoring-res"
   FIRESTORE_DATABASE: "(default)"
 
 handlers:
