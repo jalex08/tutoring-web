@@ -83,3 +83,20 @@ label.check.big{font-weight:700;font-size:1.05rem}
 .problems:empty{display:none}
 .buttons{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
 .live-links{margin:8px 0 0;font-size:.95rem}
+/* tool config (.json) */
+.banner{background:var(--pad);border:1.5px solid var(--grid);border-left:5px solid var(--ok);border-radius:10px;padding:12px 16px;margin:0 0 18px;font-weight:700}
+.banner[hidden]{display:none}
+.banner p{margin:0}
+.banner .banner-problems{margin-top:4px;color:var(--red)}
+.banner-warn{border-left-color:#B7791F}
+.banner-err{border-left-color:var(--red);background:#fff5f5}
+.field-err{margin:6px 0 0;color:var(--red);font-weight:700;font-size:.92rem}
+.field-err.warn{color:#7A4B00}
+.field-err .use-suggestion{margin-left:6px;vertical-align:middle}
+.cfg-problems{list-style:none;margin:8px 0 0;padding:0}
+.field.cfg-invalid input.cfg-invalid,.field.cfg-invalid textarea.cfg-invalid,.field.cfg-invalid select.cfg-invalid,.faq-list.cfg-invalid{border-color:var(--red);box-shadow:0 0 0 3px rgba(164,38,44,.15)}
+.checks.cfg-invalid{outline:2px solid var(--red);outline-offset:4px;border-radius:6px}
+legend.cfg-invalid{color:var(--red)}
+.configs{margin-top:12px}
+.configs ul{margin:4px 0 0;padding-left:1.2em}
+.configs[hidden]{display:none}

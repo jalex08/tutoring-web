@@ -316,7 +316,8 @@ gcloud secrets add-iam-policy-binding site-pricing --project=jalex-hub \
 
 ## Resources (free interactive tools)
 
-Upload one AI-generated HTML tool in the admin
+Upload one AI-generated HTML tool (plus, optionally, its `<name>.json` config, which fills the whole
+form; schema in `docs/resources-tool-guide.md`) in the admin
 (`josediaztutoring.com/admin` → `https://admin-dot-jalex-hub.ue.r.appspot.com`, Sign in with Google, `admin/auth.js`), write the EN/ES text, tick
 "I checked the formulas and the Spanish", Publish. Within ~30 seconds it's live at
 `/resources/<slug>/` and `/es/recursos/<slug>/`, in the library, on the home page (3 newest) and in the

@@ -1,0 +1,1298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trigonometry playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Kalam:wght@400&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<style>
+:root{--ink:#1C4C9E;--ink-d:#143A7A;--hl:#F6E15A;--pad:#E9F2E4;--grid:#C7DDBE;--g:#232A2A;--muted:#55605E;--paper:#FBFCFA;--soft:#D3DCD8;--rule:#D5DED2;--orange:#B8692E;--grey:#6F7B78}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--g);background:var(--paper);font-size:1rem;line-height:1.5;-webkit-text-size-adjust:100%}
+h1,h2,h3{font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:-.015em;margin:0;line-height:1.15}
+.app{max-width:1140px;margin:0 auto;padding:14px 14px 40px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px 16px;flex-wrap:wrap}
+h1{font-size:clamp(1.35rem,3.4vw,1.95rem);font-weight:800}
+h2{font-size:1.15rem;font-weight:700;margin-bottom:8px}
+.sub{margin:.25rem 0 0;color:var(--muted)}
+.btn{font:700 1rem/1.2 "Atkinson Hyperlegible",system-ui,sans-serif;min-height:44px;padding:10px 18px;border-radius:8px;border:2px solid var(--ink);background:var(--ink);color:#fff;cursor:pointer;touch-action:manipulation}
+.btn:hover{background:var(--ink-d);border-color:var(--ink-d)}
+.btn.sec{background:#fff;color:var(--ink)}
+.btn.sec:hover{background:var(--pad);color:var(--ink-d)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.sm{padding:8px 12px;min-width:44px}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.tabs{display:flex;gap:8px;margin:14px 0 12px;flex-wrap:wrap}
+.tab{font:700 .98rem "Atkinson Hyperlegible",system-ui,sans-serif;min-height:44px;padding:8px 18px;border-radius:999px;border:2px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--ink);color:#fff}
+.tab:hover{border-color:var(--ink-d)}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:start}
+@media(min-width:880px){.grid2{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}}
+.stack{display:grid;gap:14px;min-width:0}
+.sheet{background:#fff;border:1px solid var(--soft);border-radius:6px;box-shadow:0 1px 2px rgba(35,42,42,.04),0 6px 18px rgba(35,42,42,.06);padding:14px;min-width:0}
+.pad{background-color:var(--pad);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:22px 22px}
+figure{margin:0}
+.diag svg{display:block;width:100%;height:auto;touch-action:none;-webkit-user-select:none;user-select:none;cursor:grab}
+.diag svg:active{cursor:grabbing}
+#uc{max-height:min(72vh,560px);margin:0 auto}
+.legend{font-size:.9rem;color:var(--muted);margin-top:8px;background:rgba(255,255,255,.85);padding:6px 8px;border-radius:4px}
+.legend b{color:var(--g)}
+.sw{display:inline-block;width:18px;height:5px;border-radius:3px;vertical-align:middle;margin-right:4px}
+label,.lbl{font-weight:700;display:block;margin-bottom:4px}
+.help{font-size:.88rem;color:var(--muted);margin:4px 0 0}
+.err{color:#8A2B12;font-size:.9rem;margin:4px 0 0;min-height:0}
+.row{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end}
+.row>*{min-width:0}
+.field{flex:1 1 150px}
+input[type=text],select{font:400 1.1rem "Atkinson Hyperlegible",system-ui,sans-serif;min-height:44px;padding:8px 10px;border:1.5px solid #8C9895;border-radius:6px;background:#fff;color:var(--g);width:100%}
+input[type=text][aria-invalid="true"]{border-color:#8A2B12}
+input[type=range]{width:100%;height:44px;accent-color:var(--ink);margin:0;cursor:pointer}
+.seg{display:inline-flex;border:2px solid var(--ink);border-radius:8px;overflow:hidden}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg label{margin:0;min-height:44px;min-width:44px;padding:8px 14px;display:flex;align-items:center;justify-content:center;color:var(--ink);background:#fff;cursor:pointer;font-weight:700}
+.seg input:checked+label{background:var(--ink);color:#fff}
+.seg input:focus-visible+label{outline:3px solid var(--ink);outline-offset:-5px;box-shadow:inset 0 0 0 5px #fff}
+.check{display:flex;align-items:center;gap:10px;min-height:44px;font-weight:700;cursor:pointer;margin:0}
+.check input{width:22px;height:22px;accent-color:var(--ink);margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:700 1rem "Atkinson Hyperlegible",system-ui,sans-serif;min-height:44px;padding:6px 14px;border-radius:999px;border:2px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}
+.chip small{font-weight:400;font-size:.78rem;opacity:.9}
+.chip[aria-checked="true"],.chip[aria-pressed="true"]{background:var(--ink);color:#fff}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:12px 0 0;font-size:.98rem}
+.facts dt{color:var(--muted)}
+.facts dd{margin:0;font-weight:700}
+.math{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+.math .ml{margin:6px 0;font-size:1.06rem;min-height:1.6em}
+.math .katex{font-size:1.08em}
+.hl{background:var(--hl);border-radius:3px;padding:3px 7px;-webkit-box-decoration-break:clone;box-decoration-break:clone;display:inline-block}
+.muted{color:var(--muted)}
+.signline{margin:10px 0 0;font-size:.97rem}
+.note{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--soft);border-left:4px solid var(--ink);border-radius:6px;background:#fff;padding:10px 12px;margin-top:10px}
+.note svg{flex:0 0 20px;margin-top:2px}
+.note strong{display:block}
+.note p{margin:2px 0 0}
+.note .btn{margin-top:8px}
+.levels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media(max-width:560px){.levels{grid-template-columns:1fr}}
+.lvl{font:700 1rem "Atkinson Hyperlegible",system-ui,sans-serif;text-align:left;min-height:44px;padding:10px 12px;border-radius:8px;border:2px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer}
+.lvl small{display:block;font-weight:400;font-size:.85rem;color:var(--muted);margin-top:2px}
+.lvl[aria-pressed="true"]{background:var(--ink);color:#fff}
+.lvl[aria-pressed="true"] small{color:#E3EAF6}
+.score{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0 0;font-size:.98rem}
+.score b{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:1.15rem}
+.code{font-size:.85rem;color:var(--muted);margin:0 0 8px}
+.prompt{font-size:1.12rem;margin:0 0 10px}
+.prdiag{max-width:360px;margin:6px 0 12px}
+.prdiag svg{width:100%;height:auto;display:block}
+.keys{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.key{font:700 1.05rem "Atkinson Hyperlegible",system-ui,sans-serif;min-width:44px;min-height:44px;padding:4px 10px;border-radius:6px;border:1.5px solid #8C9895;background:#fff;color:var(--g);cursor:pointer}
+.key:hover{border-color:var(--ink);color:var(--ink)}
+.choices{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 8px}
+.choices .btn{min-width:96px}
+.choices .btn.no{background:#fff;color:#8C9895;border-color:#C9D1CE;text-decoration:line-through}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.fb{margin-top:10px;min-height:1.5em}
+.fb .ok,.fb .bad,.fb .warn{display:flex;gap:8px;align-items:flex-start}
+.fb .ok strong{color:var(--ink)}
+.fb p{margin:0}
+.hintbox{border:1px solid var(--soft);border-left:4px solid var(--ink);border-radius:6px;padding:10px 12px;margin:0 0 10px;background:#fff}
+.hintbox .t{font-weight:700;display:block;margin-bottom:2px}
+.sol ol{margin:6px 0 0;padding-left:1.4em}
+.sol li{margin:6px 0}
+.sol li::marker{font-weight:700;color:var(--ink)}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+[hidden]{display:none!important}
+svg text{font-family:"Atkinson Hyperlegible",system-ui,sans-serif;fill:#232A2A}
+svg .mth{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif}
+@media (prefers-reduced-motion:no-preference){.btn,.tab,.chip,.lvl,.key{transition:background-color .15s,color .15s,border-color .15s}}
+</style>
+</head>
+<body>
+<noscript><p style="padding:16px">This tool needs JavaScript. / Esta herramienta necesita JavaScript.</p></noscript>
+<div class="app" id="app">
+  <header class="top">
+    <div>
+      <h1 data-t="title"></h1>
+      <p class="sub" data-t="sub"></p>
+    </div>
+    <button type="button" class="btn sec" id="reset" data-t="reset"></button>
+  </header>
+
+  <div class="tabs" role="tablist" id="tabs">
+    <button type="button" class="tab" role="tab" id="tab-circle" data-tab="circle" aria-controls="p-circle" data-t="tabCircle"></button>
+    <button type="button" class="tab" role="tab" id="tab-tri" data-tab="tri" aria-controls="p-tri" data-t="tabTri"></button>
+    <button type="button" class="tab" role="tab" id="tab-practice" data-tab="practice" aria-controls="p-practice" data-t="tabPractice"></button>
+  </div>
+
+  <!-- UNIT CIRCLE -->
+  <section role="tabpanel" id="p-circle" aria-labelledby="tab-circle" tabindex="-1">
+    <div class="grid2">
+      <figure class="sheet pad diag">
+        <svg id="uc" viewBox="0 0 400 400" role="img" aria-label=""></svg>
+        <figcaption class="legend" id="uc-legend"></figcaption>
+      </figure>
+      <div class="stack">
+        <div class="sheet">
+          <div class="row">
+            <div class="field">
+              <label for="uc-in" data-t="angle"></label>
+              <input type="text" id="uc-in" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="uc-help uc-err">
+            </div>
+            <div>
+              <span class="lbl" id="uc-ul" data-t="units"></span>
+              <div class="seg" role="radiogroup" aria-labelledby="uc-ul">
+                <input type="radio" name="uc-u" id="uc-deg" value="deg"><label for="uc-deg" data-t="deg"></label>
+                <input type="radio" name="uc-u" id="uc-rad" value="rad"><label for="uc-rad" data-t="rad"></label>
+              </div>
+            </div>
+          </div>
+          <p class="help" id="uc-help"></p>
+          <p class="err" id="uc-err" aria-live="polite"></p>
+          <label for="uc-range" style="margin-top:8px" data-t="slider"></label>
+          <input type="range" id="uc-range" min="0" max="360" step="1">
+          <div class="row" style="align-items:center;margin-top:4px">
+            <button type="button" class="btn sec sm" id="uc-prev"><span aria-hidden="true">&#8722;</span><span class="sr" data-t="prevSp"></span></button>
+            <button type="button" class="btn sec sm" id="uc-next"><span aria-hidden="true">+</span><span class="sr" data-t="nextSp"></span></button>
+            <label class="check"><input type="checkbox" id="uc-snap"><span data-t="snap"></span></label>
+          </div>
+          <dl class="facts" id="uc-facts"></dl>
+        </div>
+        <div class="sheet">
+          <div class="math" id="uc-math" aria-live="polite"></div>
+          <p class="signline" id="uc-sign"></p>
+          <div id="uc-notes"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT TRIANGLE -->
+  <section role="tabpanel" id="p-tri" aria-labelledby="tab-tri" tabindex="-1" hidden>
+    <div class="grid2">
+      <figure class="sheet diag">
+        <svg id="tri" viewBox="0 0 440 300" role="img" aria-label=""></svg>
+      </figure>
+      <div class="stack">
+        <div class="sheet">
+          <span class="lbl" id="tri-rl" data-t="ratio"></span>
+          <div class="chips" role="radiogroup" aria-labelledby="tri-rl" id="tri-ratio"></div>
+          <div class="row" style="margin-top:12px">
+            <div>
+              <span class="lbl" id="tri-atl" data-t="angleAt"></span>
+              <div class="seg" role="radiogroup" aria-labelledby="tri-atl">
+                <input type="radio" name="tri-at" id="tri-atA" value="A"><label for="tri-atA">A</label>
+                <input type="radio" name="tri-at" id="tri-atB" value="B"><label for="tri-atB">B</label>
+              </div>
+            </div>
+            <div class="field">
+              <label for="tri-hide" data-t="findSide"></label>
+              <select id="tri-hide"></select>
+            </div>
+          </div>
+          <label for="tri-x" style="margin-top:12px"><span data-t="hLeg"></span>: <output id="tri-xo" for="tri-x"></output></label>
+          <input type="range" id="tri-x" min="1" max="12" step="1">
+          <label for="tri-y" style="margin-top:6px"><span data-t="vLeg"></span>: <output id="tri-yo" for="tri-y"></output></label>
+          <input type="range" id="tri-y" min="1" max="9" step="1">
+          <label class="check"><input type="checkbox" id="tri-snap"><span data-t="snapWhole"></span></label>
+        </div>
+        <div class="sheet">
+          <div class="math" id="tri-math" aria-live="polite"></div>
+          <dl class="facts" id="tri-facts"></dl>
+          <div id="tri-notes"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRACTICE -->
+  <section role="tabpanel" id="p-practice" aria-labelledby="tab-practice" tabindex="-1" hidden>
+    <div class="levels" role="group" aria-label="" id="pr-levels">
+      <button type="button" class="lvl" data-lvl="1"></button>
+      <button type="button" class="lvl" data-lvl="2"></button>
+      <button type="button" class="lvl" data-lvl="3"></button>
+    </div>
+    <p class="score" id="pr-score" aria-live="polite"></p>
+    <div class="grid2" style="margin-top:12px">
+      <div class="sheet">
+        <p class="code" id="pr-code"></p>
+        <div class="prompt" id="pr-prompt"></div>
+        <div class="prdiag" id="pr-diag"></div>
+        <div id="pr-numwrap">
+          <label for="pr-in" data-t="yourAnswer"></label>
+          <input type="text" id="pr-in" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
+          <div class="keys" role="group" id="pr-keys"></div>
+        </div>
+        <div class="choices" id="pr-choices" role="group"></div>
+        <div class="actions">
+          <button type="button" class="btn" id="pr-check" data-t="check"></button>
+          <button type="button" class="btn sec" id="pr-hint"></button>
+          <button type="button" class="btn sec" id="pr-new" data-t="newP"></button>
+        </div>
+        <div class="fb" id="pr-fb" aria-live="polite"></div>
+        <div class="actions" id="pr-after"></div>
+      </div>
+      <div class="sheet">
+        <h2 data-t="helpHints"></h2>
+        <div id="pr-help" aria-live="polite"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+/*CORE-START*/
+(function(G){
+'use strict';
+var D2R=Math.PI/180,R2D=180/Math.PI,r2=Math.SQRT2,r3=Math.sqrt(3);
+function mulberry32(a){return function(){a|=0;a=(a+0x6D2B79F5)|0;var t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
+function ri(R,a,b){return a+Math.floor(R()*(b-a+1));}
+function pick(R,arr){return arr[Math.floor(R()*arr.length)];}
+function weighted(R,tab){var tot=0,i;for(i=0;i<tab.length;i++)tot+=tab[i][1];var x=R()*tot;for(i=0;i<tab.length;i++){x-=tab[i][1];if(x<0)return tab[i][0];}return tab[tab.length-1][0];}
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){var t=a%b;a=b;b=t;}return a||1;}
+function near(a,b,t){return Math.abs(a-b)<=(t===undefined?1e-9:t);}
+function isMult(d,m){var r=((d%m)+m)%m;return r<1e-7||m-r<1e-7;}
+function norm360(d){var r=((d%360)+360)%360;if(r>360-1e-9)r=0;return r;}
+function quadrant(d){var n=norm360(d);if(isMult(n,90))return 0;return Math.floor(n/90)+1;}
+function refAngle(d){var n=norm360(d);if(n<=90)return n;if(n<=180)return 180-n;if(n<=270)return n-180;return 360-n;}
+function isSpecial(d){return isMult(d,30)||isMult(d,45);}
+var SPECIALS=[0,30,45,60,90,120,135,150,180,210,225,240,270,300,315,330];
+function sgn(v){return v>1e-9?1:v<-1e-9?-1:0;}
+function trig(fn,deg){return Math[fn](deg*D2R);}
+var ROMAN=['','I','II','III','IV'];
+var H='\\frac{1}{2}',S2='\\frac{\\sqrt{2}}{2}',S3='\\frac{\\sqrt{3}}{2}',T3='\\frac{\\sqrt{3}}{3}';
+var BASE={0:{sin:['0',0],cos:['1',1],tan:['0',0]},30:{sin:[H,.5],cos:[S3,r3/2],tan:[T3,r3/3]},45:{sin:[S2,r2/2],cos:[S2,r2/2],tan:['1',1]},60:{sin:[S3,r3/2],cos:[H,.5],tan:['\\sqrt{3}',r3]},90:{sin:['1',1],cos:['0',0],tan:null}};
+function exact(fn,d){
+  if(!isSpecial(d))return null;
+  var n=norm360(d),r=Math.round(refAngle(n)),b=BASE[r][fn];
+  if(!b)return{undef:true};
+  if(b[1]===0)return{tex:'0',val:0};
+  var s=fn==='sin'?sgn(Math.sin(n*D2R)):fn==='cos'?sgn(Math.cos(n*D2R)):sgn(Math.sin(n*D2R))*sgn(Math.cos(n*D2R));
+  return{tex:(s<0?'-':'')+b[0],val:s*b[1]};
+}
+function fmt(v,dp){if(dp===undefined)dp=4;if(Math.abs(v)<1e-10)v=0;var s=v.toFixed(dp);if(s.indexOf('.')>=0)s=s.replace(/0+$/,'').replace(/\.$/,'');if(s==='-0')s='0';return s;}
+function fmtP(v,dp){return fmt(v,dp).replace('-','\u2212');}
+function radParts(d){var k=d/15;if(!near(k,Math.round(k),1e-7))return null;var n=Math.round(k),den=12;if(n===0)return{n:0,d:1};var g=gcd(n,den);return{n:n/g,d:den/g};}
+function radTex(d){var p=radParts(d);if(!p)return null;if(p.n===0)return'0';var a=Math.abs(p.n),top=(a===1?'':a)+'\\pi',body=p.d===1?top:'\\frac{'+top+'}{'+p.d+'}';return(p.n<0?'-':'')+body;}
+function radPlain(d){var p=radParts(d);if(!p)return null;if(p.n===0)return'0';var a=Math.abs(p.n),top=(a===1?'':a)+'\u03c0';return(p.n<0?'\u2212':'')+top+(p.d===1?'':'/'+p.d);}
+function angT(d,u){if(u==='rad'){var t=radTex(d);return t!==null?t:fmt(d*D2R,4);}return fmt(d,2)+'^\\circ';}
+function angP(d,u){if(u==='rad'){var t=radPlain(d);return t!==null?t:fmtP(d*D2R,4);}return fmtP(d,2)+'\u00b0';}
+function fnA(fn,d,u){var a=angT(d,u);return'\\'+fn+(a.charAt(0)==='-'?'\\left('+a+'\\right)':(/^[0-9]/.test(a)?' ':'')+a);}
+function fracTex(n,d){if(d<0){n=-n;d=-d;}var g=gcd(n,d);n/=g;d/=g;if(d===1)return String(n);return(n<0?'-':'')+'\\frac{'+Math.abs(n)+'}{'+d+'}';}
+function tpl(s,v){return String(s).replace(/\{(\w+)\}/g,function(m,k){return v[k]!==undefined?v[k]:m;});}
+function cap(s){var i=0;while(i<s.length&&s.charAt(i)==='$')i++;return s.slice(0,i)+s.charAt(i).toUpperCase()+s.slice(i+1);}
+function m(s){return'$'+s+'$';}
+
+/* ---------- answer parsing ---------- */
+var UNDEF=/^(undefined|undef|und|dne|does ?not ?exist|indefinid[oa]|no ?est[aá] ?definid[oa]|no ?definid[oa]|no ?existe)$/i;
+function parseExpr(str){
+  var s=String(str).toLowerCase().replace(/[\u2212\u2013\u2014]/g,'-').replace(/[\u00d7\u00b7]/g,'*').replace(/\u00f7/g,'/').replace(/\s+/g,'');
+  s=s.replace(/\u00b0|degrees?|deg|grados?|radians?|radianes|rad/g,'');
+  s=s.replace(/sqrt|ra[ií]z/g,'\u221a').replace(/pi/g,'\u03c0');
+  var toks=[],i=0,c,j,t;
+  while(i<s.length){c=s.charAt(i);
+    if(/[0-9.]/.test(c)){j=i;while(j<s.length&&/[0-9.]/.test(s.charAt(j)))j++;t=s.slice(i,j);if((t.match(/\./g)||[]).length>1||t==='.')return null;toks.push({t:'n',v:parseFloat(t)});i=j;continue;}
+    if('+-*/^()\u221a\u03c0'.indexOf(c)>=0){toks.push({t:c});i++;continue;}
+    return null;}
+  if(!toks.length)return null;
+  var p=0;
+  function peek(){return toks[p];}
+  function eat(){return toks[p++];}
+  function starts(t){return t&&(t.t==='n'||t.t==='\u03c0'||t.t==='\u221a'||t.t==='(');}
+  function expr(){var v=term();while(peek()&&(peek().t==='+'||peek().t==='-')){var o=eat().t,r=term();v=o==='+'?v+r:v-r;}return v;}
+  function term(){var v=unary();for(;;){var t=peek();if(t&&(t.t==='*'||t.t==='/')){eat();var r=unary();v=t.t==='*'?v*r:v/r;}else if(starts(t)){v=v*power();}else break;}return v;}
+  function unary(){var t=peek();if(t&&t.t==='-'){eat();return -unary();}if(t&&t.t==='+'){eat();return unary();}return power();}
+  function power(){var b=atom();if(peek()&&peek().t==='^'){eat();b=Math.pow(b,unary());}return b;}
+  function atom(){var t=eat();if(!t)throw 0;if(t.t==='n')return t.v;if(t.t==='\u03c0')return Math.PI;if(t.t==='\u221a')return Math.sqrt(power());if(t.t==='('){var v=expr();var e=eat();if(!e||e.t!==')')throw 0;return v;}throw 0;}
+  try{var v=expr();if(p!==toks.length)return null;return isFinite(v)?v:null;}catch(e){return null;}
+}
+function checkNum(input,ans){
+  var raw=String(input).trim();if(!raw)return{status:'empty'};
+  if(UNDEF.test(raw.replace(/[.!“”"]/g,'').trim()))return{status:ans.undef?'correct':'wrong',undef:true};
+  var s=raw.replace(/\s/g,'');if(/^[-\u2212]?\d+,\d+$/.test(s))s=s.replace(',','.');
+  var v=parseExpr(s);if(v===null)return{status:'parse'};
+  if(ans.undef)return{status:'wrong',value:v};
+  return{status:Math.abs(v-ans.value)<=ans.tol?'correct':'wrong',value:v,decimal:/^[-+\u2212]?\d*\.\d+$/.test(s)};
+}
+function checkSet(input,ans){
+  var parts=String(input).split(/[;,]|\s+(?:and|y)\s+/i).map(function(x){return x?x.trim():'';}).filter(Boolean);
+  if(!parts.length)return{status:'empty'};
+  var vals=[],i;for(i=0;i<parts.length;i++){var v=parseExpr(parts[i]);if(v===null)return{status:'parse'};vals.push(v);}
+  var used=ans.values.map(function(){return false;}),extra=[],outRange=[];
+  vals.forEach(function(v){
+    var idx=-1;ans.values.forEach(function(e,k){if(idx<0&&!used[k]&&Math.abs(e-v)<=ans.tol)idx=k;});
+    if(idx>=0){used[idx]=true;return;}
+    if(ans.values.some(function(e){return Math.abs(e-v)<=ans.tol;}))return;
+    var mm=ans.values.some(function(e){var k=(v-e)/ans.period;return Math.abs(k-Math.round(k))*ans.period<=ans.tol;});
+    if(mm)outRange.push(v);else extra.push(v);});
+  var found=used.filter(Boolean).length;
+  return{status:(found===ans.values.length&&!extra.length&&!outRange.length)?'correct':'wrong',found:found,total:ans.values.length,extra:extra,outRange:outRange};
+}
+function diagnose(pr,res,L){
+  var a=pr.answer;
+  if(a.kind==='set'){
+    if(res.extra&&res.extra.length)return tpl(L.ui.setExtra,{v:fmtP(res.extra[0],3)});
+    if(res.outRange&&res.outRange.length)return L.ui.setRange;
+    if(res.found<res.total)return tpl(L.ui.setMissing,{n:res.found,N:res.total,fn:pr.sh.fn,sign:pr.sh.sign});
+    return null;}
+  if(a.kind!=='num')return null;
+  if(res.undef)return a.undef?null:L.ui.notUndef;
+  var v=res.value,tol=Math.max(a.tol*1.5,.011),i;
+  var ds=pr.dets||[];
+  for(i=0;i<ds.length;i++){if(isFinite(ds[i].v)&&Math.abs(v-ds[i].v)<=tol)return ds[i].m;}
+  if(!a.undef){
+    if(pr.unit==='rad'&&Math.abs(v-a.value*R2D)<=.06)return L.ui.radExp;
+    if(pr.unit==='deg'&&Math.abs(a.value)>.5&&Math.abs(v-a.value*D2R)<=.006)return L.ui.degExp;}
+  return null;
+}
+function addDet(list,v,msg,correct,tol){if(!isFinite(v))return;if(Math.abs(v-correct)<3*Math.max(tol,.011))return;for(var i=0;i<list.length;i++)if(Math.abs(list[i].v-v)<1e-6)return;list.push({v:v,m:msg});}
+
+/* ---------- dictionary ---------- */
+var DICT={
+en:{
+ab:{opp:'opp',adj:'adj',hyp:'hyp'},
+sdA:{opp:'the opposite side',adj:'the adjacent side',hyp:'the hypotenuse'},
+sdN:{opp:'opposite side',adj:'adjacent side',hyp:'hypotenuse'},
+fname:{sin:'sine',cos:'cosine',tan:'tangent'},
+uw:{deg:'degrees',rad:'radians'},
+ui:{
+title:'Trigonometry playground',sub:'Move the angle, watch the math, then practice on your own.',reset:'Reset',
+tabCircle:'Unit circle',tabTri:'Right triangle',tabPractice:'Practice',
+angle:'Angle \u03b8',units:'Units',deg:'Degrees',rad:'Radians',snap:'Snap to special angles',prevSp:'Previous special angle',nextSp:'Next special angle',
+slider:'Angle (drag the dot or use this slider)',helpDeg:'Type degrees, like 150 or -45. You can also type 5\u03c0/6.',helpRad:'Type radians, like 5\u03c0/6 or 2.4.',angleBad:'I couldn\u2019t read that angle. Try 150, -45 or 5\u03c0/6.',
+quadrant:'Quadrant',axisN:{0:'positive x-axis',90:'positive y-axis',180:'negative x-axis',270:'negative y-axis'},onAxis:'On the {a}',refAngle:'Reference angle',inRad:'In radians',inDeg:'In degrees',coterminal:'Same spot as',
+signQ:'In Quadrant {q}, x is {xs} and y is {ys}. So cos \u03b8 is {xs}, sin \u03b8 is {ys}, and tan \u03b8 = y/x is {ts}.',signAxis:'\u03b8 lands on an axis, so one of the coordinates is 0.',
+pos:'positive',neg:'negative',undefinedW:'undefined',
+legend:'<b>sin</b> = blue vertical segment (y) \u00b7 <b>cos</b> = orange horizontal segment (x) \u00b7 <b>tan</b> = grey segment on the line x = 1',
+dragMe:'drag me',dragB:'drag B',
+ucAria:'Unit circle diagram. Angle {a}. Point P at x = {x}, y = {y}.',
+nTanT:'tan \u03b8 is undefined here',nTanB:'At {a}, x = cos \u03b8 = 0, and tan \u03b8 = y/x would divide by zero. On the diagram the radius runs parallel to the line x = 1, so the two never meet.',
+nRadT:'Did you mean degrees?',nRadB:'You\u2019re in radians mode, so {v} means {v} radians. That\u2019s {d}\u00b0, which ends where {c}\u00b0 does. If you meant {v}\u00b0, switch units.',nRadBtn:'Use {v}\u00b0',
+nCalcT:'Your calculator has this switch too',nCalcB:'In radian mode, a calculator reads sin(30) as the sine of 30 radians and gives \u22120.988, not 0.5. Match the mode to the units in the problem.',
+nNegT:'Negative angles turn clockwise',nNegB:'{a} ends where {c} does. Same point on the circle, so the same sin, cos and tan.',
+nBigT:'More than one full turn',nBigB:'{a} goes around more than once and ends where {c} does, so the values repeat.',
+hLeg:'Horizontal leg AC',vLeg:'Vertical leg BC',unitsW:'units',angleAt:'Angle \u03b8 at',ratio:'Ratio',findSide:'Find a side',findNone:'None: find the angle \u03b8',opp:'Opposite',adj:'Adjacent',hyp:'Hypotenuse',
+snapWhole:'Snap to whole units',otherAngle:'Other acute angle',thetaW:'Angle \u03b8',
+triAria:'Right triangle ABC with the right angle at C. AC = {x}, BC = {y}, AB = {h}. Angle \u03b8 at {at} is {t} degrees.',
+nSwapT:'Same triangle, new angle',nSwapB:'From B, the side across from \u03b8 is AC, so opposite and adjacent trade places. The hypotenuse stays the same: it is always across from the right angle.',
+nWrongT:'This ratio doesn\u2019t use that side',nWrongB:'{fn} uses {s1} and {s2}. To find {h}, pick {opts}.',or:' or ',
+pyCheck:'Check with Pythagoras:',
+lvlGroup:'Level',lv1:'Level 1: Foundations',lv1s:'Right triangles, SOH-CAH-TOA, 30\u00b0, 45\u00b0, 60\u00b0',lv2:'Level 2: Standard',lv2s:'Unit circle, quadrants, radians',lv3:'Level 3: Challenge',lv3s:'Inverse trig, equations, word problems',
+solvedW:'Solved',streakW:'Streak',bestW:'Best',code:'Problem code {s} \u00b7 share the link to send this exact problem',yourAnswer:'Your answer',check:'Check',hint:'Hint',showSol:'Show solution',newP:'New problem',seeCircle:'See it on the unit circle',seeSteps:'See the worked solution',
+correct:'Correct.',exactForm:'Exact form: {e}',notQuite:'Not quite.',hintN:'Hint {n} of 2',solTitle:'Worked solution',tryAgain:'Try again, or open a hint.',hintOpened:'A hint is open on the right.',hintOpenedB:'A hint is open below.',
+parseErr:'I couldn\u2019t read that. Use numbers with /, \u221a and \u03c0, like \u221a3/2 or 5\u03c0/6.',empty:'Type an answer first.',revealed:'Here is the full solution. Read each step, then try a new problem.',
+radExp:'That\u2019s the right angle, but in degrees. Give it in radians.',degExp:'That\u2019s in radians. Give the answer in degrees.',notUndef:'This one does have a value: the denominator isn\u2019t 0 here.',
+setMissing:'You found {n} of {N}. Look for the other quadrant where {fn} is {sign}.',setExtra:'{v} is not a solution.',setRange:'Keep every answer inside the interval given.',
+keys:'Math keys',insert:'Insert {k}',undefKey:'undefined',
+phExact:'like \u221a3/2, -1/2 or 0.5',phDeg:'degrees, like 36.9',phRad:'radians, like \u03c0/4',phLen:'like 7.66',phSet:'separate with commas, like 30, 150',phSetRad:'separate with commas, like \u03c0/6, 5\u03c0/6',
+helpHints:'Hints and solution',helpEmpty:'Check an answer to get feedback. A wrong answer opens a hint, then a second hint, then the worked solution.',
+positive:'Positive',negative:'Negative',qN:'Quadrant {q}',
+prTriAria:'Right triangle. Angle {t} at the bottom left. Bottom side: {adj}. Right side: {opp}. Slanted side: {hyp}.',blank:'not labeled'
+},
+p:{
+ratioQ:'Find {f} for the angle \u03b8 in the triangle. Give an exact fraction.',
+labelH:'Label the sides from \u03b8: the opposite side is across from \u03b8, the adjacent side touches \u03b8, and the hypotenuse is across from the right angle.',
+ratioH2:'{mn} says {eq}. Read those two sides off the triangle.',
+stLabel:'From \u03b8: opposite = {o}, adjacent = {a}, hypotenuse = {h}.',
+sinUsedAdj:'You used the adjacent side. Sine uses the side opposite \u03b8.',
+cosUsedOpp:'You used the opposite side. Cosine uses the side adjacent to \u03b8.',
+tanFlip:'That is adjacent over opposite. Tangent is opposite over adjacent.',
+flipped:'That fraction is upside down. Sine and cosine have the hypotenuse on the bottom.',
+sideQ:'The angle is {t} and {k} is {kv}. Find {u}, marked x. Round to 2 decimal places.',
+sideH1:'From the {t} angle, you know {k} and want {u}. Which ratio uses those two sides?',
+sideH2:'Use {mn}: {eq}. Then solve for x.',
+stSide1:'Known: {k} = {kv}. Wanted: {u} = x. {mn} uses both.',
+solveX:'Solve for x:',
+mulDiv:'Right ratio, but check where x sits. If x is on the bottom of the fraction, divide instead of multiplying.',
+wrongRatio:'That comes from the wrong ratio. You know {k} and want {u}, so use {mn}.',
+radMode:'That is what a calculator in radian mode gives. Switch it to degrees.',
+angleQ:'{s1} is {v1} and {s2} is {v2}. Find \u03b8, rounded to the nearest tenth of a degree.',
+angleH1:'Which ratio uses {s1} and {s2}?',
+angleH2:'{eq}. To get \u03b8, undo the ratio with the inverse: {inv}.',
+stAngle1:'{s1} and {s2} go with {mn}.',
+radAns:'That angle is in radians. Switch your calculator to degrees.',
+complement:'That is the other acute angle. Check which side is opposite \u03b8 and which is adjacent.',
+wrongInv:'That inverse uses the wrong pair of sides. {s1} and {s2} go with {mn}.',
+specQ:'Find the exact value of {f}.',
+tri30:'Picture the 30-60-90 triangle: the side across from $30^\\circ$ is 1, the side across from $60^\\circ$ is $\\sqrt{3}$, and the hypotenuse is 2.',
+tri45:'Picture the 45-45-90 triangle: both legs are 1 and the hypotenuse is $\\sqrt{2}$.',
+specH2:'From {a}: opposite = {o}, adjacent = {aa}, hypotenuse = {h}.',
+swapSC:'That is the {g} of {a}. Check which side is opposite the angle.',
+tanFlip2:'That is adjacent over opposite, flipped. Tangent is opposite over adjacent.',
+exactQ:'Find the exact value of {f}. If it doesn\u2019t exist, type \u201cundefined\u201d.',
+exH1:'{a} is in Quadrant {q}. Its reference angle is {r}.',
+exH2:'Start from {base}. In Quadrant {q}, {fn} is {sign}.',
+axH1:'{a} lands on an axis, at the point {pt} of the unit circle.',
+axH2:'On the unit circle, $\\cos\\theta = x$, $\\sin\\theta = y$ and $\\tan\\theta = \\frac{y}{x}$.',
+stQ:'Quadrant {q}, reference angle {r}.',
+stSign:'In Quadrant {q}, {fn} is {sign}, so:',
+stPt:'The point at {a} is {pt}.',
+isUndef:'Here x = 0, and you can\u2019t divide by 0, so {f} is undefined.',
+signWrong:'Right size, wrong sign. In Quadrant {q}, {fn} is {sign}.',
+swapXY:'That is the {g} value. Cosine is the x-coordinate and sine is the y-coordinate.',
+tanUndef0:'At this angle x = 0, so tan = y/x divides by zero. It is undefined, not 0.',
+signQ:'Is {f} positive or negative?',
+sgH1:'{a} is in Quadrant {q}.',
+sgH2:'In Quadrant {q}, x is {xs} and y is {ys}. Cosine is x, sine is y, tangent is y/x.',
+sgFinal:'{f} is {sign}.',
+refQ:'Find the reference angle of {a}, in {u}.',
+refH1:'The reference angle is the acute angle between the terminal side and the x-axis (never the y-axis). {a} is in Quadrant {q}.',
+refH2:'In Quadrant {q}, the reference angle is {rule}.',
+refNeg:'Reference angles are always positive.',
+refWrong:'Measure to the x-axis, not the y-axis. In Quadrant {q}, the reference angle is {rule}.',
+convQd:'Convert {a} to radians. Give an exact answer in terms of \u03c0.',
+convQr:'Convert {a} to degrees.',
+convH1:'Use the fact that $180^\\circ = \\pi$ radians.',
+convH2d:'Multiply by $\\frac{\\pi}{180^\\circ}$, then simplify the fraction.',
+convH2r:'Multiply by $\\frac{180^\\circ}{\\pi}$. The \u03c0 cancels.',
+wrongFactor:'The conversion factor is upside down.',
+quadQ:'In which quadrant does the angle {a} end?',
+quadIn:'Quadrant I runs from 0\u00b0 to 90\u00b0, II from 90\u00b0 to 180\u00b0, III from 180\u00b0 to 270\u00b0 and IV from 270\u00b0 to 360\u00b0.',
+quadOut:'Add or subtract full turns (360\u00b0, or 2\u03c0) until the angle is between 0\u00b0 and 360\u00b0.',
+quadCot:'{a} ends where {c} does.',
+quadCmp:'Compare {c} with {b1}, {b2} and {b3}.',
+quadFinal:'{c} is between {lo} and {hi}, so the angle ends in Quadrant {q}.',
+invQ:'Find the exact value of {f}, in {u}.',
+invH1:'{f} only gives angles from {lo} to {hi}.',
+invH2:'Find the angle in that range with {fname} equal to {v}. Its reference angle is {r}.',
+invNeg:'A negative value puts it in Quadrant {q}.',
+invRange:'That angle has the right {fname}, but {f} only gives angles from {lo} to {hi}.',
+pyQ:'{g}, and \u03b8 is in Quadrant {q}. Find the exact value of {f}.',
+pyH1:'Draw a reference triangle with {s1} {a} and hypotenuse {c}. Pythagoras gives the third side: {calc}.',
+pyH2:'In Quadrant {q}, {fn} is {sign}.',
+pyGiven:'That is the value you were given. The question asks for {f}.',
+pyMag:'Without the sign: {e}',
+solveQ:'Solve {eq} for {dom}. Give every solution, separated by commas.',
+slH1:'Find the reference angle: the acute angle with {fname} equal to {v}. That is {r}.',
+slH2:'{fn} is {sign} in Quadrants {q1} and {q2}. Place the reference angle in each one.',
+slQ:'Quadrant {q}: {calc}',
+slAll:'All solutions:',
+wLadder:'A {n}-ft ladder leans against a wall and makes a {a} angle with the ground. How high up the wall does it reach? Round to the nearest tenth of a foot.',
+wBuild:'From {n} m away, the angle of elevation to the top of a building is {a}. How tall is the building? Round to the nearest tenth of a meter.',
+wRamp:'A ramp rises {r} ft over a horizontal run of {n} ft. What angle does it make with the ground? Round to the nearest tenth of a degree.',
+wKite:'A kite string is {n} m long and makes a {a} angle with the ground. How high is the kite above your hand? Round to the nearest tenth of a meter.',
+dLadder:'The ladder is the hypotenuse ({n} ft). The height on the wall is the side opposite the {a} angle.',
+dBuild:'The distance on the ground is the adjacent side ({n} m). The height is the opposite side.',
+dRamp:'The rise ({r} ft) is opposite \u03b8 and the run ({n} ft) is adjacent to \u03b8.',
+dKite:'The string is the hypotenuse ({n} m). The height is the side opposite the {a} angle.',
+ft:'ft',mt:'m'
+}},
+es:{
+ab:{opp:'op',adj:'ady',hyp:'hip'},
+sdA:{opp:'el cateto opuesto',adj:'el cateto adyacente',hyp:'la hipotenusa'},
+sdN:{opp:'cateto opuesto',adj:'cateto adyacente',hyp:'hipotenusa'},
+fname:{sin:'seno',cos:'coseno',tan:'tangente'},
+uw:{deg:'grados',rad:'radianes'},
+ui:{
+title:'Laboratorio de trigonometr\u00eda',sub:'Mueve el \u00e1ngulo, mira la matem\u00e1tica y despu\u00e9s practica por tu cuenta.',reset:'Reiniciar',
+tabCircle:'C\u00edrculo unitario',tabTri:'Tri\u00e1ngulo rect\u00e1ngulo',tabPractice:'Pr\u00e1ctica',
+angle:'\u00c1ngulo \u03b8',units:'Unidades',deg:'Grados',rad:'Radianes',snap:'Ajustar a \u00e1ngulos notables',prevSp:'\u00c1ngulo notable anterior',nextSp:'\u00c1ngulo notable siguiente',
+slider:'\u00c1ngulo (arrastra el punto o usa esta barra)',helpDeg:'Escribe grados, como 150 o -45. Tambi\u00e9n puedes escribir 5\u03c0/6.',helpRad:'Escribe radianes, como 5\u03c0/6 o 2.4.',angleBad:'No pude leer ese \u00e1ngulo. Prueba con 150, -45 o 5\u03c0/6.',
+quadrant:'Cuadrante',axisN:{0:'eje x positivo',90:'eje y positivo',180:'eje x negativo',270:'eje y negativo'},onAxis:'Sobre el {a}',refAngle:'\u00c1ngulo de referencia',inRad:'En radianes',inDeg:'En grados',coterminal:'Mismo lugar que',
+signQ:'En el cuadrante {q}, x es {xs} e y es {ys}. Por eso cos \u03b8 es {xs}, sin \u03b8 es {ys} y tan \u03b8 = y/x es {ts}.',signAxis:'\u03b8 cae sobre un eje, as\u00ed que una de las coordenadas es 0.',
+pos:'positivo',neg:'negativo',undefinedW:'no est\u00e1 definida',
+legend:'<b>sin</b> = segmento vertical azul (y) \u00b7 <b>cos</b> = segmento horizontal naranja (x) \u00b7 <b>tan</b> = segmento gris sobre la recta x = 1',
+dragMe:'arr\u00e1strame',dragB:'arrastra B',
+ucAria:'Diagrama del c\u00edrculo unitario. \u00c1ngulo {a}. Punto P en x = {x}, y = {y}.',
+nTanT:'Aqu\u00ed tan \u03b8 no est\u00e1 definida',nTanB:'En {a}, x = cos \u03b8 = 0, y tan \u03b8 = y/x dividir\u00eda entre cero. En el diagrama, el radio queda paralelo a la recta x = 1, as\u00ed que nunca se cruzan.',
+nRadT:'\u00bfQuer\u00edas decir grados?',nRadB:'Est\u00e1s en modo radianes, as\u00ed que {v} significa {v} radianes. Eso es {d}\u00b0, que termina donde termina {c}\u00b0. Si quer\u00edas {v}\u00b0, cambia las unidades.',nRadBtn:'Usar {v}\u00b0',
+nCalcT:'Tu calculadora tambi\u00e9n tiene este modo',nCalcB:'En modo radianes, la calculadora lee sin(30) como el seno de 30 radianes y da \u22120.988, no 0.5. Usa el modo que corresponda a las unidades del problema.',
+nNegT:'Los \u00e1ngulos negativos giran en sentido horario',nNegB:'{a} termina donde termina {c}. Es el mismo punto del c\u00edrculo, as\u00ed que sin, cos y tan valen lo mismo.',
+nBigT:'M\u00e1s de una vuelta completa',nBigB:'{a} da m\u00e1s de una vuelta y termina donde termina {c}, as\u00ed que los valores se repiten.',
+hLeg:'Cateto horizontal AC',vLeg:'Cateto vertical BC',unitsW:'unidades',angleAt:'\u00c1ngulo \u03b8 en',ratio:'Raz\u00f3n',findSide:'Hallar un lado',findNone:'Ninguno: hallar el \u00e1ngulo \u03b8',opp:'Cateto opuesto',adj:'Cateto adyacente',hyp:'Hipotenusa',
+snapWhole:'Ajustar a unidades enteras',otherAngle:'El otro \u00e1ngulo agudo',thetaW:'\u00c1ngulo \u03b8',
+triAria:'Tri\u00e1ngulo rect\u00e1ngulo ABC con el \u00e1ngulo recto en C. AC = {x}, BC = {y}, AB = {h}. El \u00e1ngulo \u03b8 en {at} mide {t} grados.',
+nSwapT:'El mismo tri\u00e1ngulo, otro \u00e1ngulo',nSwapB:'Desde B, el lado que queda frente a \u03b8 es AC, as\u00ed que el opuesto y el adyacente se intercambian. La hipotenusa no cambia: siempre est\u00e1 frente al \u00e1ngulo recto.',
+nWrongT:'Esta raz\u00f3n no usa ese lado',nWrongB:'{fn} usa {s1} y {s2}. Para hallar {h}, elige {opts}.',or:' o ',
+pyCheck:'Comprueba con Pit\u00e1goras:',
+lvlGroup:'Nivel',lv1:'Nivel 1: Base',lv1s:'Tri\u00e1ngulos rect\u00e1ngulos, SOH-CAH-TOA, 30\u00b0, 45\u00b0, 60\u00b0',lv2:'Nivel 2: Est\u00e1ndar',lv2s:'C\u00edrculo unitario, cuadrantes, radianes',lv3:'Nivel 3: Reto',lv3s:'Trigonometr\u00eda inversa, ecuaciones, problemas aplicados',
+solvedW:'Resueltos',streakW:'Racha',bestW:'Mejor racha',code:'C\u00f3digo del problema {s} \u00b7 comparte el enlace para enviar este mismo problema',yourAnswer:'Tu respuesta',check:'Comprobar',hint:'Pista',showSol:'Ver soluci\u00f3n',newP:'Problema nuevo',seeCircle:'Verlo en el c\u00edrculo unitario',seeSteps:'Ver la soluci\u00f3n paso a paso',
+correct:'Correcto.',exactForm:'Forma exacta: {e}',notQuite:'Todav\u00eda no.',hintN:'Pista {n} de 2',solTitle:'Soluci\u00f3n paso a paso',tryAgain:'Int\u00e9ntalo otra vez o abre una pista.',hintOpened:'Tienes una pista a la derecha.',hintOpenedB:'Tienes una pista m\u00e1s abajo.',
+parseErr:'No pude leer eso. Usa n\u00fameros con /, \u221a y \u03c0, como \u221a3/2 o 5\u03c0/6.',empty:'Primero escribe una respuesta.',revealed:'Aqu\u00ed tienes la soluci\u00f3n completa. Lee cada paso y luego prueba con un problema nuevo.',
+radExp:'Ese es el \u00e1ngulo correcto, pero en grados. Dalo en radianes.',degExp:'Eso est\u00e1 en radianes. Da la respuesta en grados.',notUndef:'Este s\u00ed tiene valor: aqu\u00ed el denominador no es 0.',
+setMissing:'Encontraste {n} de {N}. Busca el otro cuadrante donde {fn} es {sign}.',setExtra:'{v} no es soluci\u00f3n.',setRange:'Deja todas las respuestas dentro del intervalo indicado.',
+keys:'Teclas de matem\u00e1ticas',insert:'Insertar {k}',undefKey:'indefinido',
+phExact:'como \u221a3/2, -1/2 o 0.5',phDeg:'grados, como 36.9',phRad:'radianes, como \u03c0/4',phLen:'como 7.66',phSet:'separa con comas, como 30, 150',phSetRad:'separa con comas, como \u03c0/6, 5\u03c0/6',
+helpHints:'Pistas y soluci\u00f3n',helpEmpty:'Comprueba una respuesta para recibir ayuda. Si fallas, se abre una pista, luego otra y despu\u00e9s la soluci\u00f3n paso a paso.',
+positive:'Positivo',negative:'Negativo',qN:'Cuadrante {q}',
+prTriAria:'Tri\u00e1ngulo rect\u00e1ngulo. \u00c1ngulo {t} abajo a la izquierda. Lado de abajo: {adj}. Lado derecho: {opp}. Lado inclinado: {hyp}.',blank:'sin r\u00f3tulo'
+},
+p:{
+ratioQ:'Halla {f} para el \u00e1ngulo \u03b8 del tri\u00e1ngulo. Da una fracci\u00f3n exacta.',
+labelH:'Nombra los lados desde \u03b8: el cateto opuesto est\u00e1 frente a \u03b8, el adyacente toca a \u03b8 y la hipotenusa est\u00e1 frente al \u00e1ngulo recto.',
+ratioH2:'{mn} dice {eq}. Lee esos dos lados en el tri\u00e1ngulo.',
+stLabel:'Desde \u03b8: opuesto = {o}, adyacente = {a}, hipotenusa = {h}.',
+sinUsedAdj:'Usaste el cateto adyacente. El seno usa el cateto opuesto a \u03b8.',
+cosUsedOpp:'Usaste el cateto opuesto. El coseno usa el cateto adyacente a \u03b8.',
+tanFlip:'Eso es adyacente entre opuesto. La tangente es opuesto entre adyacente.',
+flipped:'La fracci\u00f3n est\u00e1 al rev\u00e9s. En el seno y el coseno, la hipotenusa va abajo.',
+sideQ:'El \u00e1ngulo mide {t} y {k} mide {kv}. Halla {u}, marcado con x. Redondea a 2 decimales.',
+sideH1:'Desde el \u00e1ngulo de {t}, conoces {k} y buscas {u}. \u00bfQu\u00e9 raz\u00f3n usa esos dos lados?',
+sideH2:'Usa {mn}: {eq}. Luego despeja x.',
+stSide1:'Conocido: {k} = {kv}. Buscado: {u} = x. {mn} usa los dos.',
+solveX:'Despeja x:',
+mulDiv:'La raz\u00f3n es la correcta, pero f\u00edjate d\u00f3nde queda x. Si x est\u00e1 abajo en la fracci\u00f3n, divide en vez de multiplicar.',
+wrongRatio:'Eso sale de la raz\u00f3n equivocada. Conoces {k} y buscas {u}, as\u00ed que usa {mn}.',
+radMode:'Eso es lo que da una calculadora en modo radianes. C\u00e1mbiala a grados.',
+angleQ:'{s1} mide {v1} y {s2} mide {v2}. Halla \u03b8, redondeado a la d\u00e9cima de grado.',
+angleH1:'\u00bfQu\u00e9 raz\u00f3n usa {s1} y {s2}?',
+angleH2:'{eq}. Para obtener \u03b8, deshaz la raz\u00f3n con la inversa: {inv}.',
+stAngle1:'{s1} y {s2} van con {mn}.',
+radAns:'Ese \u00e1ngulo est\u00e1 en radianes. Cambia la calculadora a grados.',
+complement:'Ese es el otro \u00e1ngulo agudo. Revisa cu\u00e1l lado es opuesto a \u03b8 y cu\u00e1l es adyacente.',
+wrongInv:'Esa inversa usa el par de lados equivocado. {s1} y {s2} van con {mn}.',
+specQ:'Halla el valor exacto de {f}.',
+tri30:'Piensa en el tri\u00e1ngulo 30-60-90: el lado frente a $30^\\circ$ mide 1, el lado frente a $60^\\circ$ mide $\\sqrt{3}$ y la hipotenusa mide 2.',
+tri45:'Piensa en el tri\u00e1ngulo 45-45-90: los dos catetos miden 1 y la hipotenusa mide $\\sqrt{2}$.',
+specH2:'Desde {a}: opuesto = {o}, adyacente = {aa}, hipotenusa = {h}.',
+swapSC:'Ese es el {g} de {a}. Revisa cu\u00e1l lado es opuesto al \u00e1ngulo.',
+tanFlip2:'Eso es adyacente entre opuesto, al rev\u00e9s. La tangente es opuesto entre adyacente.',
+exactQ:'Halla el valor exacto de {f}. Si no existe, escribe \u201cindefinido\u201d.',
+exH1:'{a} est\u00e1 en el cuadrante {q}. Su \u00e1ngulo de referencia es {r}.',
+exH2:'Parte de {base}. En el cuadrante {q}, {fn} es {sign}.',
+axH1:'{a} cae sobre un eje, en el punto {pt} del c\u00edrculo unitario.',
+axH2:'En el c\u00edrculo unitario, $\\cos\\theta = x$, $\\sin\\theta = y$ y $\\tan\\theta = \\frac{y}{x}$.',
+stQ:'Cuadrante {q}, \u00e1ngulo de referencia {r}.',
+stSign:'En el cuadrante {q}, {fn} es {sign}, as\u00ed que:',
+stPt:'El punto en {a} es {pt}.',
+isUndef:'Aqu\u00ed x = 0, y no se puede dividir entre 0, as\u00ed que {f} no est\u00e1 definida.',
+signWrong:'El tama\u00f1o est\u00e1 bien, pero el signo no. En el cuadrante {q}, {fn} es {sign}.',
+swapXY:'Ese es el valor del {g}. El coseno es la coordenada x y el seno es la coordenada y.',
+tanUndef0:'En este \u00e1ngulo x = 0, as\u00ed que tan = y/x divide entre cero. No est\u00e1 definida; no es 0.',
+signQ:'\u00bf{f} es positivo o negativo?',
+sgH1:'{a} est\u00e1 en el cuadrante {q}.',
+sgH2:'En el cuadrante {q}, x es {xs} e y es {ys}. El coseno es x, el seno es y, la tangente es y/x.',
+sgFinal:'{f} es {sign}.',
+refQ:'Halla el \u00e1ngulo de referencia de {a}, en {u}.',
+refH1:'El \u00e1ngulo de referencia es el \u00e1ngulo agudo entre el lado terminal y el eje x (nunca el eje y). {a} est\u00e1 en el cuadrante {q}.',
+refH2:'En el cuadrante {q}, el \u00e1ngulo de referencia es {rule}.',
+refNeg:'Los \u00e1ngulos de referencia siempre son positivos.',
+refWrong:'Mide hasta el eje x, no hasta el eje y. En el cuadrante {q}, el \u00e1ngulo de referencia es {rule}.',
+convQd:'Convierte {a} a radianes. Da una respuesta exacta en t\u00e9rminos de \u03c0.',
+convQr:'Convierte {a} a grados.',
+convH1:'Usa que $180^\\circ = \\pi$ radianes.',
+convH2d:'Multiplica por $\\frac{\\pi}{180^\\circ}$ y simplifica la fracci\u00f3n.',
+convH2r:'Multiplica por $\\frac{180^\\circ}{\\pi}$. La \u03c0 se cancela.',
+wrongFactor:'El factor de conversi\u00f3n est\u00e1 al rev\u00e9s.',
+quadQ:'\u00bfEn qu\u00e9 cuadrante termina el \u00e1ngulo {a}?',
+quadIn:'El cuadrante I va de 0\u00b0 a 90\u00b0, el II de 90\u00b0 a 180\u00b0, el III de 180\u00b0 a 270\u00b0 y el IV de 270\u00b0 a 360\u00b0.',
+quadOut:'Suma o resta vueltas completas (360\u00b0, o 2\u03c0) hasta que el \u00e1ngulo quede entre 0\u00b0 y 360\u00b0.',
+quadCot:'{a} termina donde termina {c}.',
+quadCmp:'Compara {c} con {b1}, {b2} y {b3}.',
+quadFinal:'{c} est\u00e1 entre {lo} y {hi}, as\u00ed que el \u00e1ngulo termina en el cuadrante {q}.',
+invQ:'Halla el valor exacto de {f}, en {u}.',
+invH1:'{f} solo da \u00e1ngulos entre {lo} y {hi}.',
+invH2:'Busca el \u00e1ngulo de ese rango con {fname} igual a {v}. Su \u00e1ngulo de referencia es {r}.',
+invNeg:'Un valor negativo lo pone en el cuadrante {q}.',
+invRange:'Ese \u00e1ngulo da el valor correcto de {fname}, pero {f} solo da \u00e1ngulos entre {lo} y {hi}.',
+pyQ:'{g} y \u03b8 est\u00e1 en el cuadrante {q}. Halla el valor exacto de {f}.',
+pyH1:'Dibuja un tri\u00e1ngulo de referencia con {s1} {a} e hipotenusa {c}. Pit\u00e1goras da el tercer lado: {calc}.',
+pyH2:'En el cuadrante {q}, {fn} es {sign}.',
+pyGiven:'Ese es el valor que te dieron. La pregunta pide {f}.',
+pyMag:'Sin el signo: {e}',
+solveQ:'Resuelve {eq} para {dom}. Da todas las soluciones, separadas por comas.',
+slH1:'Halla el \u00e1ngulo de referencia: el \u00e1ngulo agudo con {fname} igual a {v}. Es {r}.',
+slH2:'{fn} es {sign} en los cuadrantes {q1} y {q2}. Coloca el \u00e1ngulo de referencia en cada uno.',
+slQ:'Cuadrante {q}: {calc}',
+slAll:'Todas las soluciones:',
+wLadder:'Una escalera de {n} pies se apoya en una pared y forma un \u00e1ngulo de {a} con el suelo. \u00bfA qu\u00e9 altura de la pared llega? Redondea a la d\u00e9cima de pie.',
+wBuild:'Desde {n} m de distancia, el \u00e1ngulo de elevaci\u00f3n hasta lo m\u00e1s alto de un edificio es de {a}. \u00bfCu\u00e1nto mide de alto el edificio? Redondea a la d\u00e9cima de metro.',
+wRamp:'Una rampa sube {r} pies a lo largo de {n} pies horizontales. \u00bfQu\u00e9 \u00e1ngulo forma con el suelo? Redondea a la d\u00e9cima de grado.',
+wKite:'El hilo de un papalote mide {n} m y forma un \u00e1ngulo de {a} con el suelo. \u00bfA qu\u00e9 altura sobre tu mano est\u00e1 el papalote? Redondea a la d\u00e9cima de metro.',
+dLadder:'La escalera es la hipotenusa ({n} pies). La altura en la pared es el cateto opuesto al \u00e1ngulo de {a}.',
+dBuild:'La distancia en el suelo es el cateto adyacente ({n} m). La altura es el cateto opuesto.',
+dRamp:'La subida ({r} pies) es el cateto opuesto a \u03b8 y el recorrido ({n} pies) es el adyacente.',
+dKite:'El hilo es la hipotenusa ({n} m). La altura es el cateto opuesto al \u00e1ngulo de {a}.',
+ft:'pies',mt:'m'
+}}};
+
+/* ---------- triangle diagram for practice ---------- */
+function triDiagram(sp,L){
+  var W=320,Hh=210,s=Math.min(220/sp.adj,140/sp.opp),Ax=46,Ay=182,Cx=Ax+sp.adj*s,By=Ay-sp.opp*s;
+  var lab=sp.lab,o='';
+  var w=Cx-Ax,h=Ay-By,len=Math.hypot(w,h);
+  o+='<polygon points="'+Ax+','+Ay+' '+Cx+','+Ay+' '+Cx+','+By+'" fill="rgba(28,76,158,.07)" stroke="#232A2A" stroke-width="2.5" stroke-linejoin="round"/>';
+  o+='<path d="M'+(Cx-12)+','+Ay+'V'+(Ay-12)+'H'+Cx+'" fill="none" stroke="#232A2A" stroke-width="1.5"/>';
+  var th=Math.atan2(h,w),r=26;
+  o+='<path d="M'+(Ax+r)+','+Ay+'A'+r+','+r+' 0 0 0 '+(Ax+r*Math.cos(th))+','+(Ay-r*Math.sin(th))+'" fill="none" stroke="#1C4C9E" stroke-width="2.5"/>';
+  o+='<text x="'+(Ax+r+8)+'" y="'+(Ay-6)+'" font-size="15" fill="#1C4C9E" font-weight="700">'+esc(sp.ang)+'</text>';
+  function t(x,y,txt,anc){if(!txt)return'';return'<text x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" font-size="16" font-weight="700" text-anchor="'+anc+'"'+(txt==='x'||txt==='?'?' fill="#1C4C9E"':'')+'>'+esc(txt)+'</text>';}
+  o+=t((Ax+Cx)/2,Ay+22,lab.adj,'middle');
+  o+=t(Cx+8,(Ay+By)/2+5,lab.opp,'start');
+  o+=t((Ax+Cx)/2-h/len*16,(Ay+By)/2-w/len*16+4,lab.hyp,'middle');
+  var aria=tpl(L.ui.prTriAria,{t:sp.ang,adj:lab.adj||L.ui.blank,opp:lab.opp||L.ui.blank,hyp:lab.hyp||L.ui.blank});
+  return'<svg viewBox="0 0 '+W+' '+Hh+'" role="img" aria-label="'+esc(aria)+'">'+o+'</svg>';
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+/* ---------- problem generators ---------- */
+var TRIPLES=[[3,4,5],[5,12,13],[8,15,17],[7,24,25],[20,21,29],[9,40,41]];
+var MN={sin:'SOH',cos:'CAH',tan:'TOA'};
+var RAT={sin:['opp','hyp'],cos:['adj','hyp'],tan:['opp','adj']};
+var FN=['sin','cos','tan'];
+function abT(L,k){return'\\text{'+L.ab[k]+'}';}
+function ratT(L,fn){var r=RAT[fn];return'\\frac{'+abT(L,r[0])+'}{'+abT(L,r[1])+'}';}
+function mnT(fn){return m('\\'+fn)+' ('+MN[fn]+')';}
+function signW(L,v){return v>0?L.ui.pos:L.ui.neg;}
+
+function gRatio(c){
+  var R=c.R,L=c.L,tr=pick(R,TRIPLES),k=(tr[0]===3&&R()<.4)?2:1;
+  var a=tr[0]*k,b=tr[1]*k,h=tr[2]*k;if(R()<.5){var t=a;a=b;b=t;}
+  var fn=pick(R,FN),num=fn==='cos'?b:a,den=fn==='tan'?b:h,val=num/den,ex=fracTex(num,den),raw='\\frac{'+num+'}{'+den+'}';
+  var d=[];
+  if(fn==='sin')addDet(d,b/h,L.p.sinUsedAdj,val,.006);
+  if(fn==='cos')addDet(d,a/h,L.p.cosUsedOpp,val,.006);
+  if(fn==='tan')addDet(d,b/a,L.p.tanFlip,val,.006);
+  addDet(d,den/num,L.p.flipped,val,.006);
+  return{type:'ratio',kind:'num',unit:null,ph:'phExact',
+    prompt:tpl(L.p.ratioQ,{f:m('\\'+fn+'\\theta')}),
+    diagram:{adj:b,opp:a,lab:{adj:String(b),opp:String(a),hyp:String(h)},ang:'\u03b8'},
+    answer:{kind:'num',value:val,tol:.006,exact:ex},dets:d,
+    hints:[L.p.labelH,tpl(L.p.ratioH2,{mn:MN[fn],eq:m('\\'+fn+'\\theta='+ratT(L,fn))})],
+    steps:[tpl(L.p.stLabel,{o:a,a:b,h:h}),m('\\'+fn+'\\theta='+ratT(L,fn)+'='+raw+(raw!==ex?'='+ex:''))],
+    meta:{opp:a,adj:b,hyp:h,fn:fn}};
+}
+var PAIRS=[['hyp','opp','sin',0],['hyp','adj','cos',0],['adj','opp','tan',0],['opp','hyp','sin',1],['adj','hyp','cos',1],['opp','adj','tan',1]];
+function sideCore(L,k,u,fn,div,t,kv,unitTex,tl){tl=tl||.015;
+  var f=trig(fn,t),H=k==='hyp'?kv:k==='opp'?kv/trig('sin',t):kv/trig('cos',t);
+  var sides={hyp:H,opp:H*trig('sin',t),adj:H*trig('cos',t)},val=sides[u];
+  var d=[];
+  FN.forEach(function(g){[0,1].forEach(function(dv){var cand=dv?kv/trig(g,t):kv*trig(g,t);if(g===fn&&dv===div)return;addDet(d,cand,g===fn?L.p.mulDiv:tpl(L.p.wrongRatio,{k:L.sdA[k],u:L.sdA[u],mn:mnT(fn)}),val,tl);});});
+  addDet(d,div?kv/Math[fn](t):kv*Math[fn](t),L.p.radMode,val,tl);
+  var r=RAT[fn],sub=function(key){return key===k?String(kv):key===u?'x':'?';};
+  var eq='\\'+fn+' '+t+'^\\circ=\\frac{'+sub(r[0])+'}{'+sub(r[1])+'}';
+  var solve=div?'x=\\frac{'+kv+'}{\\'+fn+' '+t+'^\\circ}':'x='+kv+'\\'+fn+' '+t+'^\\circ';
+  var fin=div?'x=\\frac{'+kv+'}{'+fmt(f,4)+'}\\approx '+val.toFixed(unitTex?1:2):'x\\approx '+kv+'('+fmt(f,4)+')\\approx '+val.toFixed(unitTex?1:2);
+  return{val:val,sides:sides,dets:d,eq:eq,solve:solve,fin:fin+(unitTex||'')};
+}
+function gSide(c){
+  var R=c.R,L=c.L,pr=pick(R,PAIRS),k=pr[0],u=pr[1],fn=pr[2],div=pr[3],t=ri(R,20,70);if(t===45)t=48;
+  var kv=ri(R,5,25),sc=sideCore(L,k,u,fn,div,t,kv,'');
+  var lab={opp:'',adj:'',hyp:''};lab[k]=String(kv);lab[u]='x';
+  return{type:'side',kind:'num',unit:null,ph:'phLen',
+    prompt:tpl(L.p.sideQ,{t:m(t+'^\\circ'),k:L.sdA[k],kv:kv,u:L.sdA[u]}),
+    diagram:{adj:sc.sides.adj,opp:sc.sides.opp,lab:lab,ang:t+'\u00b0'},
+    answer:{kind:'num',value:sc.val,tol:.015,shown:sc.val.toFixed(2)},dets:sc.dets,
+    hints:[tpl(L.p.sideH1,{t:m(t+'^\\circ'),k:L.sdA[k],u:L.sdA[u]}),tpl(L.p.sideH2,{mn:mnT(fn),eq:m(sc.eq)})],
+    steps:[tpl(L.p.stSide1,{k:L.sdA[k],kv:kv,u:L.sdA[u],mn:MN[fn]}),m(sc.eq),L.p.solveX+' '+m(sc.solve),m(sc.fin)],
+    meta:{k:k,u:u,fn:fn,div:div,t:t,kv:kv}};
+}
+function angleCore(L,kind,o,a,h){
+  var r=RAT[kind],S={opp:o,adj:a,hyp:h},v1=S[r[0]],v2=S[r[1]],ratio=v1/v2,val=Math['a'+kind](ratio)*R2D;
+  var d=[];
+  FN.forEach(function(g){if(g===kind)return;if(g!=='tan'&&ratio>1)return;addDet(d,Math['a'+g](ratio)*R2D,tpl(L.p.wrongInv,{s1:cap(L.sdA[r[0]]),s2:L.sdA[r[1]],mn:mnT(kind)}),val,.06);});
+  addDet(d,90-val,L.p.complement,val,.06);
+  addDet(d,val*D2R,L.p.radAns,val,.06);
+  return{r:r,v1:v1,v2:v2,val:val,dets:d};
+}
+function nfmt(v){return Math.abs(v-Math.round(v))<1e-9?String(Math.round(v)):v.toFixed(2);}
+function gAngle(c){
+  var R=c.R,L=c.L,kind=pick(R,['tan','sin','cos']),o,a,h,leg;
+  if(kind==='tan'){o=ri(R,2,15);do{a=ri(R,2,15);}while(a===o);h=Math.hypot(o,a);}
+  else{leg=ri(R,2,12);h=leg+ri(R,1,9);if(kind==='sin'){o=leg;a=Math.sqrt(h*h-o*o);}else{a=leg;o=Math.sqrt(h*h-a*a);}}
+  var ac=angleCore(L,kind,o,a,h),r=ac.r,lab={opp:'',adj:'',hyp:''};lab[r[0]]=nfmt(ac.v1);lab[r[1]]=nfmt(ac.v2);
+  var fr='\\frac{'+nfmt(ac.v1)+'}{'+nfmt(ac.v2)+'}';
+  return{type:'angle',kind:'num',unit:'deg',ph:'phDeg',
+    prompt:cap(tpl(L.p.angleQ,{s1:L.sdA[r[0]],v1:nfmt(ac.v1),s2:L.sdA[r[1]],v2:nfmt(ac.v2)})),
+    diagram:{adj:a,opp:o,lab:lab,ang:'\u03b8'},
+    answer:{kind:'num',value:ac.val,tol:.06,shown:ac.val.toFixed(1)+'\u00b0'},dets:ac.dets,
+    hints:[tpl(L.p.angleH1,{s1:L.sdA[r[0]],s2:L.sdA[r[1]]}),tpl(L.p.angleH2,{eq:m('\\'+kind+'\\theta='+fr),inv:m('\\theta=\\'+kind+'^{-1}\\left('+fr+'\\right)')})],
+    steps:[cap(tpl(L.p.stAngle1,{s1:L.sdA[r[0]],s2:L.sdA[r[1]],mn:MN[kind]})),m('\\'+kind+'\\theta='+ratT(L,kind)+'='+fr),m('\\theta=\\'+kind+'^{-1}\\left('+fr+'\\right)\\approx '+ac.val.toFixed(1)+'^\\circ')],
+    meta:{kind:kind,o:o,a:a,h:h}};
+}
+var SPT={30:{opp:'1',adj:'\\sqrt{3}',hyp:'2'},45:{opp:'1',adj:'1',hyp:'\\sqrt{2}'},60:{opp:'\\sqrt{3}',adj:'1',hyp:'2'}};
+function gSpecial(c){
+  var R=c.R,L=c.L,A=pick(R,[30,45,60]),fn=pick(R,FN),ex=exact(fn,A),T=SPT[A],r=RAT[fn];
+  var raw='\\frac{'+T[r[0]]+'}{'+T[r[1]]+'}',d=[];
+  if(fn!=='tan'){var g=fn==='sin'?'cos':'sin';addDet(d,trig(g,A),tpl(L.p.swapSC,{g:L.fname[g],a:m(A+'^\\circ')}),ex.val,.006);}
+  else addDet(d,1/ex.val,L.p.tanFlip2,ex.val,.006);
+  addDet(d,Math[fn](A),L.p.radMode,ex.val,.006);
+  return{type:'special',kind:'num',unit:null,ph:'phExact',
+    prompt:tpl(L.p.specQ,{f:m(fnA(fn,A,'deg'))}),diagram:null,
+    answer:{kind:'num',value:ex.val,tol:.006,exact:ex.tex},dets:d,
+    hints:[A===45?L.p.tri45:L.p.tri30,tpl(L.p.specH2,{a:m(A+'^\\circ'),o:m(T.opp),aa:m(T.adj),h:m(T.hyp)})],
+    steps:[A===45?L.p.tri45:L.p.tri30,m(fnA(fn,A,'deg')+'='+ratT(L,fn)+'='+raw+(raw!==ex.tex?'='+ex.tex:''))],
+    circle:{deg:A,unit:'deg'},meta:{fn:fn,A:A}};
+}
+function exactHints(L,fn,deg,unit,ex){
+  var q=quadrant(deg),f=fnA(fn,deg,unit),a=m(angT(deg,unit));
+  if(q===0){
+    var x=Math.round(Math.cos(deg*D2R)),y=Math.round(Math.sin(deg*D2R)),pt=m('('+x+',\\ '+y+')');
+    return{hints:[tpl(L.p.axH1,{a:a,pt:pt}),L.p.axH2],steps:[tpl(L.p.stPt,{a:a,pt:pt}),ex.undef?tpl(L.p.isUndef,{f:m(f)}):m(f+'='+ex.tex)]};}
+  var r=refAngle(deg),rT=m(angT(r,unit)),base=m(fnA(fn,r,unit)+'='+exact(fn,r).tex),sw=signW(L,ex.val);
+  return{hints:[tpl(L.p.exH1,{a:a,q:ROMAN[q],r:rT}),tpl(L.p.exH2,{base:base,q:ROMAN[q],fn:m('\\'+fn),sign:sw})],
+    steps:[tpl(L.p.stQ,{q:ROMAN[q],r:rT}),base,tpl(L.p.stSign,{q:ROMAN[q],fn:m('\\'+fn),sign:sw}),m(f+'='+ex.tex)]};
+}
+function gExact(c){
+  var R=c.R,L=c.L,deg=pick(R,SPECIALS),unit=R()<.5?'deg':'rad',fn=R()<.2?'tan':pick(R,FN),ex=exact(fn,deg),d=[];
+  if(!ex.undef){
+    if(ex.val!==0)addDet(d,-ex.val,tpl(L.p.signWrong,{q:ROMAN[quadrant(deg)],fn:m('\\'+fn),sign:signW(L,ex.val)}),ex.val,.006);
+    if(fn!=='tan'){var g=fn==='sin'?'cos':'sin',o=exact(g,deg);addDet(d,o.val,tpl(L.p.swapXY,{g:L.fname[g]}),ex.val,.006);}
+    else if(ex.val!==0)addDet(d,1/ex.val,L.p.tanFlip2,ex.val,.006);
+    if(unit==='deg')addDet(d,Math[fn](deg),L.p.radMode,ex.val,.006);
+  }else d.push({v:0,m:L.p.tanUndef0});
+  var hs=exactHints(L,fn,deg,unit,ex);
+  return{type:'exact',kind:'num',unit:null,ph:'phExact',
+    prompt:tpl(L.p.exactQ,{f:m(fnA(fn,deg,unit))}),diagram:null,
+    answer:ex.undef?{kind:'num',undef:true,tol:0}:{kind:'num',value:ex.val,tol:.006,exact:ex.tex},dets:d,
+    hints:hs.hints,steps:hs.steps,circle:{deg:deg,unit:unit},meta:{fn:fn,deg:deg}};
+}
+var NONAX=SPECIALS.filter(function(x){return x%90!==0;});
+function gSign(c){
+  var R=c.R,L=c.L,unit=R()<.4?'rad':'deg',deg,fn=pick(R,FN);
+  if(unit==='rad')deg=pick(R,NONAX);else{do{deg=ri(R,1,359);}while(deg%90===0);}
+  var q=quadrant(deg),v=trig(fn,deg),cx=Math.cos(deg*D2R),cy=Math.sin(deg*D2R),f=m(fnA(fn,deg,unit)),a=m(angT(deg,unit));
+  var ok=v>0?'pos':'neg';
+  return{type:'sign',kind:'choice',unit:null,prompt:tpl(L.p.signQ,{f:f}),diagram:null,
+    answer:{kind:'choice',options:[{id:'pos',label:L.ui.positive},{id:'neg',label:L.ui.negative}],correct:ok},
+    hints:[tpl(L.p.sgH1,{a:a,q:ROMAN[q]}),tpl(L.p.sgH2,{q:ROMAN[q],xs:signW(L,cx),ys:signW(L,cy)})],
+    steps:[tpl(L.p.sgH1,{a:a,q:ROMAN[q]}),tpl(L.p.sgH2,{q:ROMAN[q],xs:signW(L,cx),ys:signW(L,cy)}),tpl(L.p.sgFinal,{f:f,sign:signW(L,v)})],
+    circle:{deg:deg,unit:unit},meta:{fn:fn,deg:deg}};
+}
+var RULE={deg:{2:'180^\\circ-\\theta',3:'\\theta-180^\\circ',4:'360^\\circ-\\theta'},rad:{2:'\\pi-\\theta',3:'\\theta-\\pi',4:'2\\pi-\\theta'}};
+function inU(d,u){return u==='rad'?d*D2R:d;}
+function refSub(q,deg,unit,r){
+  var A=angT(deg,unit),Rt=angT(r,unit);
+  if(unit==='rad'){if(q===2)return'\\pi-'+A+'='+Rt;if(q===3)return A+'-\\pi='+Rt;return'2\\pi-'+A+'='+Rt;}
+  if(q===2)return'180^\\circ-'+A+'='+Rt;if(q===3)return A+'-180^\\circ='+Rt;return'360^\\circ-'+A+'='+Rt;
+}
+function gRef(c){
+  var R=c.R,L=c.L,unit=R()<.45?'rad':'deg',deg;
+  var NA=NONAX.filter(function(x){return x>90;});
+  if(unit==='rad'||R()<.5)deg=pick(R,NA);else{do{deg=ri(R,91,359);}while(deg%90===0);}
+  var q=quadrant(deg),r=refAngle(deg),val=inU(r,unit),d=[];
+  addDet(d,-val,L.p.refNeg,val,.006);
+  [180-deg,deg-180,360-deg,deg-90,270-deg,deg-270].forEach(function(x){if(x>0)addDet(d,inU(x,unit),tpl(L.p.refWrong,{q:ROMAN[q],rule:m(RULE[unit][q])}),val,unit==='rad'?.006:.01);});
+  var a=m(angT(deg,unit));
+  return{type:'ref',kind:'num',unit:unit,ph:unit==='rad'?'phRad':'phDeg',
+    prompt:tpl(L.p.refQ,{a:a,u:L.uw[unit]}),diagram:null,
+    answer:{kind:'num',value:val,tol:unit==='rad'?.006:.01,exact:angT(r,unit)},dets:d,
+    hints:[tpl(L.p.refH1,{a:a,q:ROMAN[q]}),tpl(L.p.refH2,{q:ROMAN[q],rule:m(RULE[unit][q])})],
+    steps:[tpl(L.p.sgH1,{a:a,q:ROMAN[q]}),m(RULE[unit][q]),m(refSub(q,deg,unit,r))],
+    circle:{deg:deg,unit:unit},meta:{deg:deg,unit:unit}};
+}
+function gConvert(c){
+  var R=c.R,L=c.L,toRad=R()<.5,deg=15*ri(R,1,24),d=[];
+  if(toRad){var val=deg*D2R;addDet(d,deg*R2D,L.p.wrongFactor,val,.006);
+    return{type:'convert',kind:'num',unit:'rad',ph:'phRad',prompt:tpl(L.p.convQd,{a:m(deg+'^\\circ')}),diagram:null,
+      answer:{kind:'num',value:val,tol:.006,exact:radTex(deg)},dets:d,hints:[L.p.convH1,L.p.convH2d],
+      steps:[L.p.convH1,m(deg+'^\\circ\\cdot\\frac{\\pi}{180^\\circ}=\\frac{'+deg+'\\pi}{180}='+radTex(deg))],circle:{deg:deg,unit:'rad'},meta:{deg:deg,toRad:1}};}
+  addDet(d,deg*D2R*D2R,L.p.wrongFactor,deg,.01);
+  return{type:'convert',kind:'num',unit:'deg',ph:'phDeg',prompt:tpl(L.p.convQr,{a:m(radTex(deg))}),diagram:null,
+    answer:{kind:'num',value:deg,tol:.01,exact:deg+'^\\circ'},dets:d,hints:[L.p.convH1,L.p.convH2r],
+    steps:[L.p.convH1,m(radTex(deg)+'\\cdot\\frac{180^\\circ}{\\pi}='+deg+'^\\circ')],circle:{deg:deg,unit:'deg'},meta:{deg:deg,toRad:0}};
+}
+var QB=[[0,90],[90,180],[180,270],[270,360]];
+function gQuad(c){
+  var R=c.R,L=c.L,unit=R()<.4?'rad':'deg',deg;
+  if(unit==='rad')deg=pick(R,NONAX)+360*pick(R,[-1,0,1]);else{do{deg=ri(R,-359,719);}while(deg%90===0);}
+  var n=norm360(deg),q=quadrant(deg),a=m(angT(deg,unit)),cN=m(angT(n,unit)),inside=deg>=0&&deg<360;
+  var lo=m(angT(QB[q-1][0],unit)),hi=m(angT(QB[q-1][1],unit));
+  var steps=[inside?L.p.quadIn:tpl(L.p.quadCot,{a:a,c:cN})];steps.push(tpl(L.p.quadFinal,{c:cN,lo:lo,hi:hi,q:ROMAN[q]}));
+  return{type:'quad',kind:'choice',unit:null,prompt:tpl(L.p.quadQ,{a:a}),diagram:null,
+    answer:{kind:'choice',options:[1,2,3,4].map(function(k){return{id:String(k),label:ROMAN[k]};}),correct:String(q)},
+    hints:[inside?L.p.quadIn:L.p.quadOut,inside?tpl(L.p.quadCmp,{c:cN,b1:m(angT(90,unit)),b2:m(angT(180,unit)),b3:m(angT(270,unit))}):tpl(L.p.quadCot,{a:a,c:cN})],
+    steps:steps,circle:{deg:deg,unit:unit},meta:{deg:deg}};
+}
+var SV=[['-1',-1],['-\\frac{\\sqrt{3}}{2}',-r3/2],['-\\frac{\\sqrt{2}}{2}',-r2/2],['-\\frac{1}{2}',-.5],['0',0],['\\frac{1}{2}',.5],['\\frac{\\sqrt{2}}{2}',r2/2],['\\frac{\\sqrt{3}}{2}',r3/2],['1',1]];
+var TV=[['-\\sqrt{3}',-r3],['-1',-1],['-\\frac{\\sqrt{3}}{3}',-r3/3],['0',0],['\\frac{\\sqrt{3}}{3}',r3/3],['1',1],['\\sqrt{3}',r3]];
+function invRangeT(fn,unit){if(fn==='cos')return[angT(0,unit),angT(180,unit)];return[angT(-90,unit),angT(90,unit)];}
+function gInverse(c){
+  var R=c.R,L=c.L,fn=pick(R,FN),e=pick(R,fn==='tan'?TV:SV),unit=R()<.5?'deg':'rad';
+  var pd=Math.round(Math['a'+fn](e[1])*R2D),val=inU(pd,unit),f='\\'+fn+'^{-1}\\left('+e[0]+'\\right)',rg=invRangeT(fn,unit),d=[];
+  for(var x=-360;x<=360;x+=15){if(x===pd)continue;if(fn==='tan'&&isMult(x-90,180))continue;if(Math.abs(trig(fn,x)-e[1])<1e-9)addDet(d,inU(x,unit),tpl(L.p.invRange,{fname:L.fname[fn],f:m(fn==='sin'?'\\sin^{-1}':fn==='cos'?'\\cos^{-1}':'\\tan^{-1}'),lo:m(rg[0]),hi:m(rg[1])}),val,unit==='rad'?.006:.01);}
+  var fi=m('\\'+fn+'^{-1}'),ref=Math.round(refAngle(pd)),h2=tpl(L.p.invH2,{fname:L.fname[fn],v:m(e[0]),r:m(angT(ref,unit))});
+  if(e[1]<0)h2+=' '+tpl(L.p.invNeg,{q:fn==='cos'?'II':'IV'});
+  return{type:'inverse',kind:'num',unit:unit,ph:unit==='rad'?'phRad':'phDeg',
+    prompt:tpl(L.p.invQ,{f:m(f),u:L.uw[unit]}),diagram:null,
+    answer:{kind:'num',value:val,tol:unit==='rad'?.006:.01,exact:angT(pd,unit)},dets:d,
+    hints:[tpl(L.p.invH1,{f:fi,lo:m(rg[0]),hi:m(rg[1])}),h2],
+    steps:[tpl(L.p.invH1,{f:fi,lo:m(rg[0]),hi:m(rg[1])}),h2,m(f+'='+angT(pd,unit))],
+    circle:{deg:pd,unit:unit},meta:{fn:fn,v:e[1],pd:pd}};
+}
+function gPythag(c){
+  var R=c.R,L=c.L,tr=pick(R,TRIPLES.slice(0,5)),a=tr[0],b=tr[1],h=tr[2];if(R()<.5){var t=a;a=b;b=t;}
+  var q=pick(R,[2,3,4,2,3,4,1]),g=pick(R,['sin','cos']),tgt=pick(R,[g==='sin'?'cos':'sin','tan']);
+  var sx=(q===1||q===4)?1:-1,sy=(q===1||q===2)?1:-1;
+  var sinN=g==='sin'?a:b,cosN=g==='sin'?b:a;
+  var gN=g==='sin'?sy*sinN:sx*cosN,given=fracTex(gN,h);
+  var tN,tD;if(tgt==='sin'){tN=sy*sinN;tD=h;}else if(tgt==='cos'){tN=sx*cosN;tD=h;}else{tN=sy*sinN;tD=sx*cosN;}
+  var val=tN/tD,ex=fracTex(tN,tD),mag=fracTex(Math.abs(tN),Math.abs(tD)),d=[];
+  addDet(d,-val,tpl(L.p.signWrong,{q:ROMAN[q],fn:m('\\'+tgt),sign:signW(L,val)}),val,.006);
+  addDet(d,gN/h,tpl(L.p.pyGiven,{f:m('\\'+tgt+'\\theta')}),val,.006);
+  if(tgt==='tan')addDet(d,tD/tN,L.p.tanFlip2,val,.006);
+  var h1=tpl(L.p.pyH1,{s1:g==='sin'?L.sdN.opp:L.sdN.adj,a:a,c:h,calc:m('\\sqrt{'+h+'^2-'+a+'^2}='+b)});
+  var h2=tpl(L.p.pyH2,{q:ROMAN[q],fn:m('\\'+tgt),sign:signW(L,val)});
+  return{type:'pythag',kind:'num',unit:null,ph:'phExact',
+    prompt:tpl(L.p.pyQ,{g:m('\\'+g+'\\theta='+given),q:ROMAN[q],f:m('\\'+tgt+'\\theta')}),diagram:null,
+    answer:{kind:'num',value:val,tol:.006,exact:ex},dets:d,hints:[h1,h2],
+    steps:[h1,tpl(L.p.pyMag,{e:m(mag)}),h2,m('\\'+tgt+'\\theta='+ex)],meta:{g:g,tgt:tgt,q:q,given:gN/h}};
+}
+var QS={sin:{1:[1,2],'-1':[3,4]},cos:{1:[1,4],'-1':[2,3]},tan:{1:[1,3],'-1':[2,4]}};
+function placeRef(q,r){return q===1?r:q===2?180-r:q===3?180+r:360-r;}
+function placeT(q,r,unit){var R_=angT(r,unit),out=angT(placeRef(q,r),unit);if(q===1)return out;
+  if(unit==='rad')return(q===2?'\\pi-'+R_:q===3?'\\pi+'+R_:'2\\pi-'+R_)+'='+out;
+  return(q===2?'180^\\circ-'+R_:q===3?'180^\\circ+'+R_:'360^\\circ-'+R_)+'='+out;}
+function gSolve(c){
+  var R=c.R,L=c.L,fn=pick(R,FN),list=fn==='tan'?TV:SV;
+  list=list.filter(function(e){return Math.abs(e[1])>1e-9&&(fn==='tan'||Math.abs(Math.abs(e[1])-1)>1e-9);});
+  var e=pick(R,list),unit=R()<.5?'deg':'rad',s=e[1]>0?1:-1,r=Math.round(Math['a'+fn](Math.abs(e[1]))*R2D),qs=QS[fn][String(s)];
+  var sols=qs.map(function(q){return placeRef(q,r);}).sort(function(x,y){return x-y;});
+  var absT=e[0].replace(/^-/,''),sw=s>0?L.ui.pos:L.ui.neg;
+  var steps=[tpl(L.p.slH1,{fname:L.fname[fn],v:m(absT),r:m(angT(r,unit))}),tpl(L.p.slH2,{fn:m('\\'+fn),sign:sw,q1:ROMAN[qs[0]],q2:ROMAN[qs[1]]})];
+  qs.forEach(function(q){steps.push(tpl(L.p.slQ,{q:ROMAN[q],calc:m('x='+placeT(q,r,unit))}));});
+  steps.push(L.p.slAll+' '+m('x='+sols.map(function(x){return angT(x,unit);}).join(',\\ ')));
+  return{type:'solve',kind:'set',unit:unit,ph:unit==='rad'?'phSetRad':'phSet',
+    prompt:tpl(L.p.solveQ,{eq:m('\\'+fn+' x='+e[0]),dom:m(unit==='rad'?'0\\le x<2\\pi':'0^\\circ\\le x<360^\\circ')}),diagram:null,
+    answer:{kind:'set',values:sols.map(function(x){return inU(x,unit);}),tol:unit==='rad'?.006:.06,period:unit==='rad'?2*Math.PI:360,exact:sols.map(function(x){return angT(x,unit);}).join(',\\ ')},
+    sh:{fn:m('\\'+fn),sign:sw},hints:steps.slice(0,2),steps:steps,circle:{deg:sols[0],unit:unit},meta:{fn:fn,v:e[1],sols:sols}};
+}
+function gWord(c){
+  var R=c.R,L=c.L,kind=pick(R,['ladder','build','ramp','kite']),P=L.p;
+  if(kind==='ramp'){
+    var rise=pick(R,[1,1.5,2,2.5]),run=pick(R,[12,15,18,20,24]),ac=angleCore(L,'tan',rise,run,Math.hypot(rise,run));
+    var fr='\\frac{'+rise+'}{'+run+'}';
+    return{type:'word',kind:'num',unit:'deg',ph:'phDeg',prompt:tpl(P.wRamp,{r:rise,n:run}),
+      diagram:{adj:run,opp:rise,lab:{adj:run+' '+P.ft,opp:rise+' '+P.ft,hyp:''},ang:'\u03b8'},
+      answer:{kind:'num',value:ac.val,tol:.06,shown:ac.val.toFixed(1)+'\u00b0'},dets:ac.dets,
+      hints:[tpl(P.dRamp,{r:rise,n:run}),m('\\tan\\theta='+fr)],
+      steps:[tpl(P.dRamp,{r:rise,n:run}),m('\\tan\\theta='+ratT(L,'tan')+'='+fr),m('\\theta=\\tan^{-1}\\left('+fr+'\\right)\\approx '+ac.val.toFixed(1)+'^\\circ')],meta:{kind:kind,rise:rise,run:run}};
+  }
+  var cfg={ladder:{n:pick(R,[10,12,14,16,20]),t:ri(R,60,78),k:'hyp',u:'opp',fn:'sin',div:0,U:P.ft,q:P.wLadder,dsc:P.dLadder},
+    build:{n:pick(R,[25,30,40,50,60]),t:ri(R,35,65),k:'adj',u:'opp',fn:'tan',div:0,U:P.mt,q:P.wBuild,dsc:P.dBuild},
+    kite:{n:pick(R,[40,50,60,75,80]),t:ri(R,30,60),k:'hyp',u:'opp',fn:'sin',div:0,U:P.mt,q:P.wKite,dsc:P.dKite}}[kind];
+  if(cfg.t===45)cfg.t=47;
+  var sc=sideCore(L,cfg.k,cfg.u,cfg.fn,cfg.div,cfg.t,cfg.n,'\\text{ '+cfg.U+'}',.06);
+  var lab={opp:'x',adj:'',hyp:''};lab[cfg.k]=cfg.n+' '+cfg.U;
+  var ds=tpl(cfg.dsc,{n:cfg.n,a:m(cfg.t+'^\\circ')});
+  return{type:'word',kind:'num',unit:null,ph:'phLen',prompt:tpl(cfg.q,{n:cfg.n,a:m(cfg.t+'^\\circ')}),
+    diagram:{adj:sc.sides.adj,opp:sc.sides.opp,lab:lab,ang:cfg.t+'\u00b0'},
+    answer:{kind:'num',value:sc.val,tol:.06,shown:sc.val.toFixed(1)+' '+cfg.U},dets:sc.dets,
+    hints:[ds,tpl(P.sideH2,{mn:mnT(cfg.fn),eq:m(sc.eq)})],
+    steps:[ds,m(sc.eq),P.solveX+' '+m(sc.solve),m(sc.fin)],meta:{kind:kind,n:cfg.n,t:cfg.t,fn:cfg.fn}};
+}
+var LEVELS={1:[[gRatio,3],[gSide,3],[gAngle,2],[gSpecial,2]],2:[[gExact,4],[gSign,2],[gRef,2],[gConvert,2],[gQuad,2]],3:[[gInverse,3],[gPythag,3],[gSolve,3],[gWord,3]]};
+function generate(lvl,seed,lang){
+  var L=DICT[lang]||DICT.en,R=mulberry32((seed*2654435761+lvl*97)>>>0);R();R();
+  var g=weighted(R,LEVELS[lvl]||LEVELS[1]),pr=g({R:R,L:L});
+  pr.lvl=lvl;pr.seed=seed;
+  if(pr.diagram)pr.svg=triDiagram(pr.diagram,L);
+  return pr;
+}
+G.TrigCore={D2R:D2R,R2D:R2D,mulberry32:mulberry32,norm360:norm360,quadrant:quadrant,refAngle:refAngle,isSpecial:isSpecial,isMult:isMult,SPECIALS:SPECIALS,exact:exact,fmt:fmt,fmtP:fmtP,
+  radTex:radTex,radPlain:radPlain,angT:angT,angP:angP,fnA:fnA,fracTex:fracTex,tpl:tpl,parseExpr:parseExpr,checkNum:checkNum,checkSet:checkSet,diagnose:diagnose,
+  DICT:DICT,generate:generate,ROMAN:ROMAN,RAT:RAT,MN:MN,trig:trig,esc:esc,UNDEF:UNDEF};
+})(typeof window!=='undefined'?window:globalThis);
+/*CORE-END*/
+</script>
+
+<script>
+(function(){
+'use strict';
+var C=window.TrigCore,D2R=C.D2R,R2D=C.R2D;
+var LANG='en';try{if(new URLSearchParams(location.search).get('lang')==='es')LANG='es';}catch(e){}
+var L=C.DICT[LANG],U=L.ui;document.documentElement.lang=LANG;document.title=U.title;
+function $(id){return document.getElementById(id);}
+function t(k,v){return v?C.tpl(U[k],v):U[k];}
+var INK='#1C4C9E',ORANGE='#B8692E',GREY='#6F7B78',G='#232A2A';
+
+/* ---------- state + URL hash ---------- */
+var DEF={tab:'circle',a:30,u:'deg',snap:1,x:4,y:3,at:'A',r:'sin',hide:'none',ts:1,lvl:1,seed:0};
+var S=clone(DEF);
+function clone(o){var r={};for(var k in o)r[k]=o[k];return r;}
+function parseHash(){
+  var s=clone(DEF),p;try{p=new URLSearchParams(location.hash.replace(/^#/,''));}catch(e){return s;}
+  function num(k,lo,hi){var v=parseFloat(p.get(k));return isFinite(v)?Math.min(hi,Math.max(lo,v)):null;}
+  var tab=p.get('tab');if(tab==='circle'||tab==='tri'||tab==='practice')s.tab=tab;
+  var a=num('a',-720,720);if(a!==null)s.a=a;
+  if(p.get('u')==='rad')s.u='rad';
+  if(p.get('snap')==='0')s.snap=0;
+  var x=num('x',1,12);if(x!==null)s.x=Math.round(x*10)/10;
+  var y=num('y',1,9);if(y!==null)s.y=Math.round(y*10)/10;
+  if(p.get('at')==='B')s.at='B';
+  var r=p.get('r');if(r==='sin'||r==='cos'||r==='tan')s.r=r;
+  var h=p.get('hide');if(h==='opp'||h==='adj'||h==='hyp')s.hide=h;
+  if(p.get('ts')==='0')s.ts=0;
+  var l=parseInt(p.get('lvl'),10);if(l===1||l===2||l===3)s.lvl=l;
+  var sd=parseInt(p.get('seed'),10);if(sd>=1&&sd<=999999)s.seed=sd;
+  return s;
+}
+var hashTimer=null,lastHash=null;
+function buildHash(){
+  var parts=[];
+  for(var k in DEF){var v=S[k];if(k==='a')v=+(+v).toFixed(4);if(k==='x'||k==='y')v=+(+v).toFixed(1);
+    if(k==='seed'&&!v)continue;if(v!==DEF[k])parts.push(k+'='+encodeURIComponent(String(v)));}
+  return parts.join('&');
+}
+function saveHash(now){
+  clearTimeout(hashTimer);
+  function go(){var h=buildHash();lastHash=h;try{history.replaceState(null,'',location.pathname+location.search+(h?'#'+h:''));}catch(e){}}
+  if(now)go();else hashTimer=setTimeout(go,150);
+}
+window.addEventListener('hashchange',function(){var h=location.hash.replace(/^#/,'');if(h===lastHash)return;S=parseHash();radFlag=null;renderAll();});
+
+/* ---------- math rendering ---------- */
+/* Plain-text fallback when KaTeX can't load (filtered school networks, slow connections).
+   Order matters: unwrap \text{} and drop \left/\right BEFORE \le and \frac, or they get mangled. */
+function plain(s){var o=String(s),prev;
+  o=o.replace(/\\text\{([^{}]*)\}/g,'$1').replace(/\\left|\\right/g,'').replace(/\\Rightarrow/g,' \u21d2 ').replace(/\\quad|\\;|\\,|\\ /g,' ')
+     .replace(/\^\\circ/g,'\u00b0').replace(/\\pi/g,'\u03c0').replace(/\\theta/g,'\u03b8').replace(/\\cdot/g,'\u00b7')
+     .replace(/\\approx/g,'\u2248').replace(/\\le(?![a-z])/g,'\u2264').replace(/\\(sin|cos|tan)/g,'$1').replace(/\^\{-1\}/g,'\u207b\u00b9');
+  function wrap(x){return /^[\w.\u221a\u03c0\u00b0\u03b8\u2212-]+$/.test(x)?x:'('+x+')';}
+  do{prev=o;o=o.replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g,function(m,a,b){return wrap(a)+'/'+wrap(b);}).replace(/\\sqrt\{([^{}]*)\}/g,function(m,a){return'\u221a'+wrap(a);});}while(o!==prev);
+  return o.replace(/\^2/g,'\u00b2').replace(/\\/g,'').replace(/[{}]/g,'').replace(/(\d)(sin|cos|tan)/g,'$1 $2').replace(/\s{2,}/g,' ');}
+function tex(el,s,display){
+  if(window.katex){try{window.katex.render(s,el,{throwOnError:false,displayMode:!!display,output:'htmlAndMathml'});return;}catch(e){}}
+  el.textContent=plain(s);
+}
+function mixed(el,s){el.textContent='';String(s).split('$').forEach(function(p,i){if(!p)return;if(i%2){var sp=document.createElement('span');tex(sp,p,false);el.appendChild(sp);}else el.appendChild(document.createTextNode(p));});return el;}
+function mk(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=txt;return e;}
+var INFO='<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.5" fill="none" stroke="#1C4C9E" stroke-width="1.8"/><path d="M10 9v5" stroke="#1C4C9E" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="6" r="1.2" fill="#1C4C9E"/></svg>';
+var CHECK='<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.5" fill="none" stroke="#1C4C9E" stroke-width="1.8"/><path d="M6 10.5l2.6 2.6L14 7.6" fill="none" stroke="#1C4C9E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+function note(title,body,btn){var d=mk('div','note');d.setAttribute('role','note');d.innerHTML=INFO;var w=mk('div');w.appendChild(mk('strong','',title));mixed(w.appendChild(mk('p')),body);if(btn)w.appendChild(btn);d.appendChild(w);return d;}
+
+/* ---------- static text ---------- */
+function applyText(){
+  document.querySelectorAll('[data-t]').forEach(function(el){el.textContent=U[el.getAttribute('data-t')];});
+  $('uc-legend').innerHTML='<span class="sw" style="background:'+INK+'"></span><span class="sw" style="background:'+ORANGE+'"></span><span class="sw" style="background:'+GREY+'"></span> '+U.legend;
+  $('pr-levels').setAttribute('aria-label',U.lvlGroup);
+  document.querySelectorAll('.lvl').forEach(function(b){var n=b.getAttribute('data-lvl');b.innerHTML='';b.appendChild(document.createTextNode(U['lv'+n]));b.appendChild(mk('small','',U['lv'+n+'s']));});
+  var sel=$('tri-hide');sel.innerHTML='';[['none',U.findNone],['opp',U.opp],['adj',U.adj],['hyp',U.hyp]].forEach(function(o){var op=mk('option','',o[1]);op.value=o[0];sel.appendChild(op);});
+  var rc=$('tri-ratio');rc.innerHTML='';['sin','cos','tan'].forEach(function(fn){var b=mk('button','chip');b.type='button';b.setAttribute('role','radio');b.setAttribute('data-r',fn);b.appendChild(document.createTextNode(fn));b.appendChild(mk('small','',C.MN[fn]));rc.appendChild(b);});
+  var kp=$('pr-keys');kp.setAttribute('aria-label',U.keys);kp.innerHTML='';
+  [['\u221a','\u221a'],['\u03c0','\u03c0'],['/','/'],['-','\u2212'],['(','('],[')',')'],[', ',','],['*',U.undefKey]].forEach(function(k){var b=mk('button','key',k[1]);b.type='button';b.setAttribute('data-k',k[0]);b.setAttribute('aria-label',k[0]==='*'?k[1]:t('insert',{k:k[1]}));kp.appendChild(b);});
+}
+
+/* ---------- tabs ---------- */
+var TABS=['circle','tri','practice'];
+function showTab(){
+  TABS.forEach(function(k){var on=S.tab===k,b=$('tab-'+k);b.setAttribute('aria-selected',on?'true':'false');b.tabIndex=on?0:-1;$('p-'+k).hidden=!on;});
+}
+$('tabs').addEventListener('click',function(e){var b=e.target.closest('[data-tab]');if(!b)return;S.tab=b.getAttribute('data-tab');saveHash(true);renderAll();});
+$('tabs').addEventListener('keydown',function(e){var i=TABS.indexOf(S.tab),n=i;
+  if(e.key==='ArrowRight')n=(i+1)%3;else if(e.key==='ArrowLeft')n=(i+2)%3;else if(e.key==='Home')n=0;else if(e.key==='End')n=2;else return;
+  e.preventDefault();S.tab=TABS[n];saveHash(true);renderAll();$('tab-'+S.tab).focus();});
+
+/* ---------- svg helpers ---------- */
+function svgPt(svg,e){var pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;var m=svg.getScreenCTM();return m?pt.matrixTransform(m.inverse()):{x:0,y:0};}
+function T(x,y,s,attrs){return'<text x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" '+(attrs||'')+'>'+C.esc(s)+'</text>';}
+
+/* ================= UNIT CIRCLE ================= */
+var UC={cx:200,cy:200,R:120},touchedUC=false,radFlag=null;
+function nearestSpecial(n,within){var best=null,bd=1e9;C.SPECIALS.concat([360]).forEach(function(s){var d=Math.abs(s-n);if(d<bd){bd=d;best=s%360;}});return bd<=within?best:null;}
+function ucSvg(){
+  var cx=UC.cx,cy=UC.cy,R=UC.R,d=S.a,n=C.norm360(d),th=d*D2R,x=Math.cos(th),y=Math.sin(th);
+  if(Math.abs(x)<1e-12)x=0;if(Math.abs(y)<1e-12)y=0;
+  var px=cx+R*x,py=cy-R*y,q=C.quadrant(d),u=S.u,o='';
+  o+='<defs><marker id="arw" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="'+INK+'"/></marker>'+
+     '<marker id="arg" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="'+GREY+'"/></marker></defs>';
+  // quadrant sign labels
+  var QL=[[1,388,22,'end'],[2,12,22,'start'],[3,12,332,'start'],[4,388,332,'end']];
+  QL.forEach(function(Q){var k=Q[0],on=q===k,sx=(k===1||k===4)?'+':'\u2212',sy=(k===1||k===2)?'+':'\u2212',st=(sx===sy)?'+':'\u2212';
+    var attrs='text-anchor="'+Q[3]+'" font-size="15"'+(on?' fill="'+INK+'" font-weight="700"':' fill="#55605E"');
+    o+=T(Q[1],Q[2],(on?'\u25B8 ':'')+'Q'+C.ROMAN[k],attrs);
+    o+=T(Q[1],Q[2]+17,'sin '+sy,attrs)+T(Q[1],Q[2]+34,'cos '+sx,attrs)+T(Q[1],Q[2]+51,'tan '+st,attrs);});
+  // axes and tangent line
+  o+='<line x1="10" y1="'+cy+'" x2="390" y2="'+cy+'" stroke="'+G+'" stroke-width="1.4" opacity=".75"/>';
+  o+='<line x1="'+cx+'" y1="10" x2="'+cx+'" y2="390" stroke="'+G+'" stroke-width="1.4" opacity=".75"/>';
+  o+='<line x1="'+(cx+R)+'" y1="10" x2="'+(cx+R)+'" y2="390" stroke="'+GREY+'" stroke-width="1.3" stroke-dasharray="5 5"/>';
+  o+=T(cx+R+5,388,'x = 1','font-size="12" fill="#55605E"');
+  o+='<circle cx="'+cx+'" cy="'+cy+'" r="'+R+'" fill="rgba(255,255,255,.55)" stroke="'+G+'" stroke-width="2"/>';
+  C.SPECIALS.forEach(function(s){var a=s*D2R;o+='<circle cx="'+(cx+R*Math.cos(a)).toFixed(1)+'" cy="'+(cy-R*Math.sin(a)).toFixed(1)+'" r="2.6" fill="#55605E"/>';});
+  // axis labels
+  var AL=[[0,cx+R+6,cy+17,'start'],[90,cx+6,cy-R-7,'start'],[180,cx-R-6,cy+17,'end'],[270,cx+6,cy+R+17,'start']];
+  AL.forEach(function(A){o+=T(A[1],A[2],C.angP(A[0],u),'font-size="13" fill="#55605E" text-anchor="'+A[3]+'" class="mth"');});
+  // reference wedge
+  if(q>=2){var r0=n,r1=q===2?180:q===3?180:360,a0=Math.min(r0,r1),a1=Math.max(r0,r1),rr=64;
+    function P(a,rad){return(cx+rad*Math.cos(a*D2R)).toFixed(1)+','+(cy-rad*Math.sin(a*D2R)).toFixed(1);}
+    o+='<path d="M'+cx+','+cy+'L'+P(a0,rr)+'A'+rr+','+rr+' 0 0 0 '+P(a1,rr)+'Z" fill="rgba(28,76,158,.12)" stroke="'+INK+'" stroke-width="1" stroke-dasharray="3 3"/>';
+    var mid=(a0+a1)/2,lr=rr+16,ra=C.refAngle(n);
+    o+=T(cx+lr*Math.cos(mid*D2R),cy-lr*Math.sin(mid*D2R)+4,'ref '+C.angP(ra,u),'font-size="12" text-anchor="middle" fill="'+INK+'"');}
+  // tangent segment
+  if(Math.abs(x)>1e-9){var tv=y/x,lim=(cy-14)/R,clipped=Math.abs(tv)>lim,ty=clipped?Math.sign(tv)*lim:tv;
+    var tY=cy-R*ty,ex=clipped?lim/Math.abs(tv):1,ey=clipped?Math.sign(tv)*lim:tv;
+    o+='<line x1="'+px.toFixed(1)+'" y1="'+py.toFixed(1)+'" x2="'+(cx+R*ex).toFixed(1)+'" y2="'+(cy-R*ey).toFixed(1)+'" stroke="'+GREY+'" stroke-width="1.5" stroke-dasharray="2 4"/>';
+    if(Math.abs(tv)>1e-9)o+='<line x1="'+(cx+R)+'" y1="'+cy+'" x2="'+(cx+R)+'" y2="'+tY.toFixed(1)+'" stroke="'+GREY+'" stroke-width="5" stroke-linecap="round"'+(clipped?' marker-end="url(#arg)"':'')+'/>';
+    if(Math.abs(tv)>.12)o+=T(cx+R+9,(cy+tY)/2+4,'tan','font-size="14" font-weight="700" fill="'+GREY+'"');}
+  // angle spiral
+  if(Math.abs(d)>.5){var pts=[],st=d>0?3:-3,k;for(k=0;Math.abs(k)<Math.abs(d);k+=st){var rs=24+8*Math.abs(k)/360;pts.push((cx+rs*Math.cos(k*D2R)).toFixed(1)+','+(cy-rs*Math.sin(k*D2R)).toFixed(1));}
+    var rs2=24+8*Math.abs(d)/360;pts.push((cx+rs2*Math.cos(d*D2R)).toFixed(1)+','+(cy-rs2*Math.sin(d*D2R)).toFixed(1));
+    o+='<polyline points="'+pts.join(' ')+'" fill="none" stroke="'+INK+'" stroke-width="2" marker-end="url(#arw)"/>';
+    var la=(Math.abs(d)<=360?d/2:d)*D2R,lr2=rs2+13;o+=T(cx+lr2*Math.cos(la)-4,cy-lr2*Math.sin(la)+5,'\u03b8','font-size="16" font-weight="700" fill="'+INK+'"');}
+  // cos and sin segments
+  o+='<line x1="'+cx+'" y1="'+cy+'" x2="'+px.toFixed(1)+'" y2="'+cy+'" stroke="'+ORANGE+'" stroke-width="6" stroke-linecap="round"/>';
+  o+='<line x1="'+px.toFixed(1)+'" y1="'+cy+'" x2="'+px.toFixed(1)+'" y2="'+py.toFixed(1)+'" stroke="'+INK+'" stroke-width="6" stroke-linecap="round"/>';
+  if(Math.abs(x)>.15)o+=T((cx+px)/2,y>=0?cy+20:cy-9,'cos','font-size="14" font-weight="700" text-anchor="middle" fill="'+ORANGE+'"');
+  // sin label goes on the outer side of its segment, except near x = 1 where the tan label lives
+  var sinLeft=x<0||x>.55;
+  if(Math.abs(y)>.15)o+=T(px+(sinLeft?-9:9),(cy+py)/2+5,'sin','font-size="14" font-weight="700" text-anchor="'+(sinLeft?'end':'start')+'" fill="'+INK+'"');
+  o+='<line x1="'+cx+'" y1="'+cy+'" x2="'+px.toFixed(1)+'" y2="'+py.toFixed(1)+'" stroke="'+G+'" stroke-width="2.2"/>';
+  // point P
+  o+='<circle cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="24" fill="transparent"/>';
+  o+='<circle cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="10" fill="'+INK+'" stroke="#fff" stroke-width="3"/>';
+  var lx=cx+(R+24)*Math.cos(th),ly=cy-(R+24)*Math.sin(th);
+  if(Math.abs(lx-(cx+R))<18)lx=cx+R+18; // keep P clear of the tan segment on x = 1
+  o+=T(lx,ly+5,'P','font-size="16" font-weight="700" text-anchor="middle"');
+  if(!touchedUC){var hx=Math.max(44,Math.min(356,lx)),hy=ly+(y>=0?-22:34);
+    o+='<text x="'+hx.toFixed(1)+'" y="'+hy.toFixed(1)+'" text-anchor="middle" font-family="Kalam,cursive" font-size="17" fill="'+INK+'">'+C.esc(U.dragMe)+'</text>';}
+  return o;
+}
+function valTex(fn,d){var e=C.exact(fn,d);if(e){if(e.undef)return'\\text{'+U.undefinedW+'}';var dv=C.fmt(e.val,3);return/^[-]?[01]$|^0$/.test(e.tex)?e.tex:e.tex+(near3(e.val)?'='+dv:'\\approx '+dv);}
+  var v=C.trig(fn,d);if(fn==='tan'&&Math.abs(Math.cos(d*D2R))<1e-12)return'\\text{'+U.undefinedW+'}';return'\\approx '+C.fmt(v,4);}
+function near3(v){return Math.abs(v*1000-Math.round(v*1000))<1e-9;}
+function coordTex(d){var ex=C.isSpecial(d),xs,ys;
+  if(ex){xs=C.exact('cos',d).tex;ys=C.exact('sin',d).tex;return'\\left('+xs+',\\ '+ys+'\\right)';}
+  return'\\approx\\left('+C.fmt(Math.cos(d*D2R),4)+',\\ '+C.fmt(Math.sin(d*D2R),4)+'\\right)';}
+function ucRender(){
+  var d=S.a,u=S.u,svg=$('uc'),n=C.norm360(d),q=C.quadrant(d),x=Math.cos(d*D2R),y=Math.sin(d*D2R);
+  svg.innerHTML=ucSvg();
+  svg.setAttribute('aria-label',t('ucAria',{a:C.angP(d,u),x:C.fmtP(x,3),y:C.fmtP(y,3)}));
+  $('uc-deg').checked=u==='deg';$('uc-rad').checked=u==='rad';$('uc-snap').checked=!!S.snap;
+  var inp=$('uc-in');if(document.activeElement!==inp){inp.value=u==='rad'?(C.radPlain(d)!==null?C.radPlain(d).replace('\u2212','-'):C.fmt(d*D2R,4)):C.fmt(d,2);inp.removeAttribute('aria-invalid');$('uc-err').textContent='';}
+  $('uc-help').textContent=u==='rad'?U.helpRad:U.helpDeg;
+  var rg=$('uc-range');rg.value=String(Math.round(n));rg.setAttribute('aria-valuetext',C.angP(d,u));
+  // facts
+  var f=$('uc-facts');f.innerHTML='';
+  function fact(k,v){f.appendChild(mk('dt','',k));var dd=mk('dd');mixed(dd,v);f.appendChild(dd);}
+  if(q)fact(U.quadrant,C.ROMAN[q]);else fact(U.quadrant,t('onAxis',{a:U.axisN[Math.round(n)%360]}));
+  fact(U.refAngle,'$'+C.angT(C.refAngle(n),u)+'$');
+  fact(u==='rad'?U.inDeg:U.inRad,'$'+C.angT(d,u==='rad'?'deg':'rad')+(u==='deg'&&C.radTex(d)!==null&&Math.abs(d)>1e-9?'\\approx '+C.fmt(d*D2R,4):'')+'$');
+  if(d<0||d>=360)fact(U.coterminal,'$'+C.angT(n,u)+'$');
+  // math
+  var mth=$('uc-math');mth.innerHTML='';var A=C.angT(d,u);
+  function line(s,hl){var p=mk('div','ml');var sp=mk('span',hl?'hl':'');tex(sp,s,false);p.appendChild(sp);mth.appendChild(p);}
+  line('P=(\\cos\\theta,\\ \\sin\\theta)='+coordTex(d),true);
+  function ej(a,v){return v.indexOf('\\approx')===0?a+v:a+'='+v;}
+  line(ej(C.fnA('sin',d,u)+'=y',valTex('sin',d)));
+  line(ej(C.fnA('cos',d,u)+'=x',valTex('cos',d)));
+  var tl=C.fnA('tan',d,u)+'=\\frac{y}{x}';
+  if(Math.abs(x)<1e-12)tl+='=\\frac{'+(C.exact('sin',d)?C.exact('sin',d).tex:C.fmt(y,4))+'}{0}\\Rightarrow\\text{'+U.undefinedW+'}';
+  else if(C.isSpecial(d))tl+='='+valTex('tan',d);
+  else tl+='=\\frac{'+C.fmt(y,4)+'}{'+C.fmt(x,4)+'}\\approx '+C.fmt(y/x,4);
+  line(tl);
+  // sign line
+  $('uc-sign').textContent=q?t('signQ',{q:C.ROMAN[q],xs:x>0?U.pos:U.neg,ys:y>0?U.pos:U.neg,ts:(x>0)===(y>0)?U.pos:U.neg}):U.signAxis;
+  // notes
+  var nt=$('uc-notes');nt.innerHTML='';
+  if(radFlag!==null){var b=mk('button','btn sec',t('nRadBtn',{v:C.fmt(radFlag,2)}));b.type='button';var rv=radFlag;
+    b.addEventListener('click',function(){S.u='deg';S.a=Math.max(-720,Math.min(720,rv));radFlag=null;saveHash(true);ucRender();});
+    nt.appendChild(note(U.nRadT,t('nRadB',{v:C.fmt(radFlag,2),d:C.fmtP(radFlag*R2D,1),c:C.fmtP(C.norm360(radFlag*R2D),1)}),b));}
+  if(Math.abs(x)<1e-12)nt.appendChild(note(U.nTanT,t('nTanB',{a:C.angP(d,u)})));
+  if(d<0)nt.appendChild(note(U.nNegT,t('nNegB',{a:C.angP(d,u),c:C.angP(n,u)})));
+  else if(d>=360)nt.appendChild(note(U.nBigT,t('nBigB',{a:C.angP(d,u),c:C.angP(n,u)})));
+  if(u==='rad')nt.appendChild(note(U.nCalcT,U.nCalcB));
+}
+function setAngle(v){S.a=Math.max(-720,Math.min(720,+v.toFixed(6)));radFlag=null;saveHash();ucRender();}
+function angleFromPointer(e){var p=svgPt($('uc'),e),dx=p.x-UC.cx,dy=UC.cy-p.y;if(Math.hypot(dx,dy)<12)return null;
+  var a=C.norm360(Math.atan2(dy,dx)*R2D);
+  if(S.snap){var sp=nearestSpecial(a,4);if(sp!==null)return sp;}
+  return S.u==='rad'?Math.round(a*D2R*100)/100*R2D:Math.round(a)%360;}
+(function(){var svg=$('uc'),drag=false;
+  svg.addEventListener('pointerdown',function(e){var a=angleFromPointer(e);if(a===null)return;drag=true;touchedUC=true;try{svg.setPointerCapture(e.pointerId);}catch(_){}e.preventDefault();setAngle(a);});
+  svg.addEventListener('pointermove',function(e){if(!drag)return;var a=angleFromPointer(e);if(a!==null)setAngle(a);});
+  function end(){drag=false;}svg.addEventListener('pointerup',end);svg.addEventListener('pointercancel',end);})();
+$('uc-range').addEventListener('input',function(){var v=+this.value;if(S.snap){var sp=nearestSpecial(v,4);if(sp!==null)v=sp;}touchedUC=true;setAngle(v);});
+function onAngleText(){
+  var raw=$('uc-in').value,hasPi=/\u03c0|pi/i.test(raw),v=C.parseExpr(raw);
+  if(v===null){$('uc-in').setAttribute('aria-invalid','true');$('uc-err').textContent=U.angleBad;return;}
+  $('uc-in').removeAttribute('aria-invalid');$('uc-err').textContent='';
+  var deg,flag=null;
+  if(S.u==='rad'||hasPi){if(hasPi)S.u='rad';deg=v*R2D;if(!hasPi&&Math.abs(v)>4*Math.PI&&Math.abs(v-Math.round(v))<1e-9)flag=v;}
+  else deg=v;
+  if(Math.abs(deg)>720)deg=C.norm360(deg);
+  S.a=+deg.toFixed(6);radFlag=flag;saveHash(true);ucRender();
+}
+$('uc-in').addEventListener('change',onAngleText);
+$('uc-in').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();onAngleText();}});
+$('uc-deg').addEventListener('change',function(){S.u='deg';radFlag=null;saveHash(true);ucRender();});
+$('uc-rad').addEventListener('change',function(){S.u='rad';radFlag=null;saveHash(true);ucRender();});
+$('uc-snap').addEventListener('change',function(){S.snap=this.checked?1:0;saveHash(true);});
+function stepSpecial(dir){var d=S.a,best=null;for(var k=-3;k<=3;k++)C.SPECIALS.forEach(function(s){var c=s+360*k;if(dir>0?c>d+1e-6:c<d-1e-6){if(best===null||(dir>0?c<best:c>best))best=c;}});if(best!==null&&Math.abs(best)<=720){touchedUC=true;setAngle(best);saveHash(true);}}
+$('uc-prev').addEventListener('click',function(){stepSpecial(-1);});
+$('uc-next').addEventListener('click',function(){stepSpecial(1);});
+
+/* ================= RIGHT TRIANGLE ================= */
+var TR={s:26,Ax:40,Ay:270},touchedTri=false,lastAt='A';
+function triVals(){var x=S.x,y=S.y,h=Math.hypot(x,y),thA=Math.atan2(y,x)*R2D,at=S.at;
+  return{x:x,y:y,h:h,at:at,opp:at==='A'?y:x,adj:at==='A'?x:y,th:at==='A'?thA:90-thA,thA:thA,
+    role:{AC:at==='A'?'adj':'opp',BC:at==='A'?'opp':'adj',AB:'hyp'}};}
+function n2(v){return C.fmt(v,2);}
+function triSvg(V){
+  var s=TR.s,Ax=TR.Ax,Ay=TR.Ay,Cx=Ax+V.x*s,By=Ay-V.y*s,o='',used=C.RAT[S.r];
+  o+='<rect x="0" y="0" width="440" height="300" fill="#E9F2E4"/>';
+  for(var i=0;Ax+i*s<=440;i++)o+='<line x1="'+(Ax+i*s)+'" y1="0" x2="'+(Ax+i*s)+'" y2="300" stroke="#C7DDBE" stroke-width="1"/>';
+  for(var j=0;Ay-j*s>=0;j++)o+='<line x1="0" y1="'+(Ay-j*s)+'" x2="440" y2="'+(Ay-j*s)+'" stroke="#C7DDBE" stroke-width="1"/>';
+  o+='<polygon points="'+Ax+','+Ay+' '+Cx+','+Ay+' '+Cx+','+By+'" fill="rgba(255,255,255,.75)"/>';
+  function side(k,x1,y1,x2,y2){var r=V.role[k],u=used.indexOf(r)>=0;return'<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+(u?INK:'#A9B5B1')+'" stroke-width="'+(u?6:3)+'" stroke-linecap="round"/>';}
+  o+=side('AC',Ax,Ay,Cx,Ay)+side('BC',Cx,Ay,Cx,By)+side('AB',Ax,Ay,Cx,By);
+  o+='<path d="M'+(Cx-14)+','+Ay+'V'+(Ay-14)+'H'+Cx+'" fill="none" stroke="'+G+'" stroke-width="1.6"/>';
+  // angle arc
+  var rr=36,a0,a1,vx,vy;if(V.at==='A'){vx=Ax;vy=Ay;a0=0;a1=V.thA;}else{vx=Cx;vy=By;a0=180+V.thA;a1=270;}
+  function P(a,r){return(vx+r*Math.cos(a*D2R)).toFixed(1)+','+(vy-r*Math.sin(a*D2R)).toFixed(1);}
+  o+='<path d="M'+P(a0,rr)+'A'+rr+','+rr+' 0 0 0 '+P(a1,rr)+'" fill="none" stroke="'+INK+'" stroke-width="2.5"/>';
+  var ma=(a0+a1)/2,ml=rr+15;o+=T(vx+ml*Math.cos(ma*D2R)-5,vy-ml*Math.sin(ma*D2R)+6,'\u03b8','font-size="18" font-weight="700" fill="'+INK+'"');
+  // labels
+  function lab(k,x,y,anc){var r=V.role[k],u=used.indexOf(r)>=0,v=r==='hyp'?V.h:r==='opp'?V.opp:V.adj,txt=L.ab[r]+' = '+(S.hide===r?'?':n2(v));
+    return T(x,y,txt,'font-size="15" text-anchor="'+anc+'"'+(u?' font-weight="700" fill="'+INK+'"':' fill="#55605E"'));}
+  o+=lab('AC',(Ax+Cx)/2,Ay+22,'middle');
+  o+=lab('BC',Cx+10,(Ay+By)/2+5,'start');
+  var w=Cx-Ax,h=Ay-By,len=Math.hypot(w,h);
+  o+=lab('AB',(Ax+Cx)/2-h/len*14-4,(Ay+By)/2-w/len*14,'end');
+  o+=T(Ax-14,Ay+18,'A','font-size="15" font-weight="700" text-anchor="middle"')+T(Cx+10,Ay+18,'C','font-size="15" font-weight="700"')+T(Cx+12,By-6,'B','font-size="15" font-weight="700"');
+  o+='<circle cx="'+Cx+'" cy="'+By+'" r="26" fill="transparent"/><circle cx="'+Cx+'" cy="'+By+'" r="10" fill="'+INK+'" stroke="#fff" stroke-width="3"/>';
+  if(!touchedTri)o+='<text x="'+(Cx-16)+'" y="'+(By-14)+'" text-anchor="end" font-family="Kalam,cursive" font-size="17" fill="'+INK+'">'+C.esc(U.dragB)+'</text>';
+  return o;
+}
+function triRender(){
+  var V=triVals(),svg=$('tri'),fn=S.r,rt=C.RAT[fn];
+  svg.innerHTML=triSvg(V);
+  svg.setAttribute('aria-label',t('triAria',{x:n2(V.x),y:n2(V.y),h:n2(V.h),at:V.at,t:n2(V.th)}));
+  document.querySelectorAll('#tri-ratio .chip').forEach(function(b){var on=b.getAttribute('data-r')===fn;b.setAttribute('aria-checked',on?'true':'false');b.tabIndex=on?0:-1;});
+  $('tri-atA').checked=V.at==='A';$('tri-atB').checked=V.at==='B';$('tri-hide').value=S.hide;$('tri-snap').checked=!!S.ts;
+  var st=S.ts?'1':'0.1';$('tri-x').step=st;$('tri-y').step=st;$('tri-x').value=String(V.x);$('tri-y').value=String(V.y);
+  $('tri-xo').textContent=n2(V.x)+' '+U.unitsW;$('tri-yo').textContent=n2(V.y)+' '+U.unitsW;
+  $('tri-x').setAttribute('aria-valuetext',n2(V.x)+' '+U.unitsW);$('tri-y').setAttribute('aria-valuetext',n2(V.y)+' '+U.unitsW);
+  var mth=$('tri-math');mth.innerHTML='';
+  function line(s,hl){var p=mk('div','ml');var sp=mk('span',hl?'hl':'');tex(sp,s,false);p.appendChild(sp);mth.appendChild(p);}
+  var AB=function(k){return'\\text{'+L.ab[k]+'}';},val={opp:V.opp,adj:V.adj,hyp:V.h},ratioTex='\\frac{'+AB(rt[0])+'}{'+AB(rt[1])+'}';
+  var hd=S.hide,nt=$('tri-notes');nt.innerHTML='';
+  function eqv(v){return Math.abs(v*100-Math.round(v*100))<1e-6?'=':'\\approx ';}
+  if(hd==='none'){
+    line(AB('hyp')+'=\\sqrt{'+AB('adj')+'^2+'+AB('opp')+'^2}=\\sqrt{'+n2(V.adj)+'^2+'+n2(V.opp)+'^2}'+eqv(V.h)+n2(V.h));
+    var rv=val[rt[0]]/val[rt[1]];
+    line('\\'+fn+'\\theta='+ratioTex+'=\\frac{'+n2(val[rt[0]])+'}{'+n2(val[rt[1]])+'}'+eqv(rv)+C.fmt(rv,4));
+    line('\\theta=\\'+fn+'^{-1}\\left('+C.fmt(rv,4)+'\\right)'+eqv(V.th)+n2(V.th)+'^\\circ',true);
+  }else if(rt.indexOf(hd)>=0){
+    var other=rt[0]===hd?rt[1]:rt[0],kv=val[other],top=rt[0]===hd?'x':n2(kv),bot=rt[1]===hd?'x':n2(kv),thS=n2(V.th)+'^\\circ',res=val[hd];
+    line('\\theta='+thS+',\\quad '+AB(other)+'='+n2(kv));
+    line('\\'+fn+'\\theta='+ratioTex+'\\;\\Rightarrow\\;\\'+fn+' '+thS+'=\\frac{'+top+'}{'+bot+'}');
+    line(rt[0]===hd?'x='+n2(kv)+'\\,\\'+fn+' '+thS:'x=\\frac{'+n2(kv)+'}{\\'+fn+' '+thS+'}');
+    line(AB(hd)+'=x\\approx '+res.toFixed(2),true);
+    var py=hd==='hyp'?'\\sqrt{'+n2(V.adj)+'^2+'+n2(V.opp)+'^2}':'\\sqrt{'+n2(V.h)+'^2-'+n2(hd==='opp'?V.adj:V.opp)+'^2}';
+    var pp=mk('p','muted');pp.style.margin='8px 0 0';mixed(pp,U.pyCheck+' $'+py+'\\approx '+res.toFixed(2)+'$');mth.appendChild(pp);
+  }else{
+    line('\\'+fn+'\\theta='+ratioTex);
+    var opts=['sin','cos','tan'].filter(function(g){return C.RAT[g].indexOf(hd)>=0;});
+    nt.appendChild(note(U.nWrongT,t('nWrongB',{fn:'$\\'+fn+'$',s1:L.sdA[rt[0]],s2:L.sdA[rt[1]],h:L.sdA[hd],opts:opts.map(function(g){return'$\\'+g+'$ ('+C.MN[g]+')';}).join(U.or)})));
+  }
+  var f=$('tri-facts');f.innerHTML='';
+  function fact(k,v){f.appendChild(mk('dt','',k));var dd=mk('dd');mixed(dd,v);f.appendChild(dd);}
+  fact(U.thetaW+' ('+V.at+')',n2(V.th)+'\u00b0');fact(U.otherAngle,n2(90-V.th)+'\u00b0');
+  if(V.at==='B')nt.appendChild(note(U.nSwapT,U.nSwapB));
+}
+function setLegs(x,y){var q=S.ts?1:10;S.x=Math.max(1,Math.min(12,Math.round(x*q)/q));S.y=Math.max(1,Math.min(9,Math.round(y*q)/q));saveHash();triRender();}
+(function(){var svg=$('tri'),drag=false;
+  function mv(e){var p=svgPt(svg,e);setLegs((p.x-TR.Ax)/TR.s,(TR.Ay-p.y)/TR.s);}
+  svg.addEventListener('pointerdown',function(e){drag=true;touchedTri=true;try{svg.setPointerCapture(e.pointerId);}catch(_){}e.preventDefault();mv(e);});
+  svg.addEventListener('pointermove',function(e){if(drag)mv(e);});
+  function end(){drag=false;}svg.addEventListener('pointerup',end);svg.addEventListener('pointercancel',end);})();
+$('tri-x').addEventListener('input',function(){touchedTri=true;setLegs(+this.value,S.y);});
+$('tri-y').addEventListener('input',function(){touchedTri=true;setLegs(S.x,+this.value);});
+$('tri-snap').addEventListener('change',function(){S.ts=this.checked?1:0;if(S.ts){S.x=Math.round(S.x);S.y=Math.round(S.y);}saveHash(true);triRender();});
+$('tri-hide').addEventListener('change',function(){S.hide=this.value;saveHash(true);triRender();});
+$('tri-atA').addEventListener('change',function(){S.at='A';saveHash(true);triRender();});
+$('tri-atB').addEventListener('change',function(){S.at='B';saveHash(true);triRender();});
+$('tri-ratio').addEventListener('click',function(e){var b=e.target.closest('[data-r]');if(!b)return;S.r=b.getAttribute('data-r');saveHash(true);triRender();});
+$('tri-ratio').addEventListener('keydown',function(e){var L3=['sin','cos','tan'],i=L3.indexOf(S.r),n=i;
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')n=(i+1)%3;else if(e.key==='ArrowLeft'||e.key==='ArrowUp')n=(i+2)%3;else return;
+  e.preventDefault();S.r=L3[n];saveHash(true);triRender();var b=document.querySelector('#tri-ratio [data-r="'+S.r+'"]');if(b)b.focus();});
+
+/* ================= PRACTICE ================= */
+var P={key:null,pr:null,att:0,hints:0,sol:false,solved:false,fb:null,wrong:[],score:{solved:0,streak:0,best:0}};
+function ensureSeed(){if(!S.seed){S.seed=1+Math.floor(Math.random()*999999);saveHash(true);}}
+function loadProblem(){ensureSeed();var key=S.lvl+':'+S.seed+':'+LANG;if(P.key===key)return;
+  P.key=key;P.pr=C.generate(S.lvl,S.seed,LANG);P.att=0;P.hints=0;P.sol=false;P.solved=false;P.fb=null;P.wrong=[];$('pr-in').value='';}
+function done(){return P.solved||P.sol;}
+function wideLayout(){return window.matchMedia&&window.matchMedia('(min-width:880px)').matches;}
+function drawPractice(){
+  var pr=P.pr;if(!pr)return;
+  document.querySelectorAll('.lvl').forEach(function(b){b.setAttribute('aria-pressed',+b.getAttribute('data-lvl')===S.lvl?'true':'false');});
+  var sc=$('pr-score');sc.innerHTML='';[[U.solvedW,P.score.solved],[U.streakW,P.score.streak],[U.bestW,P.score.best]].forEach(function(z){var s=mk('span');s.appendChild(document.createTextNode(z[0]+' '));s.appendChild(mk('b','',String(z[1])));sc.appendChild(s);});
+  $('pr-code').textContent=t('code',{s:S.seed});
+  mixed($('pr-prompt'),pr.prompt);
+  $('pr-diag').innerHTML=pr.svg||'';$('pr-diag').hidden=!pr.svg;
+  var isChoice=pr.answer.kind==='choice';
+  $('pr-numwrap').hidden=isChoice;$('pr-choices').hidden=!isChoice;$('pr-check').hidden=isChoice;
+  if(!isChoice){var inp=$('pr-in');inp.placeholder=U[pr.ph]||'';inp.disabled=done();
+    document.querySelectorAll('#pr-keys .key').forEach(function(k){k.disabled=done();k.hidden=(k.getAttribute('data-k')===', '&&pr.answer.kind!=='set')||(k.getAttribute('data-k')==='*'&&pr.type!=='exact');});}
+  else{var ch=$('pr-choices');ch.innerHTML='';ch.setAttribute('aria-label',U.yourAnswer);
+    pr.answer.options.forEach(function(o){var b=mk('button','btn sec',pr.type==='quad'?t('qN',{q:o.label}):o.label);b.type='button';b.setAttribute('data-id',o.id);
+      var wrong=P.wrong.indexOf(o.id)>=0;if(wrong)b.className='btn sec no';
+      if(done()&&o.id===pr.answer.correct)b.className='btn';
+      b.disabled=done()||wrong;ch.appendChild(b);});}
+  $('pr-check').disabled=done();
+  var hb=$('pr-hint');hb.hidden=P.sol;hb.textContent=P.hints>=pr.hints.length?U.showSol:U.hint;
+  if(P.solved&&!P.sol){hb.hidden=false;hb.textContent=U.seeSteps;}
+  $('pr-new').className=done()?'btn':'btn sec';
+  // feedback
+  var fb=$('pr-fb');fb.innerHTML='';
+  if(P.fb){var w=mk('div',P.fb.kind);
+    if(P.fb.kind==='ok'){w.innerHTML=CHECK;}
+    var body=mk('div');if(P.fb.title)body.appendChild(mk('strong','',P.fb.title+' '));
+    if(P.fb.msg){var sp=mk('span');mixed(sp,P.fb.msg);body.appendChild(sp);}
+    w.appendChild(body);fb.appendChild(w);}
+  // after-actions
+  var af=$('pr-after');af.innerHTML='';
+  if(done()&&pr.circle){var cb=mk('button','btn sec',U.seeCircle);cb.type='button';cb.addEventListener('click',function(){S.tab='circle';S.a=pr.circle.deg;S.u=pr.circle.unit;radFlag=null;saveHash(true);renderAll();$('tab-circle').focus();});af.appendChild(cb);}
+  // help pane
+  var hp=$('pr-help');hp.innerHTML='';
+  if(!P.hints&&!P.sol){hp.appendChild(mk('p','muted',U.helpEmpty));}
+  for(var i=0;i<Math.min(P.hints,pr.hints.length);i++){var hbx=mk('div','hintbox');hbx.appendChild(mk('span','t',t('hintN',{n:i+1})));mixed(hbx.appendChild(mk('div')),pr.hints[i]);hp.appendChild(hbx);}
+  if(P.sol){var so=mk('div','sol');so.appendChild(mk('strong','',U.solTitle));var ol=mk('ol');
+    pr.steps.forEach(function(s,k){var li=mk('li');if(k===pr.steps.length-1){var hl=mk('span','hl');mixed(hl,s);li.appendChild(hl);}else mixed(li,s);ol.appendChild(li);});
+    so.appendChild(ol);hp.appendChild(so);}
+}
+function exactNote(pr,res){var a=pr.answer;if(!a.exact)return'';if(res&&res.decimal===false)return'';return t('exactForm',{e:'$'+a.exact+'$'});}
+function onRight(res){
+  var first=!P.sol;P.solved=true;P.score.solved++;P.score.streak++;if(P.score.streak>P.score.best)P.score.best=P.score.streak;
+  var pr=P.pr,msg='';
+  if(pr.answer.kind==='num'&&!pr.answer.undef){if(pr.answer.exact&&res&&res.decimal)msg=exactNote(pr,res);else if(pr.answer.shown)msg='\u2248 '+pr.answer.shown;}
+  if(pr.answer.kind==='set')msg='$x='+pr.answer.exact+'$';
+  P.fb={kind:'ok',title:U.correct,msg:msg};void first;
+}
+function onWrong(diag){
+  P.att++;var pr=P.pr,lines=[];
+  if(diag)lines.push(diag);
+  var two=pr.answer.kind==='choice'&&pr.answer.options.length===2;
+  if(two||P.att>=3){P.sol=true;P.score.streak=0;lines.push(U.revealed);}
+  else{if(P.hints<P.att)P.hints=P.att;lines.push(wideLayout()?U.hintOpened:U.hintOpenedB);}
+  P.fb={kind:'bad',title:U.notQuite,msg:lines.join(' ')};
+}
+function onCheck(){
+  if(done())return;var pr=P.pr,a=pr.answer,v=$('pr-in').value,res;
+  res=a.kind==='set'?C.checkSet(v,a):C.checkNum(v,a);
+  if(res.status==='empty'){P.fb={kind:'warn',title:'',msg:U.empty};drawPractice();return;}
+  if(res.status==='parse'){P.fb={kind:'warn',title:'',msg:U.parseErr};drawPractice();return;}
+  if(res.status==='correct')onRight(res);else onWrong(C.diagnose(pr,res,L));
+  drawPractice();
+}
+$('pr-check').addEventListener('click',onCheck);
+$('pr-in').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();onCheck();}});
+$('pr-choices').addEventListener('click',function(e){var b=e.target.closest('[data-id]');if(!b||done())return;var id=b.getAttribute('data-id');
+  if(id===P.pr.answer.correct)onRight(null);else{P.wrong.push(id);onWrong(null);}drawPractice();
+  var nb=document.querySelector('#pr-choices button:not([disabled])');if(nb)nb.focus();else $('pr-new').focus();});
+$('pr-hint').addEventListener('click',function(){
+  var pr=P.pr;if(P.solved&&!P.sol){P.sol=true;drawPractice();return;}
+  if(P.hints<pr.hints.length)P.hints++;else{P.sol=true;if(!P.solved)P.score.streak=0;P.fb={kind:'bad',title:'',msg:U.revealed};}
+  drawPractice();});
+$('pr-new').addEventListener('click',function(){var s;do{s=1+Math.floor(Math.random()*999999);}while(s===S.seed);S.seed=s;saveHash(true);loadProblem();drawPractice();});
+$('pr-levels').addEventListener('click',function(e){var b=e.target.closest('[data-lvl]');if(!b)return;var l=+b.getAttribute('data-lvl');if(l===S.lvl)return;S.lvl=l;S.seed=1+Math.floor(Math.random()*999999);saveHash(true);loadProblem();drawPractice();});
+$('pr-keys').addEventListener('mousedown',function(e){if(e.target.closest('.key'))e.preventDefault();});
+$('pr-keys').addEventListener('click',function(e){var b=e.target.closest('[data-k]');if(!b)return;var k=b.getAttribute('data-k'),inp=$('pr-in');
+  if(k==='*'){inp.value=U.undefKey;inp.focus();return;}
+  var s=inp.selectionStart==null?inp.value.length:inp.selectionStart,en=inp.selectionEnd==null?s:inp.selectionEnd;
+  inp.value=inp.value.slice(0,s)+k+inp.value.slice(en);var c=s+k.length;inp.focus();try{inp.setSelectionRange(c,c);}catch(_){}});
+
+/* ================= global ================= */
+$('reset').addEventListener('click',function(){var tab=S.tab,seed=S.seed,lvl=S.lvl;S=clone(DEF);S.tab=tab;S.seed=seed;S.lvl=lvl;radFlag=null;touchedUC=false;touchedTri=false;saveHash(true);renderAll();});
+function renderAll(){showTab();ucRender();triRender();if(S.tab==='practice'||P.pr){loadProblem();drawPractice();}}
+S=parseHash();applyText();renderAll();
+window.addEventListener('load',function(){if(window.katex)renderAll();});
+})();
+</script>
+</body>
+</html>

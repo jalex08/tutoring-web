@@ -40,3 +40,40 @@ Requirements:
     tells the page, which copies the hash into its own address bar. Copy link and the EN/ES switch
     carry it, and opening that link restores the setup.
 - The Spanish page loads the same file with `?lang=es`.
+
+## The config file (`<name>.json`, version 1)
+
+Ask the AI for a second file with the same base name as the tool: `trigonometry-playground.html` and
+`trigonometry-playground.json`. Drop both on the admin's file box, at once and in any order, or one at
+a time. The JSON fills every field of the page text. Example: `test/fixtures/trigonometry-playground.json`.
+
+```json
+{
+  "version": 1,
+  "file": "trigonometry-playground.html",
+  "subject": "geometry-trig",
+  "levels": ["high-school", "college"],
+  "courseTags": ["Geometry", "Algebra 2"],
+  "en": {
+    "title": "…", "slug": "…", "description": "… (155 characters max)",
+    "intro": "First paragraph.\n\nSecond paragraph.",
+    "howTo": ["Step one.", "Step two."],
+    "keyIdeas": ["$\\sin^2\\theta + \\cos^2\\theta = 1$"],
+    "faq": [{ "q": "…", "a": "…" }],
+    "keywords": ["…"]
+  },
+  "es": { "same keys": "…" }
+}
+```
+
+- `subject`: algebra, geometry-trig, precalc, calculus, physics, circuits, digital-logic, programming,
+  embedded or other. `levels`: high-school, college, engineering.
+- `intro`: a blank line (`\n\n`) between paragraphs. Any text may use `$…$` math.
+- Required in both languages: title, slug, description, intro, howTo and keyIdeas. `faq` and `keywords`
+  are optional.
+- The admin fills the form; it doesn't publish. Problems (a `file` that doesn't match the .html, missing
+  fields, a description over 155 characters, an invalid subject or level, a slug that's taken, with a
+  one-click `slug-2`) show next to the field. Values are never dropped silently.
+- Every uploaded config is kept as it was. Download it under the file box ("Config files").
+- Replacing a live tool with a new .html + .json asks "Update the page text from the config?" (OK = yes).
+  An .html alone replaces only the tool; a .json alone updates only the page text.

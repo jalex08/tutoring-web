@@ -110,7 +110,13 @@ function normalize(doc) {
       sha256: String(d.file.sha256 || ""),
       uploadedAt: String(d.file.uploadedAt || ""),
       warnings: list(d.file.warnings, 30, 400),
+      name: str(d.file.name, 200), // the uploaded file's name (to pair it with a config file)
     } : null,
+    // every config JSON uploaded, original bytes kept in the bucket (resources/<id>/config-<n>.json)
+    configs: (Array.isArray(d.configs) ? d.configs : []).filter((c) => c && c.path).slice(-50).map((c) => ({
+      n: Number(c.n) || 0, path: String(c.path), name: str(c.name, 200), file: str(c.file, 200),
+      fileVersion: Number(c.fileVersion) || 0, sizeBytes: Number(c.sizeBytes) || 0, uploadedAt: String(c.uploadedAt || ""),
+    })),
     og: { en: str(d.og && d.og.en, 200), es: str(d.og && d.og.es, 200) },
     createdAt: String(d.createdAt || ""),
     publishedAt: String(d.publishedAt || ""),

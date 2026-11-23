@@ -107,6 +107,44 @@ function sample(over = {}) {
     for (const re of [/api\.example\.org/, /evil\.example/, /forms\.example\.net/, /localStorage/, /viewport/, /#hash/]) assert.ok(w.some((x) => re.test(x)), re);
     assert.deepEqual(frame.analyze(TOOL), []);
   });
+  await check("tool config (fixture): reads cleanly, every EN and ES field mapped, nothing lost", () => {
+    const T = require("../lib/resources/toolconfig.js");
+    const text = fs.readFileSync(path.join(ROOT, "test/fixtures/trigonometry-playground.json"), "utf8"), cfg = JSON.parse(text);
+    const r = T.readConfig(text, { htmlName: "trigonometry-playground.html" });
+    assert.equal(r.ok, true); assert.deepEqual(r.problems, []);
+    assert.deepEqual([r.fields.slugEn, r.fields.slugEs, r.fields.subject, r.fields.levels, r.fields.courseTags], [cfg.en.slug, cfg.es.slug, cfg.subject, cfg.levels, cfg.courseTags]);
+    for (const l of ["en", "es"]) for (const k of ["title", "description", "intro", "howTo", "keyIdeas", "faq", "keywords"]) assert.deepEqual(r.fields[l][k], cfg[l][k], `${l}.${k}`);
+    // the filled form passes the publish checks (formulas included)
+    const doc = M.normalize({ id: "x", ...r.fields, file: { version: 1 } });
+    assert.deepEqual(M.problems(doc), []);
+    for (const l of ["en", "es"]) for (const k of doc[l].keyIdeas) assert.deepEqual(math.mathErrors(k), [], k);
+  });
+  await check("tool config problems: file, version, JSON, types, subject/levels, length, slug clash with -2 suggestion, unknown keys", () => {
+    const T = require("../lib/resources/toolconfig.js");
+    const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, "test/fixtures/trigonometry-playground.json"), "utf8"));
+    const read = (c, o = {}) => T.readConfig(typeof c === "string" ? c : JSON.stringify(c), o);
+    const fieldsOf = (r) => r.problems.map((p) => p.field);
+    assert.match(read(cfg, { htmlName: "other.html" }).problems[0].message, /is for "trigonometry-playground\.html", but the tool file is "other\.html"/);
+    assert.equal(read({ ...cfg, version: 2 }).fields, null);
+    assert.match(read({ ...cfg, version: 2 }).problems[0].message, /Unknown config version 2/);
+    assert.match(read({ ...cfg, version: undefined }).problems[0].message, /no "version"/);
+    assert.match(read("{ nope").problems[0].message, /isn't valid JSON \(line 1/);
+    assert.match(read("[1]").problems[0].message, /must be a JSON object/);
+    let r = read({ ...cfg, subject: "trig", levels: ["college", "kindergarten"], extra: 1, en: { ...cfg.en, description: "y".repeat(160), howTo: "one", bonus: true }, es: { ...cfg.es, faq: [{ q: "only q" }] } });
+    assert.deepEqual(fieldsOf(r).sort(), ["en", "en.description", "en.howTo", "es.faq", "json", "levels", "subject"].sort());
+    assert.deepEqual(r.fields.levels, ["college"]);
+    assert.equal(r.fields.en.description.length, 160); // kept, flagged
+    assert.equal(r.problems.find((p) => p.field === "json").level, "warning");
+    const other = sample({ id: "zzzzz11111", slugEn: "trigonometry-playground", slugEs: "otra", slugHistoryEn: [] });
+    const other2 = sample({ id: "zzzzz22222", slugEn: "x", slugEs: "y", slugHistoryEn: ["trigonometry-playground-2"] });
+    r = read(cfg, { others: [other, other2] });
+    const clash = r.problems.find((p) => p.field === "en.slug");
+    assert.match(clash.message, /already used/); assert.equal(clash.suggestion, "trigonometry-playground-3");
+    assert.equal(r.fields.slugEn, "trigonometry-playground");
+    assert.equal(read({ ...cfg, en: { ...cfg.en, slug: "Bad Slug" } }).problems[0].suggestion, "bad-slug");
+    const { en, ...noEn } = cfg;
+    assert.match(read(noEn).problems.find((p) => p.field === "en").message, /Missing the "en" section/);
+  });
   await check("Firestore value encoding round-trips", () => {
     const d = { a: "x", n: 3, f: 1.5, b: true, z: null, arr: ["p", 2], empty: [], m: { k: [{ q: "a" }] } };
     assert.deepEqual(storeLib.fromFields(storeLib.toFields(d)), d);
@@ -509,6 +547,28 @@ function sample(over = {}) {
         assert.match(p, new RegExp(`"http://127\\.0\\.0\\.1:\\d+/frame/${id}/v2\\?lang=es"`));
         assert.equal(r.headers.get("x-frame-options"), "DENY");
         assert.equal((await fetch(`${abase}/edit/zzzzzzzzzz`)).status, 404);
+      });
+      await check("config endpoint: stored as uploaded, mapped, download; bad JSON refused and not stored", async () => {
+        const text = fs.readFileSync(path.join(ROOT, "test/fixtures/trigonometry-playground.json"));
+        const cid = (await (await A("POST", "/api/resources", {})).json()).id;
+        let r = await A("POST", `/api/resources/${cid}/config`, text, { "X-File-Name": "trigonometry-playground.json", "X-Html-Name": "trigonometry-playground.html" });
+        let j = await r.json();
+        assert.equal(r.status, 200, j.error);
+        assert.equal(j.fields.en.faq.length, 5);
+        assert.deepEqual(j.problems, []);
+        assert.equal(j.config.n, 1);
+        const d = await fetch(`${abase}/download/${cid}/config/1`);
+        assert.ok(Buffer.from(await d.arrayBuffer()).equals(text));
+        r = await A("POST", `/api/resources/${cid}/config`, Buffer.from("{oops"), { "X-File-Name": "x.json" });
+        j = await r.json();
+        assert.equal(r.status, 400); assert.match(j.problems[0].message, /isn't valid JSON/);
+        assert.equal((await astore.get(cid)).configs.length, 1);
+        assert.equal((await fetch(`${abase}/download/${cid}/config/2`)).status, 404);
+        // the .html uploaded after a config for another file name: flagged
+        r = await A("POST", `/api/resources/${cid}/file`, Buffer.from(TOOL), { "X-File-Name": "unit-circle.html" });
+        j = await r.json();
+        assert.equal(j.doc.file.name, "unit-circle.html");
+        assert.match(j.configProblems[0].message, /is for "trigonometry-playground\.html", but the tool file is "unit-circle\.html"/);
       });
       await check("math preview endpoint", async () => {
         const j = await (await A("POST", "/api/math", { text: "$x^2$ and $\\frac{1}$" })).json();

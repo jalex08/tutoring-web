@@ -14,7 +14,8 @@
  * Pages:  GET /  (list) · GET /edit/<id> · GET /preview/<id>/<en|es> · GET /frame/<id>/v<N> (any version)
  * API:    POST /api/resources · PUT /api/resources/<id> · POST /api/resources/<id>/file (raw HTML body)
  *         POST /api/resources/<id>/publish · POST /api/resources/<id>/unpublish · DELETE /api/resources/<id>
- *         POST /api/math (KaTeX preview)
+ *         POST /api/resources/<id>/config (a tool's .json: stored as is, read, mapped to the form; see toolconfig.js)
+ *         POST /api/math (KaTeX preview) · GET /download/<id>/config/<n> (an uploaded config, as it was)
  */
 "use strict";
 
@@ -28,6 +29,7 @@ const render = require("./lib/resources/render.js");
 const frame = require("./lib/resources/frame.js");
 const math = require("./lib/resources/math.js");
 const storeLib = require("./lib/resources/store.js");
+const toolconfig = require("./lib/resources/toolconfig.js");
 const iap = require("./iap.js");
 const authLib = require("./auth.js");
 
@@ -154,7 +156,7 @@ async function api(req, res, pathname, email) {
     log("resource_created", email, doc.id);
     return json(res, 200, { ok: true, id: doc.id });
   }
-  const m = pathname.match(/^\/api\/resources\/([a-z0-9]{10})(?:\/(file|publish|unpublish))?$/);
+  const m = pathname.match(/^\/api\/resources\/([a-z0-9]{10})(?:\/(file|config|publish|unpublish))?$/);
   if (!m) throw fail(404, "Not found.");
   const [, id, action] = m;
   const doc = await getDoc(id);
@@ -189,16 +191,42 @@ async function api(req, res, pathname, email) {
     const buf = Buffer.from(text, "utf8");
     const version = ((doc.file && doc.file.version) || 0) + 1;
     const warnings = frame.analyze(text, { size: buf.length });
+    const name = fileName(req);
     await s.writeObject(M.filePath(id, version), buf, "text/html; charset=utf-8");
     const next = M.normalize({
       ...doc,
-      file: { path: M.filePath(id, version), version, sizeBytes: buf.length, sha256: crypto.createHash("sha256").update(buf).digest("hex"), uploadedAt: now(), warnings },
+      file: { path: M.filePath(id, version), version, sizeBytes: buf.length, sha256: crypto.createHash("sha256").update(buf).digest("hex"), uploadedAt: now(), warnings, name },
       updatedAt: now(),
     });
     await s.put(next);
     if (doc.status === "published") await s.bump();
-    log("resource_file", email, id, { version, bytes: buf.length });
-    return json(res, 200, { ok: true, doc: next, warnings, scriptHosts: frame.scriptHostsOf(text), problems: publishProblems(next, others) });
+    log("resource_file", email, id, { version, bytes: buf.length, name });
+    // the last config said which tool file it was for: say so if this one has another name
+    const lastCfg = doc.configs[doc.configs.length - 1];
+    const configProblems = lastCfg && lastCfg.file && name && toolconfig.baseName(lastCfg.file) !== name
+      ? [{ field: "file", level: "error", message: `The config ${lastCfg.name || ""} is for "${toolconfig.baseName(lastCfg.file)}", but the tool file is "${name}". Check that they belong together.` }] : [];
+    return json(res, 200, { ok: true, doc: next, warnings, scriptHosts: frame.scriptHostsOf(text), problems: publishProblems(next, others), configProblems });
+  }
+
+  if (action === "config" && req.method === "POST") {
+    // a tool's config JSON: kept as uploaded (download later), read, and mapped onto the form's fields.
+    // The page text is NOT saved here: the editor fills the form; Save / Publish save it.
+    const raw = await readBody(req, toolconfig.MAX_BYTES + 1);
+    let text;
+    try { text = new TextDecoder("utf-8", { fatal: true }).decode(raw); }
+    catch { throw fail(400, "The config isn't UTF-8 text.", { problems: [{ field: "json", level: "error", message: "The config isn't UTF-8 text." }] }); }
+    const name = fileName(req) || "config.json";
+    const htmlName = String(req.headers["x-html-name"] ? decodeURIComponent(req.headers["x-html-name"]) : (doc.file && doc.file.name) || "").slice(0, 200);
+    const r = toolconfig.readConfig(text, { htmlName, others, selfId: id });
+    if (!r.ok && r.problems.some((p) => p.field === "json")) throw fail(400, r.problems[0].message, { problems: r.problems }); // not stored: it isn't JSON
+    const n = Math.max(0, ...doc.configs.map((c) => c.n)) + 1;
+    const cpath = `resources/${id}/config-${n}.json`;
+    await s.writeObject(cpath, raw, "application/json; charset=utf-8");
+    const entry = { n, path: cpath, name, file: r.file || "", fileVersion: (doc.file && doc.file.version) || 0, sizeBytes: raw.length, uploadedAt: now() };
+    const next = M.normalize({ ...doc, configs: [...doc.configs, entry] });
+    await s.put(next);
+    log("resource_config", email, id, { n, name, problems: r.problems.length });
+    return json(res, 200, { ok: true, doc: next, fields: r.fields, problems: r.problems, config: entry });
   }
 
   if (action === "publish" && req.method === "POST") {
@@ -236,6 +264,13 @@ async function api(req, res, pathname, email) {
     return json(res, 200, { ok: true });
   }
   throw fail(405, "Method not allowed.");
+}
+
+/** The uploaded file's own name (header X-File-Name, URI-encoded), just the base name. */
+function fileName(req) {
+  let v = String(req.headers["x-file-name"] || "");
+  try { v = decodeURIComponent(v); } catch {}
+  return toolconfig.baseName(v).replace(/[\u0000-\u001f]/g, "").slice(0, 200);
 }
 
 const log = (event, email, id, extra = {}) => console.log(JSON.stringify({ event, admin: email, id, ...extra }));
@@ -345,18 +380,25 @@ async function editPage(res, id) {
 <section class="card" aria-labelledby="file-h">
   <h2 id="file-h">Tool file</h2>
   <div class="drop" id="drop" tabindex="0" role="button" aria-describedby="drop-hint">
-    <p><b>Drop the .html file here</b> or <label class="link" for="file-input">choose a file</label></p>
-    <p class="hint" id="drop-hint">One self-contained HTML file, up to ${(MAX_UPLOAD / 1048576).toFixed(1)} MB. Replacing it makes a new version; the page URL stays the same${doc.status === "published" ? " and the live page switches to it right away" : ""}.</p>
-    <input type="file" id="file-input" accept=".html,.htm,text/html" hidden>
+    <p><b>Drop the tool here: <code>name.html</code> and <code>name.json</code></b> or <label class="link" for="file-input">choose files</label></p>
+    <p class="hint" id="drop-hint">The .html is the tool (up to ${(MAX_UPLOAD / 1048576).toFixed(1)} MB); the .json with the same name fills the page text. Both at once, in any order, or one at a time. Replacing the .html makes a new version; the page URL stays the same${doc.status === "published" ? " and the live page switches to it right away" : ""}.</p>
+    <input type="file" id="file-input" accept=".html,.htm,.json,text/html,application/json" multiple hidden>
   </div>
   <p class="file-info" id="file-info">${f ? `Version ${f.version} · ${(f.sizeBytes / 1024).toFixed(0)} KB · uploaded ${esc(f.uploadedAt.slice(0, 16).replace("T", " "))} UTC` : "No file yet."}</p>
   <ul class="warnings" id="warnings">${f ? f.warnings.map((w) => `<li>${esc(w)}</li>`).join("") : ""}</ul>
+  <ul class="cfg-problems" id="cfg-file-problems"></ul>
+  <div class="configs" id="configs"${doc.configs.length ? "" : " hidden"}>
+    <span class="label">Config files</span>
+    <ul id="config-list">${[...doc.configs].reverse().map((c) => configItem(doc.id, c)).join("")}</ul>
+  </div>
   <div class="tool-preview" id="tool-preview"${f ? "" : " hidden"}>
     <div class="tp-bar"><span>Live preview (same sandbox as the site)</span>
       <span><button type="button" class="btn btn-small" data-preview-lang="en" aria-pressed="true">EN</button><button type="button" class="btn btn-small" data-preview-lang="es" aria-pressed="false">ES</button></span></div>
     <iframe id="tool-frame" title="Tool preview" sandbox="${frame.SANDBOX}" allow="fullscreen"${f ? ` src="/frame/${doc.id}/v${f.version}"` : ""}></iframe>
   </div>
 </section>
+
+<div class="banner" id="cfg-banner" role="status" aria-live="polite" hidden></div>
 
 <form id="edit" class="card" novalidate>
   <h2>Page text</h2>
@@ -389,6 +431,18 @@ async function editPage(res, id) {
   <p class="live-links" id="live-links">${doc.status === "published" ? `Live: <a href="${live(M.pathOf(doc, "en"))}" target="_blank" rel="noopener">${esc(M.pathOf(doc, "en"))}</a> · <a href="${live(M.pathOf(doc, "es"))}" target="_blank" rel="noopener">${esc(M.pathOf(doc, "es"))}</a>` : ""}</p>
 </section>`;
   page(res, layout(doc.en.title || "New resource", body));
+}
+
+const configItem = (id, c) => `<li><a href="/download/${id}/config/${c.n}" download>${esc(c.name || `config-${c.n}.json`)}</a> <span class="hint">· for ${esc(c.file || "?")} · tool v${c.fileVersion || "–"} · ${esc(c.uploadedAt.slice(0, 16).replace("T", " "))} UTC</span></li>`;
+
+async function downloadConfig(res, id, n) {
+  const doc = await getDoc(id);
+  const c = doc.configs.find((x) => x.n === n);
+  if (!c) throw fail(404, "No such config file.");
+  const buf = await getStore().readObject(c.path);
+  if (!buf) throw fail(404, "Config file missing.");
+  const name = (c.name || `config-${n}.json`).replace(/[^\w.-]/g, "_");
+  send(res, 200, { "Content-Type": "application/json; charset=utf-8", "Content-Disposition": `attachment; filename="${name}"` }, buf);
 }
 
 async function previewPage(req, res, id, lang) {
@@ -445,6 +499,7 @@ async function handle(req, res) {
     if ((m = p.match(/^\/edit\/([a-z0-9]{10})$/))) return await editPage(res, m[1]);
     if ((m = p.match(/^\/preview\/([a-z0-9]{10})\/(en|es)$/))) return await previewPage(req, res, m[1], m[2]);
     if ((m = p.match(/^\/frame\/([a-z0-9]{10})\/v([0-9]{1,6})$/))) return await adminFrame(res, m[1], Number(m[2]));
+    if ((m = p.match(/^\/download\/([a-z0-9]{10})\/config\/([0-9]{1,4})$/))) return await downloadConfig(res, m[1], Number(m[2]));
     throw fail(404, "Not found.");
   } catch (err) {
     const status = err.status || 500;
