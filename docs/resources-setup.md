@@ -10,8 +10,7 @@ Names used below (change them in `app.yaml` and `admin/admin.yaml` too if you pi
 |---|---|
 | Bucket | `gs://josediaz-tutoring-res` (us-east1, private) |
 | Firestore database | `(default)`, or `resources` (see step 2) |
-| Public site's service account | `jalex-hub@appspot.gserviceaccount.com` (App Engine default, already exists) |
-| Admin's service account | `resources-admin@jalex-hub.iam.gserviceaccount.com` (step 4) |
+| Service account (both services) | `jalex-hub@appspot.gserviceaccount.com` (App Engine default, already exists) |
 | Admin URL | `https://admin-dot-jalex-hub.ue.r.appspot.com` |
 
 ## 1. Enable the APIs
@@ -70,46 +69,29 @@ gcloud storage buckets update gs://josediaz-tutoring-res --uniform-bucket-level-
 
 Objects are never public: the site streams them (`/frame/...`, `/resources/og/...`).
 
-## 4. Service accounts and permissions
+## 4. Permissions
 
-The admin gets its own service account, so the public site can only **read** resources.
-
-```bash
-gcloud iam service-accounts create resources-admin --display-name="Resources admin (App Engine service admin)" --project=jalex-hub
-```
-
-Public site (default App Engine account): read the bucket and Firestore.
-
-```bash
-gcloud storage buckets add-iam-policy-binding gs://josediaz-tutoring-res --member=serviceAccount:jalex-hub@appspot.gserviceaccount.com --role=roles/storage.objectViewer
-```
-
-```bash
-gcloud projects add-iam-policy-binding jalex-hub --member=serviceAccount:jalex-hub@appspot.gserviceaccount.com --role=roles/datastore.viewer --condition=None
-```
-
-Admin: write the bucket and Firestore.
-
-```bash
-gcloud storage buckets add-iam-policy-binding gs://josediaz-tutoring-res --member=serviceAccount:resources-admin@jalex-hub.iam.gserviceaccount.com --role=roles/storage.objectAdmin
-```
-
-```bash
-gcloud projects add-iam-policy-binding jalex-hub --member=serviceAccount:resources-admin@jalex-hub.iam.gserviceaccount.com --role=roles/datastore.user --condition=None
-```
-
-Let your own account deploy a service that runs as `resources-admin` (replace `YOU@gmail.com` with the Google account you deploy with):
-
-```bash
-gcloud iam service-accounts add-iam-policy-binding resources-admin@jalex-hub.iam.gserviceaccount.com --member=user:YOU@gmail.com --role=roles/iam.serviceAccountUser --project=jalex-hub
-```
-
-Older projects gave the App Engine default account the project-wide **Editor** role, which would also
-let it write. Check, and if it's there, consider removing it after the site works with the roles above:
+Both services (the public site and `admin`) run as the App Engine default service account,
+`jalex-hub@appspot.gserviceaccount.com`. In this project it has the project-wide **Editor** role, which
+already covers reading and writing Firestore and the bucket, so **there's nothing to grant**. Check:
 
 ```bash
 gcloud projects get-iam-policy jalex-hub --flatten="bindings[].members" --filter="bindings.members:jalex-hub@appspot.gserviceaccount.com" --format="value(bindings.role)"
 ```
+
+If `roles/editor` is listed (it was on 2026-11-23), go to step 5. If you ever remove Editor from that
+account, grant these instead:
+
+```bash
+gcloud storage buckets add-iam-policy-binding gs://josediaz-tutoring-res --member=serviceAccount:jalex-hub@appspot.gserviceaccount.com --role=roles/storage.objectAdmin
+```
+
+```bash
+gcloud projects add-iam-policy-binding jalex-hub --member=serviceAccount:jalex-hub@appspot.gserviceaccount.com --role=roles/datastore.user --condition=None
+```
+
+(A stricter setup gives the admin its own service account with write access and leaves the public
+site read-only. With Editor on the default account that buys little, so it isn't used here.)
 
 ## 5. Deploy the public site (default service)
 

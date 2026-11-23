@@ -4,9 +4,8 @@
 # allows only the Google accounts in ADMIN_EMAILS.
 service: admin
 runtime: nodejs22
-# Its own service account: the only identity that can write resources (the public site's default
-# account can only read them). Created in docs/resources-setup.md, step 4.
-service_account: resources-admin@jalex-hub.iam.gserviceaccount.com
+# Runs as the App Engine default service account (jalex-hub@appspot.gserviceaccount.com), like the
+# public site. See docs/resources-setup.md, step 4.
 
 instance_class: F1
 automatic_scaling:
