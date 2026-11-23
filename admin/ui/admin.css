@@ -10,6 +10,7 @@ h1,h2{font-family:var(--display);line-height:1.15;margin:0}
 h1{font-size:clamp(1.5rem,4vw,2.1rem);font-weight:800}
 h2{font-size:1.25rem;margin-bottom:14px}
 .top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 16px;background:var(--pad);border-bottom:1px solid var(--grid)}
+.top-links{display:flex;gap:16px;flex-wrap:wrap}
 .brand{font:800 1.1rem/1 var(--display);color:var(--graphite);text-decoration:none}
 main{max-width:1200px;margin:0 auto;padding:20px 16px 80px}
 .head-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}

@@ -20,7 +20,7 @@ default_expiration: "10m"
 env_variables:
   RESOURCES_BUCKET: "josediaz-tutoring-res"
   FIRESTORE_DATABASE: "(default)"
-  # /admin and /admin/ -> 302 here (the admin service, behind IAP). Empty = /admin stays a 404.
+  # /admin and /admin/ -> 302 here (the admin service, which asks for Google sign-in). Empty = /admin stays a 404.
   # Check it with: gcloud app browse --service=admin --no-launch-browser --project=jalex-hub
   ADMIN_URL: "https://admin-dot-jalex-hub.ue.r.appspot.com"
 

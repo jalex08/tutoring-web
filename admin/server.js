@@ -4,7 +4,8 @@
  * Publishing writes Firestore + Cloud Storage and bumps the change marker; the public site picks it up
  * within ~15-30 s (../resources.js). No deploy.
  *
- * Every request: IAP's signed header is verified and the email must be in ADMIN_EMAILS (iap.js).
+ * Every request: signed in with Google (auth.js: the app's own "Sign in with Google", session cookie) and
+ * the email must be in ADMIN_EMAILS. (App Engine can't put IAP in front of one service only.)
  * Every /api/ call also needs the header X-JDT-Admin: 1 and a same-origin Origin, so neither another site
  * nor an uploaded tool (sandboxed, opaque origin) can make one.
  *
@@ -28,6 +29,7 @@ const frame = require("./lib/resources/frame.js");
 const math = require("./lib/resources/math.js");
 const storeLib = require("./lib/resources/store.js");
 const iap = require("./iap.js");
+const authLib = require("./auth.js");
 
 const PORT = Number(process.env.PORT) || 8081;
 const MAX_UPLOAD = Math.round((Number(process.env.MAX_UPLOAD_MB) || 2) * 1048576);
@@ -38,7 +40,7 @@ const KATEX_DIST = path.join(path.dirname(require.resolve("katex/package.json"))
 let store = null;
 const getStore = () => (store ??= storeLib.fromEnv());
 let cards = () => require("./cards.js"); // tests can stub it
-let auth = (req) => iap.adminEmail(req);
+let auth = (req) => authLib.sessionEmail(req); // email, or null = not signed in
 
 const esc = math.escapeHtml;
 const now = () => new Date().toISOString();
@@ -252,7 +254,7 @@ const layout = (title, body, { script = true } = {}) => `<!DOCTYPE html>
 <link rel="stylesheet" href="/ui/admin.css">
 </head>
 <body>
-<header class="top"><a href="/" class="brand">Resources admin</a><a href="https://josediaztutoring.com/resources/" target="_blank" rel="noopener">Live library ↗</a></header>
+<header class="top"><a href="/" class="brand">Resources admin</a><span class="top-links"><a href="https://josediaztutoring.com/resources/" target="_blank" rel="noopener">Live library ↗</a> <a href="/auth/logout">Sign out</a></span></header>
 <main>
 ${body}
 </main>
@@ -412,11 +414,22 @@ const STATIC = { "/ui/admin.css": "text/css; charset=utf-8", "/ui/admin.js": "te
 async function handle(req, res) {
   const url = new URL(req.url || "/", "http://x");
   const p = url.pathname;
+  try {
+    if (await authLib.route(req, res, url, send)) return;
+  } catch (err) {
+    console.error("Admin: sign-in error:", err.message);
+    return send(res, 500, { "Content-Type": "text/plain; charset=utf-8" }, `Sign-in isn't set up correctly: ${err.message}`);
+  }
   let email;
   try { email = await auth(req); }
   catch (err) {
     console.warn(`Admin: refused ${req.method} ${p}: ${err.message}`);
     return send(res, 403, { "Content-Type": "text/plain; charset=utf-8" }, "Forbidden.");
+  }
+  if (!email) {
+    if (p.startsWith("/api/")) return json(res, 401, { ok: false, error: "You're signed out. Reload the page to sign in again (your edits stay in the form)." });
+    if (req.method === "GET" || req.method === "HEAD") return send(res, 302, { Location: `/auth/login?next=${encodeURIComponent(authLib.safeNext(p + url.search))}` }, "");
+    return send(res, 401, { "Content-Type": "text/plain; charset=utf-8" }, "Sign in first.");
   }
   try {
     if (p.startsWith("/api/")) return await api(req, res, p, email);

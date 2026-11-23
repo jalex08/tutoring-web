@@ -17,7 +17,7 @@
  * itself (/frame/...), its preview cards and /sitemap.xml are served by resources.js, from Firestore and
  * Cloud Storage (published from the admin service, admin/). The home pages get the 3 newest tools.
  *
- * /admin and /admin/: 302 to the admin service (env ADMIN_URL), where IAP asks for Google sign-in.
+ * /admin and /admin/: 302 to the admin service (env ADMIN_URL), which asks for Google sign-in.
  *
  * Language preference: / and /exams/ send a visitor with the cookie lang=es (saved by the EN/ES
  * toggle) to /es/ and /es/examenes/ (302). See LANG_ENTRY below.
@@ -678,7 +678,7 @@ function normalizePath(raw) {
 }
 
 /**
- * /admin and /admin/ -> the admin service (env ADMIN_URL in app.yaml), where IAP asks for Google sign-in.
+ * /admin and /admin/ -> the admin service (env ADMIN_URL in app.yaml), which asks for Google sign-in.
  * 302 + no-store so no browser or cache keeps it; noindex. Only an https URL counts; empty or invalid ->
  * the usual 404. Deeper paths (/admin/x) are never redirected. Not linked anywhere on the site.
  */

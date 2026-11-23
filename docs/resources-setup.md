@@ -1,7 +1,7 @@
 # Resources: one-time setup (project `jalex-hub`)
 
 What this sets up: the private bucket and the Firestore database behind `/resources/`, the
-`admin` App Engine service for uploading tools, and Google sign-in (IAP) in front of that service only.
+`admin` App Engine service for uploading tools, with its own "Sign in with Google" (step 7).
 Do the steps in this order. Every command names `--project=jalex-hub`, so it can't land in another project.
 
 Names used below (change them in `app.yaml` and `admin/admin.yaml` too if you pick others):
@@ -18,7 +18,7 @@ Names used below (change them in `app.yaml` and `admin/admin.yaml` too if you pi
 Secret Manager is already on (for `site-pricing`).
 
 ```bash
-gcloud services enable firestore.googleapis.com storage.googleapis.com iap.googleapis.com --project=jalex-hub
+gcloud services enable firestore.googleapis.com storage.googleapis.com --project=jalex-hub
 ```
 
 ## 2. Firestore database
@@ -119,87 +119,83 @@ Then:
 gcloud app deploy admin/admin.yaml --project=jalex-hub
 ```
 
-Until IAP is on (next step), every admin URL answers **403 Forbidden**: the code refuses any request that
-doesn't carry IAP's signed header. Nothing is exposed in between.
+Until step 7 is done, the admin answers with an error instead of the sign-in: nobody gets in.
 
-## 7. Turn on Google sign-in (IAP) for the `admin` service only
+## 7. Google sign-in for the admin
 
-Where you are before this step: the admin is deployed with your email in `ADMIN_EMAILS`, and every
-admin URL answers "Forbidden". The admin's log says `no IAP header`. This step makes Google ask you
-to sign in first.
+App Engine can only turn IAP on for the **whole** app, never for one service, so IAP would put the
+public site behind a login. The admin does "Sign in with Google" itself instead (`admin/auth.js`):
+Google's sign-in page, then only the accounts in `ADMIN_EMAILS` get in (12-hour session).
 
-> **Never run `gcloud iap web enable --resource-type=app-engine`** (with or without OAuth flags). It
-> turns IAP on for the whole App Engine app, including the public site, and every visitor would get a
-> Google sign-in page. Use the console's per-service switch (7.4).
+> **Leave IAP off.** In Security → Identity-Aware Proxy, the **App Engine app** switch must stay off.
+> Never run `gcloud iap web enable --resource-type=app-engine`.
 
 ### 7.1 OAuth consent screen (once)
 
 Console → **Google Auth Platform** (older consoles: **APIs & Services → OAuth consent screen**).
 
-1. If it shows **Get started**: App name `Jose Diaz Tutoring admin`, User support email `jadiazlab@gmail.com`,
-   Audience **External**, Contact email `jadiazlab@gmail.com`, accept the policy, **Create**.
-2. **Audience** → **Test users** → **Add users** → `jadiazlab@gmail.com` → **Save**. Leave the
-   publishing status on **Testing**: only test users can sign in, which is what you want.
+1. If it shows **Get started**: App name `Jose Diaz Tutoring admin`, support email `jadiazlab@gmail.com`,
+   Audience **External**, contact email `jadiazlab@gmail.com` → **Create**.
+2. **Audience → Test users → Add users →** `jadiazlab@gmail.com` → **Save**. Leave it on **Testing**: only
+   test users can sign in at all, an extra lock on top of `ADMIN_EMAILS`.
 
-### 7.2 OAuth client
+### 7.2 OAuth client (done: "IAP admin", `836480703321-h8q56orgjo937vrjgnq589psdrrc9g0f.apps.googleusercontent.com`)
 
-A personal (non-Workspace) project needs its own client; Google's built-in one only works inside a
-Workspace organization.
+**Google Auth Platform → Clients → IAP admin.**
 
-1. **Google Auth Platform → Clients → Create client** (older: **APIs & Services → Credentials → Create
-   credentials → OAuth client ID**).
-2. Application type **Web application**. Name `IAP admin`.
-3. **Authorized JavaScript origins:** leave empty. **Authorized redirect URIs:** leave empty for now.
-4. **Create**. A box shows the **Client ID** and the **Client secret**. Copy both somewhere safe
-   (or download the JSON). Never paste the secret into a chat or a file in the repo.
+- **Authorized JavaScript origins:** none.
+- **Authorized redirect URIs:** exactly this one (remove the `iap.googleapis.com` one if you added it):
 
-### 7.3 Redirect URI
+  ```
+  https://admin-dot-jalex-hub.ue.r.appspot.com/auth/callback
+  ```
 
-In Cloud Shell, paste the Client ID when asked; it prints the exact line to add:
+- **Save.** (Google can take a few minutes to apply it.)
 
-```bash
-read -p "Client ID: " CLIENT_ID; echo; echo "https://iap.googleapis.com/v1/oauth/clientIds/${CLIENT_ID}:handleRedirect"
-```
+The client ID is already in `admin/admin.yaml` (`OAUTH_CLIENT_ID`), with `ADMIN_BASE_URL` and `ADMIN_EMAILS`.
 
-Back in the console: **Clients** → **IAP admin** → **Authorized redirect URIs** → **Add URI** → paste
-that line → **Save**. (JavaScript origins stay empty.)
+### 7.3 Client secret in Secret Manager
 
-### 7.4 Switch IAP on for `admin`
-
-1. Console → **Security → Identity-Aware Proxy**. If it asks to enable the API, enable it.
-2. **Applications** tab. Expand **App Engine app**: you see one row per service, `default` and `admin`.
-3. Give IAP your client: on the **App Engine app** row, open **⋮ → Settings** (on some consoles, the
-   switch in step 4 asks for it instead). Choose the **custom OAuth** option and paste the Client ID
-   and Client secret from 7.2. **Save**.
-4. Turn on the switch on the **`admin`** row only. Confirm. The `default` row and the App Engine app
-   switch stay **off**.
-   - If there are no per-service rows, only one switch for the whole app: **stop**, don't turn it on.
-
-### 7.5 Let your account through IAP
+Paste the client secret when asked (it isn't shown or saved anywhere else):
 
 ```bash
-gcloud iap web add-iam-policy-binding --resource-type=app-engine --service=admin --member=user:jadiazlab@gmail.com --role=roles/iap.httpsResourceAccessor --project=jalex-hub
+read -s -p "Client secret: " S; echo; printf '%s' "$S" | gcloud secrets create admin-oauth-client-secret --data-file=- --replication-policy=automatic --project=jalex-hub; unset S
 ```
 
-### 7.6 Check (wait 2–3 minutes after 7.4)
+Let the app read it (the Editor role doesn't include reading secret values):
+
+```bash
+gcloud secrets add-iam-policy-binding admin-oauth-client-secret --member=serviceAccount:jalex-hub@appspot.gserviceaccount.com --role=roles/secretmanager.secretAccessor --project=jalex-hub
+```
+
+New secret later (e.g. you reset it in the console): `gcloud secrets versions add admin-oauth-client-secret --data-file=-`
+the same way. Everyone is signed out within 10 minutes.
+
+### 7.4 Deploy the admin
+
+```bash
+gcloud app deploy admin/admin.yaml --project=jalex-hub
+```
+
+### 7.5 Check
 
 In a **private window**:
 
-1. `https://josediaztutoring.com/` loads with **no** sign-in (the public site is untouched).
-2. `https://josediaztutoring.com/admin` → Google sign-in → sign in as `jadiazlab@gmail.com` → the
-   **Resources** list.
+1. `https://josediaztutoring.com/` loads with **no** sign-in.
+2. `https://josediaztutoring.com/admin` → Google's sign-in → choose `jadiazlab@gmail.com` → the **Resources** list.
+3. **Sign out** (top right) works.
 
-### 7.7 If it doesn't work
+### 7.6 If it doesn't work
 
 | What you see | Cause | Fix |
 |---|---|---|
-| "Forbidden." (plain text) and no Google sign-in | IAP not on for `admin` yet, or still propagating | Check 7.4; wait 5 minutes |
-| "Forbidden." after signing in | The admin refused you | `gcloud app logs read --service=admin --project=jalex-hub --limit=20 \| grep "Admin: refused"`, then fix what it says (usually the email in `ADMIN_EMAILS`) |
-| Google's "You don't have access" page | 7.5 not done, or done for another account | Run 7.5 for the account you signed in with |
-| `Error 400: redirect_uri_mismatch` | Redirect URI missing or mistyped | Redo 7.3 (the Client ID must match the client IAP uses) |
+| `Sign-in isn't set up correctly: secret admin-oauth-client-secret: HTTP 403` | The app can't read the secret | 7.3, second command |
+| `… HTTP 404` | The secret doesn't exist | 7.3, first command |
+| `Error 400: redirect_uri_mismatch` (Google) | The redirect URI on the client isn't exactly 7.2's | Fix it in 7.2; wait 5 minutes |
 | `Access blocked: … has not completed the Google verification process` | Your account isn't a test user | 7.1 step 2 |
+| "Not allowed" page after choosing the account | That account isn't in `ADMIN_EMAILS` | Sign in with `jadiazlab@gmail.com`, or add the account to `ADMIN_EMAILS` and redeploy |
+| "Sign-in failed" page | Google refused the code (often a wrong secret) | `gcloud app logs read --service=admin --project=jalex-hub --limit=20 \| grep "Admin:"`; redo 7.3 with `versions add` |
 | `/admin` gives the site's 404 page | The public site wasn't redeployed after the `/admin` change | `gcloud app deploy app.yaml --project=jalex-hub` |
-| The public site asks for sign-in | IAP was turned on for `default` or the whole app | IAP page: turn those switches off right away |
 
 ## 8. First tool
 
@@ -228,4 +224,4 @@ the folder `.dev-data/resources` (gitignored) instead of Firestore and Cloud Sto
 ## Costs
 
 The bucket holds a few MB. Firestore reads are about one per 15 seconds per instance while there's
-traffic, plus one list read per publish, which is far inside the free tier. The admin scales to zero. IAP is free.
+traffic, plus one list read per publish, which is far inside the free tier. The admin scales to zero. Google sign-in is free.

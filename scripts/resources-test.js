@@ -321,13 +321,79 @@ function sample(over = {}) {
       assert.deepEqual(iap.allowedEmails({ ADMIN_EMAILS: " A@x.com, b@y.com ,," }), ["a@x.com", "b@y.com"]);
     });
 
+    await check("Google sign-in: login redirect, state/nonce checks, allowlist, signed 12-hour session, logout", async () => {
+      const auth = require("../admin/auth.js");
+      const env = { ADMIN_EMAILS: "me@school.test", OAUTH_CLIENT_ID: "cid.apps.googleusercontent.com", OAUTH_CLIENT_SECRET: "s3cret", ADMIN_BASE_URL: "https://admin.example" };
+      const run = async (pathAndQuery, cookie = "") => {
+        const out = {};
+        const url = new URL(pathAndQuery, "https://admin.example");
+        await auth.route({ headers: { cookie } }, {}, url, (res, status, headers, body) => Object.assign(out, { status, headers, body }), env);
+        return out;
+      };
+      const jar = (setCookie) => [].concat(setCookie).map((c) => c.split(";")[0]).filter((c) => !/=$/.test(c)).join("; ");
+      // login: Google URL with our client, exact redirect URI, state + nonce, login_hint; state cookie
+      const login = await run("/auth/login?next=/edit/abcde12345");
+      assert.equal(login.status, 302);
+      const g = new URL(login.headers.Location);
+      assert.equal(g.origin + g.pathname, "https://accounts.google.com/o/oauth2/v2/auth");
+      assert.equal(g.searchParams.get("client_id"), env.OAUTH_CLIENT_ID);
+      assert.equal(g.searchParams.get("redirect_uri"), "https://admin.example/auth/callback");
+      assert.equal(g.searchParams.get("login_hint"), "me@school.test");
+      assert.match(login.headers["Set-Cookie"], /^__Host-jdt_oauth=[^;]+; Path=\/; Max-Age=600; HttpOnly; Secure; SameSite=Lax$/);
+      const stateCookie = jar(login.headers["Set-Cookie"]);
+      const state = g.searchParams.get("state"), nonce = g.searchParams.get("nonce");
+      // Google's token endpoint, mocked: returns an ID token with the given claims
+      let claims = {};
+      auth._setFetch(async (u, opts) => {
+        assert.equal(u, "https://oauth2.googleapis.com/token");
+        const b = new URLSearchParams(opts.body);
+        assert.equal(b.get("client_secret"), "s3cret"); assert.equal(b.get("redirect_uri"), "https://admin.example/auth/callback");
+        const tok = ["x", Buffer.from(JSON.stringify(claims)).toString("base64url"), "sig"].join(".");
+        return { ok: true, status: 200, json: async () => ({ id_token: tok }) };
+      });
+      const good = { aud: env.OAUTH_CLIENT_ID, iss: "https://accounts.google.com", exp: Date.now() / 1000 + 600, nonce, email: "Me@School.test", email_verified: true };
+      // wrong state -> 400; other account -> 403; wrong nonce / audience -> 403
+      assert.equal((await run(`/auth/callback?code=c&state=nope`, stateCookie)).status, 400);
+      assert.equal((await run(`/auth/callback?code=c&state=${state}`)).status, 400); // no state cookie
+      for (const bad of [{ email: "other@gmail.com" }, { nonce: "x" }, { aud: "other" }, { email_verified: false }, { exp: 1 }]) {
+        claims = { ...good, ...bad };
+        const warn = console.warn; console.warn = () => {};
+        try { assert.equal((await run(`/auth/callback?code=c&state=${state}`, stateCookie)).status, 403, JSON.stringify(bad)); } finally { console.warn = warn; }
+      }
+      claims = good;
+      const log = console.log; console.log = () => {};
+      let ok; try { ok = await run(`/auth/callback?code=c&state=${state}`, stateCookie); } finally { console.log = log; }
+      assert.equal(ok.status, 302);
+      assert.equal(ok.headers.Location, "/edit/abcde12345");
+      const session = jar(ok.headers["Set-Cookie"]);
+      assert.match(session, /^__Host-jdt_admin=/);
+      assert.ok(ok.headers["Set-Cookie"].some((c) => /^__Host-jdt_admin=.*Max-Age=43200; HttpOnly; Secure; SameSite=Lax$/.test(c)));
+      // the session works; tampered, other-key or no cookie -> signed out; removed from ADMIN_EMAILS -> signed out
+      assert.equal(await auth.sessionEmail({ headers: { cookie: session } }, env), "me@school.test");
+      const [name, val] = session.split("=");
+      const [body, sig] = val.split(".");
+      const forged = Buffer.from(JSON.stringify({ email: "me@school.test", exp: 9e9 })).toString("base64url");
+      assert.equal(await auth.sessionEmail({ headers: { cookie: `${name}=${forged}.${sig}` } }, env), null);
+      assert.equal(await auth.sessionEmail({ headers: { cookie: session } }, { ...env, OAUTH_CLIENT_SECRET: "rotated" }), null);
+      assert.equal(await auth.sessionEmail({ headers: { cookie: session } }, { ...env, ADMIN_EMAILS: "else@x.com" }), null);
+      assert.equal(await auth.sessionEmail({ headers: {} }, env), null);
+      // open-redirect guard on ?next=
+      for (const n of ["//evil.example", "https://evil.example", "/\\evil", "/auth/logout", ""]) assert.equal(auth.safeNext(n), "/", n);
+      assert.equal(auth.safeNext("/edit/abc?x=1"), "/edit/abc?x=1");
+      // logout clears the cookie
+      const out = await run("/auth/logout", session);
+      assert.match(out.headers["Set-Cookie"], /^__Host-jdt_admin=; Path=\/; Max-Age=0/);
+      // misconfiguration is loud
+      await assert.rejects(auth.route({ headers: {} }, {}, new URL("https://a/auth/login"), () => {}, { ...env, ADMIN_BASE_URL: "" }), /ADMIN_BASE_URL/);
+    });
+
     const admin = require("../admin/server.js");
     const astore = storeLib.memoryStore();
     admin._setStore(astore);
     const cardsCalls = [];
     admin._setCards({ renderCard: async (o) => { cardsCalls.push(o); return Buffer.from(`png-${o.lang}-${o.title}`); }, cardPath: (id, lang, png) => `og/${id}-${lang}-${crypto.createHash("sha256").update(png).digest("hex").slice(0, 8)}.png` });
     let user = "me@school.test";
-    admin._setAuth(async () => { if (!user) throw new Error("not signed in (test)"); return user; });
+    admin._setAuth(async () => user || null);
     const warn = console.warn; console.warn = () => {};
     const abase = await listen(admin.server);
     const A = (method, p, body, headers = {}) => fetch(abase + p, {
@@ -338,10 +404,12 @@ function sample(over = {}) {
     const logs = console.log; console.log = () => {};
     let id;
     try {
-      await check("admin refuses anyone not signed in (403), pages and API alike", async () => {
+      await check("signed out: pages go to Google sign-in (302 /auth/login?next=...), the API answers 401", async () => {
         user = null;
-        assert.equal((await fetch(abase + "/")).status, 403);
-        assert.equal((await A("POST", "/api/resources", {})).status, 403);
+        const r = await fetch(abase + "/edit/abcde12345?x=1", { redirect: "manual" });
+        assert.equal(r.status, 302);
+        assert.equal(r.headers.get("location"), "/auth/login?next=%2Fedit%2Fabcde12345%3Fx%3D1");
+        assert.equal((await A("POST", "/api/resources", {})).status, 401);
         user = "me@school.test";
         assert.equal((await fetch(abase + "/")).status, 200);
       });
