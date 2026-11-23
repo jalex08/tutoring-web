@@ -75,7 +75,7 @@ async function call(url, opts = {}, { okMissing = false } = {}) {
   if (okMissing && r.status === 404) return null;
   if (!r.ok) {
     let msg = "";
-    try { msg = (await r.text()).slice(0, 300); } catch {}
+    try { msg = (await r.text()).replace(/\s+/g, " ").slice(0, 400); } catch {} // one log line
     throw new Error(`${opts.method || "GET"} ${url.replace(/\?.*/, "")}: HTTP ${r.status} ${msg}`);
   }
   return r;
