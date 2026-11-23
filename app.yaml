@@ -16,11 +16,10 @@ automatic_scaling:
 default_expiration: "10m"
 
 # Resources (free interactive tools, see resources.js and docs/resources-setup.md): the private bucket
-# for the tool files and preview cards, and the Firestore database: a named Native-mode database,
-# "resources", because this project's (default) database is in Datastore mode (the Firestore API can't use it).
+# for the tool files and preview cards, and the Firestore database ((default), Native mode, us-east1).
 env_variables:
   RESOURCES_BUCKET: "josediaz-tutoring-res"
-  FIRESTORE_DATABASE: "resources"
+  FIRESTORE_DATABASE: "(default)"
 
 handlers:
 # Link-preview image. Long cache.

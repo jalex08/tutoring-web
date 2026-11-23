@@ -9,7 +9,7 @@ Names used below (change them in `app.yaml` and `admin/admin.yaml` too if you pi
 | Thing | Name |
 |---|---|
 | Bucket | `gs://josediaz-tutoring-res` (us-east1, private) |
-| Firestore database | `resources` (Native mode; this project's `(default)` is in Datastore mode, see step 2) |
+| Firestore database | `(default)` (Native mode, us-east1; already exists) |
 | Service account (both services) | `jalex-hub@appspot.gserviceaccount.com` (App Engine default, already exists) |
 | Admin URL | `https://admin-dot-jalex-hub.ue.r.appspot.com` |
 
