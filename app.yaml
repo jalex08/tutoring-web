@@ -20,6 +20,9 @@ default_expiration: "10m"
 env_variables:
   RESOURCES_BUCKET: "josediaz-tutoring-res"
   FIRESTORE_DATABASE: "(default)"
+  # /admin and /admin/ -> 302 here (the admin service, behind IAP). Empty = /admin stays a 404.
+  # Check it with: gcloud app browse --service=admin --no-launch-browser --project=jalex-hub
+  ADMIN_URL: "https://admin-dot-jalex-hub.ue.r.appspot.com"
 
 handlers:
 # Link-preview image. Long cache.
@@ -104,6 +107,7 @@ handlers:
 #   /exams, /exams.html, /exams/index.html -> /exams/ (and the same for the other three)   (301)
 #   any other URL under /exams/ or /es/examenes/ -> the 404 page
 #   /api/contact            booking form (POST only)
+#   /admin, /admin/         302 to ADMIN_URL (env above; the admin service), no-store, noindex; /admin/x -> 404
 #   /resources/, /es/recursos/ and /resources/<slug>/, /es/recursos/<slug>/
 #                           free interactive tools (resources.js; data from Firestore + Cloud Storage,
 #                           published from the admin service). /resources -> /resources/ (301);

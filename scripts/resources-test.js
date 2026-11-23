@@ -245,6 +245,39 @@ function sample(over = {}) {
     assert.equal(mem.calls.list, before.list);
     assert.equal(mem.calls.rev, before.rev + 3);
   }));
+  await check("/admin and /admin/: 302 to ADMIN_URL, no-store, noindex; deeper paths and /es/admin 404", quiet(async () => {
+    const saved = process.env.ADMIN_URL;
+    process.env.ADMIN_URL = "https://admin-dot-jalex-hub.ue.r.appspot.com";
+    try {
+      for (const p of ["/admin", "/admin/"]) {
+        const r = await get(p);
+        assert.equal(r.status, 302, p);
+        assert.equal(r.headers.get("location"), "https://admin-dot-jalex-hub.ue.r.appspot.com", p);
+        assert.equal(r.headers.get("cache-control"), "no-store", p);
+        assert.equal(r.headers.get("x-robots-tag"), "noindex", p);
+      }
+      assert.equal((await fetch(base + "/admin", { method: "HEAD", redirect: "manual" })).status, 302);
+      for (const p of ["/admin/anything", "/admin/edit/abcde12345", "/es/admin", "/es/admin/", "/administrator"]) assert.equal((await get(p)).status, 404, p);
+      assert.equal((await fetch(base + "/admin", { method: "POST", redirect: "manual" })).status, 404);
+      // uppercase: one 301 to the lowercase path first (server.js normalization), then the 302
+      const up = await get("/Admin");
+      assert.equal(up.status, 301); assert.equal(up.headers.get("location"), "/admin");
+      // not linked or listed anywhere public
+      const home = await (await get("/")).text(), sm = await (await get("/sitemap.xml")).text();
+      for (const [n, t] of [["home", home], ["sitemap", sm], ["llms.txt", await (await get("/llms.txt")).text()], ["robots.txt", await (await get("/robots.txt")).text()]]) {
+        assert.doesNotMatch(t, /\/admin\b|admin-dot/, n);
+      }
+      for (const v of ["", "   ", "http://admin-dot-jalex-hub.ue.r.appspot.com", "not a url"]) {
+        process.env.ADMIN_URL = v;
+        const warn = console.warn; console.warn = () => {};
+        try { assert.equal((await get("/admin")).status, 404, JSON.stringify(v)); } finally { console.warn = warn; }
+      }
+      delete process.env.ADMIN_URL;
+      assert.equal((await get("/admin/")).status, 404);
+    } finally {
+      if (saved === undefined) delete process.env.ADMIN_URL; else process.env.ADMIN_URL = saved;
+    }
+  }));
   await check("store down: the last good data keeps serving", quiet(async () => {
     const real = mem.rev;
     mem.rev = async () => { throw new Error("down"); };

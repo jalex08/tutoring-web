@@ -378,6 +378,7 @@ Mark `generate_lead` as a key event in GA4. Preview mode shows the events firing
 | `/llms.txt`, `/exams/data.json` | 10 min, public | `server.js` |
 | `/index.html`, `/es`, `/es/index.html` | 1 hour | `server.js`: 301 to `/` or `/es/` |
 | `/?lang=es` | 1 hour | `server.js`: 301 to `/es/` (keeps `?topic=`); the script at the top of `index.html` does the same as a fallback |
+| `/admin`, `/admin/` | never (`no-store`, `noindex`) | `server.js`: 302 to `ADMIN_URL` (app.yaml env; the admin service, behind IAP). Empty: 404. `/admin/*` deeper: 404 |
 | `/api/*` | never | `server.js` (unknown `/api/*` paths get a JSON 404) |
 | anything else | 10 min | `server.js`: 404 with `www/404.html`, `X-Robots-Tag: noindex` |
 
