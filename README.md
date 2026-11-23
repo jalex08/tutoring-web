@@ -11,6 +11,11 @@ confirmation to the client), plus a few redirects and the 404 page.
 ```
 app.yaml          App Engine config (handlers, caching, security headers, scaling)
 server.js         booking form, redirects and 404 page (Node.js, no framework)
+resources.js      free interactive tools: /resources/, /es/recursos/, /frame/..., sitemap (see "Resources")
+lib/resources/    shared by the site and the admin: data model, rendering, sandbox, store <- edit
+pages/resources/  CSS + scripts for the resource pages and the library                 <- edit
+admin/            App Engine service `admin` (upload + publish tools, Google sign-in); admin/lib/
+                  is a copy of lib/resources made by `npm run build`
 package.json      Node dependencies (just nodemailer) and npm scripts
 package-lock.json
 .gcloudignore     uploads only app.yaml, server.js, package files and www/
@@ -309,6 +314,32 @@ gcloud secrets add-iam-policy-binding site-pricing --project=jalex-hub \
   --member=serviceAccount:jalex-hub@appspot.gserviceaccount.com --role=roles/secretmanager.secretAccessor
 ```
 
+## Resources (free interactive tools)
+
+Upload one AI-generated HTML tool (plus, optionally, its `<name>.json` config, which fills the whole
+form; schema in `docs/resources-tool-guide.md`) in the admin
+(`josediaztutoring.com/admin` → `https://admin-dot-jalex-hub.ue.r.appspot.com`, Sign in with Google, `admin/auth.js`), write the EN/ES text, tick
+"I checked the formulas and the Spanish", Publish. Within ~30 seconds it's live at
+`/resources/<slug>/` and `/es/recursos/<slug>/`, in the library, on the home page (3 newest) and in the
+sitemap. **No deploy.** Setup: `docs/resources-setup.md`. What to ask the AI for:
+`docs/resources-tool-guide.md`.
+
+- Data: Firestore (`resources` collection, `meta/resources` change marker) + the private bucket
+  `josediaz-tutoring-res` (`resources/<id>/v<N>.html`, `og/<id>-<lang>-<hash>.png`). `resources.js` re-checks
+  the marker at most every 15 s and keeps the last good data if Firestore is down.
+- Isolation: the tool is served at `/frame/<id>/v<N>` with `Content-Security-Policy: sandbox …` (never
+  `allow-same-origin`) and `frame-ancestors 'self'`, and loaded in an `<iframe sandbox>`. It can't read
+  cookies, the page or the admin, even when opened directly. A small injected script keeps
+  `localStorage`/cookies from crashing tools and mirrors the tool's `#hash` into the page URL (Copy link).
+- URLs: changing a slug after publishing keeps a 301 from the old one; Unpublish gives 410; drafts 404.
+  Slugs `og` and `katex` are reserved.
+- The page text is in Firestore, edited in the admin; the bar's and the page's fixed labels are in
+  `lib/resources/render.js` (`T`). Preview cards are made on publish (`admin/cards.js`, satori + resvg,
+  fonts in `admin/fonts/`, SIL OFL).
+- Local: `npm install --prefix admin`, then `npm run dev` and `npm run admin:dev` (shared folder
+  `.dev-data/resources`, no sign-in).
+- Deploy the admin with `gcloud app deploy admin/admin.yaml --project=jalex-hub` after `npm run build`.
+
 ## Analytics (Google Tag Manager)
 
 Every page (`/`, `/es/`, the legal pages, the 404 page) loads Google Tag Manager container
@@ -322,6 +353,9 @@ The page pushes these events to the `dataLayer` (no names, emails or messages):
 |---|---|---|
 | `generate_lead` | booking form sent successfully | `form_name`, `student_level`, `page_language` |
 | `contact_click` | WhatsApp, phone or email link clicked | `contact_method`, `link_location`, `page_language` |
+| `resource_link_copy` | Share on a tool page (share sheet or copied link) | `resource_id`, `has_state`, `method` (`share`/`copy`), `page_language` |
+| `resource_fullscreen` | Full screen on a tool page | `resource_id`, `page_language` |
+| `resource_book_click` | "Book a free intro" on a tool page (bar or bottom) | `resource_id`, `link_location` (`bar`/`cta`), `page_language` |
 
 In Tag Manager: add a **Google tag** with your GA4 measurement ID (`G-…`) on
 *Initialization – All Pages*, then a **GA4 Event** tag per event above (trigger:
@@ -338,10 +372,14 @@ Mark `generate_lead` as a key event in GA4. Preview mode shows the events firing
 | `/privacy/`, `/terms/`, `/accessibility/`, `/es/privacidad/`, `/es/terminos/`, `/es/accesibilidad/` | private, 10 min | `server.js` (built files; not static, so they can re-send the `lang` cookie) |
 | the same without the trailing slash, or as `/privacy.html` | 1 hour | `server.js`: 301 to the slash URL |
 | `/og-image.png`, favicons | 7 days | static |
-| `/robots.txt`, `/sitemap.xml` | 10 min | static |
+| `/robots.txt` | 10 min | static |
+| `/sitemap.xml` | 10 min | `server.js` (`resources.js`): the built file + the library and published tools |
+| `/resources/`, `/es/recursos/`, `/resources/<slug>/` | private, 30 s (`/resources/` revalidated, `Vary: Cookie`) | `resources.js`; `/resources/` with `lang=es` 302s to `/es/recursos/` |
+| `/frame/<id>/v<N>`, `/resources/og/*.png`, `/resources/katex/*` | 1 year, immutable | `resources.js` (the version or a hash is in the URL) |
 | `/llms.txt`, `/exams/data.json` | 10 min, public | `server.js` |
 | `/index.html`, `/es`, `/es/index.html` | 1 hour | `server.js`: 301 to `/` or `/es/` |
 | `/?lang=es` | 1 hour | `server.js`: 301 to `/es/` (keeps `?topic=`); the script at the top of `index.html` does the same as a fallback |
+| `/admin`, `/admin/` | never (`no-store`, `noindex`) | `server.js`: 302 to `ADMIN_URL` (app.yaml env; the admin service, with its own Google sign-in). Empty: 404. `/admin/*` deeper: 404 |
 | `/api/*` | never | `server.js` (unknown `/api/*` paths get a JSON 404) |
 | anything else | 10 min | `server.js`: 404 with `www/404.html`, `X-Robots-Tag: noindex` |
 

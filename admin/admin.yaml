@@ -1,0 +1,30 @@
+# App Engine service `admin`: upload and publish free interactive tools (see ../docs/resources-setup.md).
+# Reached at https://admin-dot-jalex-hub.ue.r.appspot.com (and josediaztutoring.com/admin redirects there).
+# Sign-in: "Sign in with Google" done by the app (auth.js), only the accounts in ADMIN_EMAILS. Not IAP:
+# App Engine can only turn IAP on for the whole app, which would put the public site behind a login.
+service: admin
+runtime: nodejs22
+# Runs as the App Engine default service account (jalex-hub@appspot.gserviceaccount.com), like the
+# public site. See docs/resources-setup.md, step 4.
+
+instance_class: F1
+automatic_scaling:
+  min_instances: 0
+  max_instances: 1
+
+env_variables:
+  # Comma-separated Google accounts allowed in (each must also be a test user on the OAuth consent screen).
+  ADMIN_EMAILS: "jadiazlab@gmail.com"
+  # The OAuth client ("IAP admin", Google Auth Platform -> Clients). Its secret is in Secret Manager:
+  # admin-oauth-client-secret. Redirect URI on the client: ADMIN_BASE_URL + /auth/callback.
+  OAUTH_CLIENT_ID: "836480703321-h8q56orgjo937vrjgnq589psdrrc9g0f.apps.googleusercontent.com"
+  ADMIN_BASE_URL: "https://admin-dot-jalex-hub.ue.r.appspot.com"
+  RESOURCES_BUCKET: "josediaz-tutoring-res"
+  FIRESTORE_DATABASE: "(default)"
+  MAX_UPLOAD_MB: "2"
+
+handlers:
+- url: /.*
+  script: auto
+  secure: always
+  redirect_http_response_code: 301

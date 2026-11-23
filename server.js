@@ -13,6 +13,12 @@
  * code and gets a 301 (/index.html, /es, /es/index.html, legal pages without
  * the trailing slash) or a real 404 page.
  *
+ * Resources (free interactive tools): /resources/, /es/recursos/, each tool's page, the sandboxed tool
+ * itself (/frame/...), its preview cards and /sitemap.xml are served by resources.js, from Firestore and
+ * Cloud Storage (published from the admin service, admin/). The home pages get the 3 newest tools.
+ *
+ * /admin and /admin/: 302 to the admin service (env ADMIN_URL), which asks for Google sign-in.
+ *
  * Language preference: / and /exams/ send a visitor with the cookie lang=es (saved by the EN/ES
  * toggle) to /es/ and /es/examenes/ (302). See LANG_ENTRY below.
  *
@@ -51,6 +57,7 @@ const path = require("node:path");
 const nodemailer = require("nodemailer");
 const pricingLib = require("./pricing.js");
 const examCal = require("./exam-calendar.js");
+const resources = require("./resources.js");
 
 const PORT = Number(process.env.PORT) || 8080;
 const PROJECT = process.env.GOOGLE_CLOUD_PROJECT || "";
@@ -465,6 +472,7 @@ async function pricedPage(req, res, pathname) {
   } catch (err) {
     console.error(`Pricing: couldn't fill ${pathname}, sending the built page (fallback prices):`, err.message);
   }
+  if (pathname === "/" || pathname === "/es/") body = await resources.fillHome(body, pathname === "/es/" ? "es" : "en");
   res.writeHead(200, {
     ...SECURITY_HEADERS,
     "Content-Type": pg.type,
@@ -588,6 +596,8 @@ for (const p of ["/privacy", "/terms", "/accessibility", "/es/privacidad", "/es/
 for (const p of Object.keys(EXAM_PAGES).map((u) => u.slice(0, -1))) {
   REDIRECTS[p] = REDIRECTS[`${p}.html`] = REDIRECTS[`${p}/index.html`] = `${p}/`;
 }
+// resources library: /resources, /resources.html, /resources/index.html -> /resources/ (and /es/recursos)
+for (const p of ["/resources", "/es/recursos"]) REDIRECTS[p] = REDIRECTS[`${p}.html`] = REDIRECTS[`${p}/index.html`] = `${p}/`;
 let page404 = null;
 
 // legal pages (built files, no filling). Served here, not as static files, so they can re-send the lang cookie.
@@ -605,7 +615,7 @@ function legalPage(req, res, pathname) {
 // missing cookie, not the Spanish pages (so there's no loop), not the guides or legal pages.
 // Accept-Language and IP are never used. These two pages depend on the cookie, so no shared cache
 // may keep them (private + Vary: Cookie), and the redirect itself is never stored.
-const LANG_ENTRY = { "/": "/es/", "/exams/": "/es/examenes/" };
+const LANG_ENTRY = { "/": "/es/", "/exams/": "/es/examenes/", "/resources/": "/es/recursos/" };
 const LANG_ENTRY_CACHE = { "Cache-Control": "private, no-cache", Vary: "Cookie" };
 // Every HTML page re-sends a valid lang cookie from the server (Safari deletes cookies set by
 // JavaScript after 7 days, not server-set ones). Never created here: no cookie in, none out. A page
@@ -625,13 +635,13 @@ function cookie(req, name) {
   return null;
 }
 
-function notFoundPage(req, res) {
+function notFoundPage(req, res, status = 404) {
   try {
     page404 ??= fs.readFileSync(path.join(__dirname, "www/404.html"));
   } catch {
     page404 = Buffer.from("<!doctype html><title>404</title><p>Page not found. <a href=\"/\">Home</a></p>");
   }
-  res.writeHead(404, {
+  res.writeHead(status, {
     ...SECURITY_HEADERS,
     "Content-Type": "text/html; charset=utf-8",
     ...htmlHeaders(req, null),
@@ -667,8 +677,25 @@ function normalizePath(raw) {
   return p;
 }
 
+/**
+ * /admin and /admin/ -> the admin service (env ADMIN_URL in app.yaml), which asks for Google sign-in.
+ * 302 + no-store so no browser or cache keeps it; noindex. Only an https URL counts; empty or invalid ->
+ * the usual 404. Deeper paths (/admin/x) are never redirected. Not linked anywhere on the site.
+ */
+function adminUrl() {
+  const v = String(process.env.ADMIN_URL || "").trim();
+  if (!v) return "";
+  try { if (new URL(v).protocol === "https:") return v; } catch {}
+  console.warn(`ADMIN_URL is not an https URL ("${v}"); /admin stays a 404.`);
+  return "";
+}
+
 function page(req, res, pathname, query, search = "") {
   const read = req.method === "GET" || req.method === "HEAD";
+  if ((pathname === "/admin" || pathname === "/admin/") && read && adminUrl()) {
+    res.writeHead(302, { ...SECURITY_HEADERS, Location: adminUrl(), "Cache-Control": "no-store", "X-Robots-Tag": "noindex" });
+    return res.end();
+  }
   const to = redirectFor(pathname, query);
   if (to && read) {
     res.writeHead(301, { ...SECURITY_HEADERS, Location: to, "Cache-Control": "public, max-age=3600" });
@@ -693,6 +720,12 @@ function page(req, res, pathname, query, search = "") {
       if (!res.headersSent) notFoundPage(req, res);
     });
   }
+  if (resources.matches(pathname) && read) {
+    return resources.handle(req, res, pathname, search).catch((err) => {
+      console.error(err);
+      if (!res.headersSent) notFoundPage(req, res);
+    });
+  }
   if (PRICED[pathname] && read) {
     return pricedPage(req, res, pathname).catch((err) => {
       console.error(err);
@@ -701,6 +734,8 @@ function page(req, res, pathname, query, search = "") {
   }
   return notFoundPage(req, res);
 }
+
+resources.init({ SECURITY_HEADERS, htmlHeaders, notFoundPage });
 
 const server = http.createServer((req, res) => {
   let url;
@@ -760,4 +795,6 @@ module.exports = {
   _setExamsSource: (fn) => { examsSource = fn; examsCache = null; },
   _clearExamsCache: () => { examsCache = null; },
   _setExamsToday: (fn) => { examsToday = fn || (() => examCal.todayInFlorida()); },
+  // dev server / tests: read resources from another store (lib/resources/store.js)
+  resources,
 };

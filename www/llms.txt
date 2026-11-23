@@ -82,6 +82,13 @@ Free Florida test dates for the school year, each linked to its official source 
 - [Algebra 1 EOC guide](https://josediaztutoring.com/exams/algebra-1-eoc/): the passing score (400), the 2026–27 testing windows, other scores that meet the graduation requirement, and free official practice.
 - [Guía del EOC de Álgebra 1](https://josediaztutoring.com/es/examenes/eoc-algebra-1/): the Algebra 1 EOC guide in Spanish.
 
+## Free interactive tools
+
+Interactive math, physics and engineering tools Jose made for his students (sliders, live formulas with the substituted values), each with a page that explains how to use it and the key ideas. Free, no sign-up, in English and Spanish. New tools are added without redeploying the site.
+
+- [Free interactive tools](https://josediaztutoring.com/resources/): the library, filterable by subject and level.
+- [Herramientas interactivas gratis](https://josediaztutoring.com/es/recursos/): the same library in Spanish.
+
 ## Links
 
 - [Jose Diaz Tutoring (English)](https://josediaztutoring.com/)

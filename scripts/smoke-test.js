@@ -11,7 +11,7 @@ const app = require("../server.js");
 const pricing = require("../pricing.js");
 
 let sent = [];
-const srv = createDevServer({ onSend: (m) => sent.push(m), pricingFile: "" });
+const srv = createDevServer({ onSend: (m) => sent.push(m), pricingFile: "", resourcesStore: require("../lib/resources/store.js").memoryStore() });
 srv.keepAliveTimeout = 120e3; // some checks run for several seconds between requests
 let failures = 0;
 

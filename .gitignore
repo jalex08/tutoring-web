@@ -8,3 +8,6 @@ smtp-config.json
 
 # Drop folder for incoming packages (never commit or deploy)
 _incoming/
+
+# local resources store for npm run dev / npm run admin:dev
+.dev-data/

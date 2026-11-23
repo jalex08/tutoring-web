@@ -15,6 +15,15 @@ automatic_scaling:
 
 default_expiration: "10m"
 
+# Resources (free interactive tools, see resources.js and docs/resources-setup.md): the private bucket
+# for the tool files and preview cards, and the Firestore database ((default), Native mode, us-east1).
+env_variables:
+  RESOURCES_BUCKET: "josediaz-tutoring-res"
+  FIRESTORE_DATABASE: "(default)"
+  # /admin and /admin/ -> 302 here (the admin service, which asks for Google sign-in). Empty = /admin stays a 404.
+  # Check it with: gcloud app browse --service=admin --no-launch-browser --project=jalex-hub
+  ADMIN_URL: "https://admin-dot-jalex-hub.ue.r.appspot.com"
+
 handlers:
 # Link-preview image. Long cache.
 - url: /og-image\.png
@@ -64,20 +73,10 @@ handlers:
     X-Content-Type-Options: "nosniff"
     Referrer-Policy: "strict-origin-when-cross-origin"
 
-# Crawler files.
+# Crawler files. (/sitemap.xml is served by server.js: the built file + the published resources.)
 - url: /robots\.txt
   static_files: www/robots.txt
   upload: www/robots\.txt
-  secure: always
-  redirect_http_response_code: 301
-  http_headers:
-    Strict-Transport-Security: "max-age=31536000; includeSubDomains"
-    X-Content-Type-Options: "nosniff"
-    Referrer-Policy: "strict-origin-when-cross-origin"
-
-- url: /sitemap\.xml
-  static_files: www/sitemap.xml
-  upload: www/sitemap\.xml
   secure: always
   redirect_http_response_code: 301
   http_headers:
@@ -108,6 +107,14 @@ handlers:
 #   /exams, /exams.html, /exams/index.html -> /exams/ (and the same for the other three)   (301)
 #   any other URL under /exams/ or /es/examenes/ -> the 404 page
 #   /api/contact            booking form (POST only)
+#   /admin, /admin/         302 to ADMIN_URL (env above; the admin service), no-store, noindex; /admin/x -> 404
+#   /resources/, /es/recursos/ and /resources/<slug>/, /es/recursos/<slug>/
+#                           free interactive tools (resources.js; data from Firestore + Cloud Storage,
+#                           published from the admin service). /resources -> /resources/ (301);
+#                           /resources/ with lang=es -> /es/recursos/ (302); old slugs 301; unpublished 410
+#   /frame/<id>/v<N>        the uploaded tool, with CSP sandbox + frame-ancestors 'self', noindex
+#   /resources/og/*.png     preview cards (1 year, immutable)
+#   /sitemap.xml            www/sitemap.xml + the library and each published resource
 #   /privacy/, /terms/, /accessibility/, /es/privacidad/, /es/terminos/, /es/accesibilidad/
 #                           built legal pages (www/privacy.html, ...), Cache-Control: private, max-age=600
 #   every HTML page:        a request with a valid lang cookie (en|es) gets it back as a
