@@ -122,31 +122,84 @@ gcloud app deploy admin/admin.yaml --project=jalex-hub
 Until IAP is on (next step), every admin URL answers **403 Forbidden**: the code refuses any request that
 doesn't carry IAP's signed header. Nothing is exposed in between.
 
-## 7. Turn on IAP for the `admin` service only
+## 7. Turn on Google sign-in (IAP) for the `admin` service only
 
-> **Don't run `gcloud iap web enable --resource-type=app-engine`.** It turns IAP on for the whole App
-> Engine app, including the public site, and every visitor would get a Google sign-in page. Use the
-> console's per-service switch below.
+Where you are before this step: the admin is deployed with your email in `ADMIN_EMAILS`, and every
+admin URL answers "Forbidden". The admin's log says `no IAP header`. This step makes Google ask you
+to sign in first.
 
-1. **OAuth consent screen** (once per project): Google Cloud console → *Google Auth Platform* →
-   *Branding*. App name "Jose Diaz Tutoring admin", your email as support and developer contact.
-   *Audience*: External. Leave it in *Testing* and add your Google account under *Test users*.
-   Nothing else uses this screen.
-2. Console → *Security* → **Identity-Aware Proxy** → *Applications*. Expand **App Engine app**. Turn on
-   the switch on the **`admin`** row only. Leave the app-level switch and the `default` row **off**.
-   If the console asks for an OAuth client, let it create one.
-3. Allow your account through IAP (the same email as in `ADMIN_EMAILS`):
+> **Never run `gcloud iap web enable --resource-type=app-engine`** (with or without OAuth flags). It
+> turns IAP on for the whole App Engine app, including the public site, and every visitor would get a
+> Google sign-in page. Use the console's per-service switch (7.4).
 
-   ```bash
-   gcloud iap web add-iam-policy-binding --resource-type=app-engine --service=admin --member=user:YOU@gmail.com --role=roles/iap.httpsResourceAccessor --project=jalex-hub
-   ```
+### 7.1 OAuth consent screen (once)
 
-4. Open `https://admin-dot-jalex-hub.ue.r.appspot.com`. You sign in with Google and see the list.
-5. Check the public site is still open: open `https://josediaztutoring.com/resources/` in a private
-   window. No sign-in should appear.
+Console → **Google Auth Platform** (older consoles: **APIs & Services → OAuth consent screen**).
 
-If the admin still answers 403 after you sign in, check the admin's logs. The line `Admin: refused ...`
-says why, for example `x@gmail.com is not in ADMIN_EMAILS` or `no IAP header`.
+1. If it shows **Get started**: App name `Jose Diaz Tutoring admin`, User support email `jadiazlab@gmail.com`,
+   Audience **External**, Contact email `jadiazlab@gmail.com`, accept the policy, **Create**.
+2. **Audience** → **Test users** → **Add users** → `jadiazlab@gmail.com` → **Save**. Leave the
+   publishing status on **Testing**: only test users can sign in, which is what you want.
+
+### 7.2 OAuth client
+
+A personal (non-Workspace) project needs its own client; Google's built-in one only works inside a
+Workspace organization.
+
+1. **Google Auth Platform → Clients → Create client** (older: **APIs & Services → Credentials → Create
+   credentials → OAuth client ID**).
+2. Application type **Web application**. Name `IAP admin`.
+3. **Authorized JavaScript origins:** leave empty. **Authorized redirect URIs:** leave empty for now.
+4. **Create**. A box shows the **Client ID** and the **Client secret**. Copy both somewhere safe
+   (or download the JSON). Never paste the secret into a chat or a file in the repo.
+
+### 7.3 Redirect URI
+
+In Cloud Shell, paste the Client ID when asked; it prints the exact line to add:
+
+```bash
+read -p "Client ID: " CLIENT_ID; echo; echo "https://iap.googleapis.com/v1/oauth/clientIds/${CLIENT_ID}:handleRedirect"
+```
+
+Back in the console: **Clients** → **IAP admin** → **Authorized redirect URIs** → **Add URI** → paste
+that line → **Save**. (JavaScript origins stay empty.)
+
+### 7.4 Switch IAP on for `admin`
+
+1. Console → **Security → Identity-Aware Proxy**. If it asks to enable the API, enable it.
+2. **Applications** tab. Expand **App Engine app**: you see one row per service, `default` and `admin`.
+3. Give IAP your client: on the **App Engine app** row, open **⋮ → Settings** (on some consoles, the
+   switch in step 4 asks for it instead). Choose the **custom OAuth** option and paste the Client ID
+   and Client secret from 7.2. **Save**.
+4. Turn on the switch on the **`admin`** row only. Confirm. The `default` row and the App Engine app
+   switch stay **off**.
+   - If there are no per-service rows, only one switch for the whole app: **stop**, don't turn it on.
+
+### 7.5 Let your account through IAP
+
+```bash
+gcloud iap web add-iam-policy-binding --resource-type=app-engine --service=admin --member=user:jadiazlab@gmail.com --role=roles/iap.httpsResourceAccessor --project=jalex-hub
+```
+
+### 7.6 Check (wait 2–3 minutes after 7.4)
+
+In a **private window**:
+
+1. `https://josediaztutoring.com/` loads with **no** sign-in (the public site is untouched).
+2. `https://josediaztutoring.com/admin` → Google sign-in → sign in as `jadiazlab@gmail.com` → the
+   **Resources** list.
+
+### 7.7 If it doesn't work
+
+| What you see | Cause | Fix |
+|---|---|---|
+| "Forbidden." (plain text) and no Google sign-in | IAP not on for `admin` yet, or still propagating | Check 7.4; wait 5 minutes |
+| "Forbidden." after signing in | The admin refused you | `gcloud app logs read --service=admin --project=jalex-hub --limit=20 \| grep "Admin: refused"`, then fix what it says (usually the email in `ADMIN_EMAILS`) |
+| Google's "You don't have access" page | 7.5 not done, or done for another account | Run 7.5 for the account you signed in with |
+| `Error 400: redirect_uri_mismatch` | Redirect URI missing or mistyped | Redo 7.3 (the Client ID must match the client IAP uses) |
+| `Access blocked: … has not completed the Google verification process` | Your account isn't a test user | 7.1 step 2 |
+| `/admin` gives the site's 404 page | The public site wasn't redeployed after the `/admin` change | `gcloud app deploy app.yaml --project=jalex-hub` |
+| The public site asks for sign-in | IAP was turned on for `default` or the whole app | IAP page: turn those switches off right away |
 
 ## 8. First tool
 
