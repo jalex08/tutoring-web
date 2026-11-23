@@ -4,6 +4,8 @@
 !/server.js
 !/pricing.js
 !/exam-calendar.js
+!/resources.js
+!/lib/
 !/package.json
 !/package-lock.json
 !/www/

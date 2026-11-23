@@ -1,0 +1,112 @@
+/* Resources pages (/resources/, /es/recursos/ and each tool's page). scripts/build.js puts this in
+   www/resources-shell.json, after the site's shared CSS from www/index.html (tokens, buttons, .pad,
+   header, footer, .tool-card). Never the highlighter in the bar; the page's one highlighter is the
+   guarantee line at the bottom. */
+:root{--bar:44px}
+@media (min-width:700px){:root{--bar:48px}}
+.crumbs ol{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-wrap:wrap;font-size:.9rem;color:var(--muted)}
+.crumbs li + li::before{content:"/";padding:0 .45em}
+.crumbs a{color:var(--muted)}
+
+/* ---- tool page: thin bar ---- */
+.res-page{background:var(--paper)}
+.res-bar{position:sticky;top:0;z-index:20;height:var(--bar);display:flex;align-items:center;gap:4px;padding:0 8px;
+  background:var(--pad);border-bottom:1px solid var(--grid)}
+.res-mark{font:800 1.05rem/1 var(--display);color:var(--graphite);text-decoration:none;letter-spacing:-.02em;white-space:nowrap;
+  min-height:44px;display:inline-flex;align-items:center;padding:0 6px}
+.res-mark-short{display:none}
+.res-title{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:700 .95rem/1.2 var(--body);color:var(--muted);padding:0 8px}
+.res-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:44px;min-height:44px;padding:0 10px;
+  font:700 .9rem/1 var(--body);color:var(--ink);background:transparent;border:0;border-radius:8px;text-decoration:none;cursor:pointer;white-space:nowrap}
+.res-btn svg{width:20px;height:20px;flex:none}
+.res-btn[hidden]{display:none}
+@media (hover:hover){.res-btn:hover{background:#fff;color:var(--ink-dark)}}
+.res-btn:focus-visible,.res-mark:focus-visible,.res-cue:focus-visible{outline:3px solid var(--ink);outline-offset:-3px}
+.res-bar .lang{border-width:1.5px;flex:none}
+.res-bar .lang a{min-height:41px;display:inline-flex;align-items:center;justify-content:center;min-width:41px;padding:0 9px}
+.res-cta{flex:none;min-height:44px;padding:0 14px;font-size:.92rem;margin-left:4px}
+.res-cta .cta-mini{display:none}
+@media (min-width:700px){.res-bar{padding:0 12px;gap:6px}.res-cta{min-height:40px}}
+@media (max-width:899px){.res-title{visibility:hidden;padding:0}.res-lbl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}}
+@media (max-width:599px){
+  .res-bar .lang a[aria-current]{display:none}           /* one toggle: the other language */
+  .res-bar .lang a{min-width:41px}
+  .res-cta .cta-full{display:none}.res-cta .cta-mini{display:inline}
+  .res-cta{padding:0 12px;font-size:.88rem}
+}
+@media (max-width:419px){
+  .res-bar{gap:2px;padding:0 4px}
+  .res-mark-full{display:none}.res-mark-short{display:inline}
+  .res-cta{padding:0 10px;font-size:.85rem;margin-left:2px}
+}
+.res-preview{margin:0;padding:8px 12px;background:var(--graphite);color:#fff;font-weight:700;font-size:.9rem;text-align:center}
+
+/* ---- tool page: the tool fills the rest of the screen ---- */
+.res-stage{position:relative;background:#fff;display:flex;flex-direction:column;height:calc(100vh - var(--bar));height:calc(100dvh - var(--bar))}
+.res-stage iframe{flex:1 1 auto;width:100%;min-height:0;border:0;display:block;background:#fff}
+.res-stage:fullscreen{height:100vh;height:100dvh}
+.res-stage:fullscreen .res-cue{display:none}
+.res-stage:-webkit-full-screen{height:100vh}
+.res-cue{flex:none;display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;border-top:1px solid var(--grid);
+  background:var(--pad);color:var(--ink);font:700 .92rem/1 var(--body);text-decoration:none}
+.res-cue svg{width:18px;height:18px}
+@media (hover:hover){.res-cue:hover{color:var(--ink-dark);background:#fff}}
+.res-noscript{padding:24px;font-weight:700}
+
+/* ---- tool page: the written part ---- */
+.res-wrap{padding-top:40px;padding-bottom:72px}
+.res-sheet{max-width:50em;margin-top:0;padding:30px 36px 34px 52px}
+.res-sheet h1{font-size:clamp(1.9rem,3.6vw,2.75rem);max-width:22em}
+.res-kicker{font-weight:700;color:var(--ink);font-size:.95rem;margin:0 0 10px}
+.res-intro{margin-top:16px;font-size:1.12rem;max-width:40em}
+.res-intro p + p{margin-top:12px}
+.res-sec{margin-top:34px;outline:0}
+.res-sec h2{font-size:clamp(1.35rem,2.4vw,1.7rem);margin-bottom:12px}
+.res-steps,.res-ideas{margin:0;padding-left:1.4em;max-width:40em}
+.res-steps li,.res-ideas li{margin:0 0 10px;padding-left:4px}
+.res-steps li::marker{font-weight:700;color:var(--ink)}
+.res-ideas li::marker{color:var(--ink)}
+.res-sheet .faq{max-width:none}
+.res-see-also{margin-top:28px;color:var(--muted)}
+.res-see-also a{font-weight:700}
+.res-related{margin-top:56px}
+.res-related h2,.res-help h2{font-size:clamp(1.5rem,2.8vw,2rem);margin-bottom:18px}
+.res-help{margin-top:56px;max-width:46em}
+.res-help > p{color:var(--muted);font-size:1.1rem;max-width:38em}
+.res-help .guarantee{margin-top:20px}
+.res-help-cta{margin-top:24px}
+.katex{font-size:1.08em}
+.katex-display{overflow-x:auto;overflow-y:hidden;padding:4px 0}
+@media (max-width:520px){.res-sheet{padding:22px 18px 24px 30px}.res-wrap{padding-top:28px}}
+
+/* ---- library ---- */
+.lib-band{border-bottom:1px solid var(--grid);padding:38px 0 44px}
+.lib-band .lede{color:var(--graphite);margin-top:14px;max-width:40em}
+.lib{padding:40px 0 88px}
+.lib-filters{display:grid;gap:12px;margin-bottom:22px}
+.lib-filters[hidden]{display:none}
+.lib-filter{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.lib-filter-label{font-size:.9rem;font-weight:700;color:var(--muted);min-width:5em}
+.lib-filter .chip[aria-pressed="true"]{background:var(--ink);color:#fff}
+.lib-count{color:var(--muted);font-size:.95rem;margin:0 0 16px}
+.lib-empty{font-size:1.1rem;color:var(--muted);padding:24px 0}
+.lib-empty[hidden]{display:none}
+.tool-card[hidden]{display:none}
+.lib-filter .chip{font:700 .92rem/1.2 var(--body);color:var(--ink);background:#fff;border:2px solid var(--ink);border-radius:999px;padding:6px 14px;min-height:44px;cursor:pointer}
+
+/* the home page's sheet, FAQ and guarantee styles (they live in its own CSS, not the shared block) */
+.note-sheet{position:relative;background:#fff;border:1px solid var(--line);box-shadow:var(--soft-shadow);border-radius:6px}
+.faq details{border-bottom:1px solid var(--rule)}
+.faq details:first-child{border-top:1px solid var(--rule)}
+.faq summary{cursor:pointer;list-style:none;padding:18px 40px 18px 0;font:700 1.08rem/1.35 var(--display);position:relative}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";position:absolute;right:6px;top:14px;font:400 1.6rem/1 var(--body);color:var(--ink)}
+.faq details[open] summary::after{content:"\2212"}
+.faq details p{padding:0 0 20px;color:var(--muted);max-width:40em}
+.guarantee{display:flex;gap:14px;align-items:flex-start;background:#fff;border:1px solid var(--line);box-shadow:var(--soft-shadow);border-radius:6px;padding:20px 24px;max-width:46em}
+.check{flex:none;width:26px;height:26px;color:var(--ink)}
+.guarantee p{color:var(--muted);font-size:1.02rem}
+.guarantee strong{display:inline;color:var(--graphite);background:var(--hi);border-radius:3px;padding:1px 4px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+@media (max-width:520px){.guarantee{padding:16px;gap:12px}}
+.res-sheet li .katex-display{margin:.2em 0}
+.res-sheet li .katex-display > .katex{text-align:left}

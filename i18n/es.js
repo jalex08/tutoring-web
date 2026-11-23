@@ -160,6 +160,11 @@ module.exports = {
   foot: "Tutorías de matemáticas, física e ingeniería, en línea y en el sur de Florida.",
   footArea: "En persona en Broward y Miami-Dade · En línea desde cualquier lugar",
   footExams: "Calendario de exámenes",
+  footResources: "Recursos",
+  navResources: "Recursos",
+  toolsTitle: "Herramientas interactivas gratis",
+  toolsLede: "Herramientas que hice para mis estudiantes. Mueve los controles y mira cómo funcionan las matemáticas.",
+  toolsAll: "Todos los recursos",
   footGbp: "Perfil en Google",
   footReview: "Déjame una reseña en Google",
   footContact: "Contacto",
@@ -253,6 +258,10 @@ module.exports = {
         <li>Si me entero de que recogí información de un niño menor de 13 años sin el consentimiento de sus padres, la borro.</li>
         <li>Las reglas sobre sesiones presenciales y grabaciones están en los <a href="/es/terminos/">Términos del servicio</a>.</li>
       </ul>
+    `,
+  ppTools: `
+      <h2>Herramientas interactivas</h2>
+      <p>Las herramientas interactivas gratis de <a href="/es/recursos/">Recursos</a> funcionan por completo en tu navegador. Nada de lo que escribes o ajustas en ellas me llega, y nada se guarda entre visitas. Cada herramienta funciona aislada del resto del sitio, así que no puede leer tus cookies ni las páginas y formularios de este sitio. Los ajustes de la herramienta pueden aparecer en la dirección de la página (después del #) para que puedas compartir el enlace; esa parte de la dirección tampoco se envía a mi servidor. Algunas herramientas cargan código o fuentes de redes públicas de contenido (como Google Fonts o jsDelivr), que reciben tu dirección IP como cualquier sitio web.</p>
     `,
   ppAi: `
       <h2>Herramientas de IA</h2>

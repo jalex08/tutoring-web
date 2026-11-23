@@ -12,6 +12,9 @@
  *   EXAMS_FILE=exams.json npm run dev
  *                          exam data from a local file instead of the site-exams secret
  *                          (same rules; an invalid or missing file -> the bundled data, with a warning)
+ *   RESOURCES_DIR=dir npm run dev
+ *                          free interactive tools from a local folder instead of Firestore + Cloud Storage
+ *                          [.dev-data/resources, shared with `npm run admin:dev`]
  */
 "use strict";
 
@@ -49,8 +52,11 @@ function handlers() {
   return out;
 }
 
-function createDevServer({ onSend, pricingFile = process.env.PRICING_FILE, examsFile = process.env.EXAMS_FILE } = {}) {
+function createDevServer({ onSend, pricingFile = process.env.PRICING_FILE, examsFile = process.env.EXAMS_FILE, resourcesStore } = {}) {
   const app = require(path.join(ROOT, "server.js"));
+  // resources: a local folder (or the store a test passes) stands in for Firestore + Cloud Storage
+  const storeLib = require(path.join(ROOT, "lib/resources/store.js"));
+  app.resources._setStore(resourcesStore || storeLib.dirStore(process.env.RESOURCES_DIR || path.join(ROOT, ".dev-data/resources")));
   // stub the mailer and secrets: nothing leaves this machine
   app.secrets.set("smtp-config", JSON.stringify({ user: "site@example.test", password: "dev-stub" }));
   for (const name of ["mail-daily-limit", "mail-ip-hourly-limit", "mail-email-hourly-limit"]) app.secrets.set(name, "");

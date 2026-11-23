@@ -1,0 +1,4 @@
+# The admin service: deployed from this folder (gcloud app deploy admin/admin.yaml).
+# lib/ is a copy of ../lib/resources made by `npm run build` at the repo root.
+node_modules/
+.gcloudignore

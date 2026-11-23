@@ -1,0 +1,28 @@
+# App Engine service `admin`: upload and publish free interactive tools (see ../docs/resources-setup.md).
+# Reached only at https://admin-dot-jalex-hub.ue.r.appspot.com, behind Identity-Aware Proxy (IAP), which is
+# turned on for this service only. server.js also verifies IAP's signed header on every request and
+# allows only the Google accounts in ADMIN_EMAILS.
+service: admin
+runtime: nodejs22
+# Its own service account: the only identity that can write resources (the public site's default
+# account can only read them). Created in docs/resources-setup.md, step 4.
+service_account: resources-admin@jalex-hub.iam.gserviceaccount.com
+
+instance_class: F1
+automatic_scaling:
+  min_instances: 0
+  max_instances: 1
+
+env_variables:
+  # Comma-separated Google account emails allowed in (the same accounts must have the
+  # "IAP-secured Web App User" role). Set it before the first deploy.
+  ADMIN_EMAILS: "set-your-google-account@example.com"
+  RESOURCES_BUCKET: "jalex-hub-resources"
+  FIRESTORE_DATABASE: "(default)"
+  MAX_UPLOAD_MB: "2"
+
+handlers:
+- url: /.*
+  script: auto
+  secure: always
+  redirect_http_response_code: 301
