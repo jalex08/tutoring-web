@@ -16,6 +16,9 @@ const math = require("../lib/resources/math.js");
 const frame = require("../lib/resources/frame.js");
 const storeLib = require("../lib/resources/store.js");
 const render = require("../lib/resources/render.js");
+const pdfs = require("../lib/resources/files.js");
+const toolconfig = require("../lib/resources/toolconfig.js");
+const PDF = (n = 3000, tag = "a") => Buffer.concat([Buffer.from(`%PDF-1.4\n% ${tag}\n`), Buffer.alloc(n, 0x41)]);
 const { createDevServer } = require("./dev-server.js");
 
 let failures = 0;
@@ -71,6 +74,99 @@ function sample(over = {}) {
     assert.match(M.problems(sample({ en: { ...sample().en, description: "x".repeat(156) } })).join(), /156 characters/);
     assert.deepEqual(M.problems(sample()), []);
   });
+  await check("PDF names: letters, digits, . _ -, ending .pdf, case kept; no paths, no leading dot", () => {
+    for (const n of ["PHY2053_Newtons_Laws_Formula_Cards.pdf", "a.pdf", "v1.2-final.pdf", "A_B-c.pdf"]) assert.ok(M.validFileName(n), n);
+    for (const n of ["", "a.PDF", "a.pdf.html", "../a.pdf", "..pdf", ".hidden.pdf", "a b.pdf", "a/b.pdf", "a%2Fb.pdf", "ñ.pdf", "a.pdf ", `${"x".repeat(117)}.pdf`, 5])
+      assert.ok(!M.validFileName(n), JSON.stringify(n));
+    assert.match(M.fileNameProblem("a b.pdf"), /letters, numbers, dots, hyphens and underscores/);
+  });
+  await check("PDF upload check: starts with %PDF-, not empty, size limit (plain messages)", () => {
+    pdfs.validatePdf("a.pdf", PDF(), 10 * 1048576);
+    assert.throws(() => pdfs.validatePdf("a.pdf", Buffer.from("<html>"), 1e6), /isn't a PDF \(it doesn't start with %PDF-\)/);
+    assert.throws(() => pdfs.validatePdf("a.pdf", Buffer.alloc(0), 1e6), /is empty/);
+    assert.throws(() => pdfs.validatePdf("a.pdf", PDF(2000), 1000), /a\.pdf is 0\.0 MB; the limit is 0 MB/);
+    assert.throws(() => pdfs.validatePdf("a.pdf", PDF(11 * 1048576), 10 * 1048576), /is 11\.0 MB; the limit is 10 MB/);
+    assert.throws(() => pdfs.validatePdf("../a.pdf", PDF(), 1e6), /isn't a usable PDF name/);
+  });
+  await check("files in the doc: no migration, max 20, unique ignoring case, listed vs uploaded", () => {
+    assert.deepEqual(sample().files, []);
+    assert.deepEqual(sample().related, []);
+    const d = M.normalize({ files: [{ name: "A.pdf", path: "p", sizeBytes: 9, sha256: "h", labelEn: "a", labelEs: "a" }, { name: "a.pdf" }, { name: "bad name.pdf" }, { name: "B.pdf", sizeBytes: 5 }] });
+    assert.deepEqual(d.files.map((f) => [f.name, f.path, f.sizeBytes]), [["A.pdf", "p", 9], ["B.pdf", "", 0]]);
+    assert.deepEqual(M.uploadedFiles(d).map((f) => f.name), ["A.pdf"]);
+    assert.equal(M.normalize({ files: Array.from({ length: 25 }, (_, i) => ({ name: `f${i}.pdf` })) }).files.length, 20);
+    // publish waits for every listed file and both labels
+    const p = M.problems(sample({ files: [{ name: "B.pdf", labelEn: "b", labelEs: "b" }, { name: "C.pdf", path: "x", labelEn: "c" }] }));
+    assert.deepEqual(p, ["PDF B.pdf is listed but not uploaded. Drop it, or remove it from Files.", "PDF C.pdf needs an EN and an ES label."]);
+    assert.equal(M.fileUrl(sample(), "PHY_A.pdf"), "/resources/unit-circle/files/PHY_A.pdf");
+    assert.equal(pdfs.sizeLabel(239616), "234 KB"); assert.equal(pdfs.sizeLabel(2737890), "2.6 MB"); assert.equal(pdfs.sizeLabel(2737890, "es"), "2,6 MB"); assert.equal(pdfs.sizeLabel(10), "1 KB");
+  });
+  await check("config `files`: labels and order from the JSON; bad, duplicate and unlabeled entries named", () => {
+    const fx = JSON.parse(fs.readFileSync(path.join(ROOT, "test/fixtures/trigonometry-playground.json"), "utf8"));
+    assert.equal(toolconfig.readConfig(JSON.stringify(fx)).fields.files, undefined, "no files key: list left alone");
+    const r = toolconfig.readConfig(JSON.stringify({ ...fx, files: [
+      { file: "PHY_B.pdf", en: "Newton's laws", es: "Leyes de Newton" }, { file: "PHY_A.pdf", en: "Kinematics", es: "Cinemática" },
+      { file: "phy_a.pdf", en: "x", es: "x" }, { file: "notes.docx", en: "x", es: "x" }, { file: "PHY_C.pdf", en: "Only EN" }, "PHY_D.pdf",
+    ] }));
+    assert.deepEqual(r.fields.files, [{ name: "PHY_B.pdf", labelEn: "Newton's laws", labelEs: "Leyes de Newton" }, { name: "PHY_A.pdf", labelEn: "Kinematics", labelEs: "Cinemática" }, { name: "PHY_C.pdf", labelEn: "Only EN", labelEs: "" }]);
+    const msgs = r.problems.filter((x) => x.field === "files").map((x) => x.message).join("\n");
+    assert.match(msgs, /"phy_a\.pdf" is listed twice \(as "PHY_A\.pdf" too/);
+    assert.match(msgs, /"notes\.docx" isn't a usable PDF name/);
+    assert.match(msgs, /"PHY_C\.pdf" needs an "en" and an "es" label/);
+    assert.match(msgs, /File 6 needs a "file"/);
+    assert.ok(!r.problems.some((x) => /Unknown key "files"/.test(x.message)));
+    assert.match(toolconfig.readConfig(JSON.stringify({ ...fx, files: "x.pdf" })).problems.map((x) => x.message).join(), /"files" must be a list/);
+  });
+  await check("dropped PDFs vs the JSON list: found / missing / extra, exact names", () => {
+    assert.deepEqual(toolconfig.matchFiles([{ name: "A.pdf" }, { name: "B.pdf" }, { name: "C.pdf" }], ["C.pdf", "A.pdf", "X.pdf", "b.pdf"]),
+      { found: ["A.pdf", "C.pdf"], missing: ["B.pdf"], extra: ["X.pdf", "b.pdf"] });
+    assert.deepEqual(toolconfig.matchFiles([], ["A.pdf"]), { found: [], missing: [], extra: ["A.pdf"] });
+  });
+  await check("config `related`: EN slugs kept in order; self, unknown and unpublished noted", () => {
+    const fx = JSON.parse(fs.readFileSync(path.join(ROOT, "test/fixtures/trigonometry-playground.json"), "utf8"));
+    const others = [sample({ id: "o1", slugEn: "projectile-motion-lab" }), sample({ id: "o2", slugEn: "rc-circuit-lab", status: "draft" })];
+    const r = toolconfig.readConfig(JSON.stringify({ ...fx, related: ["Projectile-Motion-Lab", fx.en.slug, "rc-circuit-lab", "nope-lab", "bad slug!"] }), { others });
+    assert.deepEqual(r.fields.related, ["projectile-motion-lab", "rc-circuit-lab", "nope-lab"]);
+    const m = r.problems.filter((x) => x.field === "related").map((x) => `${x.level}: ${x.message}`).join("\n");
+    assert.match(m, /warning: Related: ".*" is this resource itself/);
+    assert.match(m, /warning: Related: "rc-circuit-lab" isn't published/);
+    assert.match(m, /warning: Related: no resource has the EN slug "nope-lab"/);
+    assert.match(m, /error: Related: "bad slug!" isn't a slug/);
+  });
+  await check("related resources: own list first (live only), then shared course tags (most, then newest), then subject; max 3", () => {
+    const mk = (id, over) => sample({ id, slugEn: id, slugEs: `${id}-es`, slugHistoryEn: [], courseTags: [], subject: "physics", ...over });
+    const self = mk("self", { courseTags: ["AP Physics 1", "PHY 2053"], related: ["pick-b", "draft-x", "self", "pick-a"] });
+    const all = [
+      self,
+      mk("pick-a", { subject: "circuits", publishedAt: "2026-01-01T00:00:00Z" }),
+      mk("pick-b", { subject: "algebra", publishedAt: "2026-01-02T00:00:00Z" }),
+      mk("draft-x", { status: "draft" }),
+      mk("tag1-old", { subject: "calculus", courseTags: ["ap physics 1"], publishedAt: "2026-02-01T00:00:00Z" }),
+      mk("tag1-new", { subject: "calculus", courseTags: ["PHY 2053"], publishedAt: "2026-03-01T00:00:00Z" }),
+      mk("tag2", { subject: "calculus", courseTags: ["PHY 2053", "AP Physics 1"], publishedAt: "2026-01-15T00:00:00Z" }),
+      mk("subj-new", { publishedAt: "2026-05-01T00:00:00Z" }),
+      mk("subj-old", { publishedAt: "2026-04-01T00:00:00Z" }),
+      mk("other", { subject: "algebra", publishedAt: "2026-06-01T00:00:00Z" }),
+    ];
+    const ids = (d, n) => M.relatedFor(d, all, n).map((x) => x.id);
+    assert.deepEqual(ids(self, 3), ["pick-b", "pick-a", "tag2"]);
+    assert.deepEqual(ids(self, 9), ["pick-b", "pick-a", "tag2", "tag1-new", "tag1-old", "subj-new", "subj-old"]);
+    assert.deepEqual(ids({ ...self, related: [] }, 3), ["tag2", "tag1-new", "tag1-old"]);
+    assert.deepEqual(ids({ ...self, related: [], courseTags: [] }, 3), ["subj-new", "subj-old"]);
+    // an old slug in `related` still finds the resource
+    const renamed = all.map((d) => (d.id === "pick-a" ? { ...d, slugEn: "new-a", slugHistoryEn: ["pick-a"] } : d));
+    assert.deepEqual(M.relatedFor({ ...self, related: ["pick-a"] }, renamed, 1).map((x) => x.id), ["pick-a"]);
+  });
+  await check("Range header parsing: one range, suffix, open end, clamped; several or malformed ignored; past the end 416", () => {
+    assert.deepEqual(pdfs.parseRange("bytes=0-4", 100), { start: 0, end: 4 });
+    assert.deepEqual(pdfs.parseRange("bytes=90-", 100), { start: 90, end: 99 });
+    assert.deepEqual(pdfs.parseRange("bytes=-10", 100), { start: 90, end: 99 });
+    assert.deepEqual(pdfs.parseRange("bytes=-500", 100), { start: 0, end: 99 });
+    assert.deepEqual(pdfs.parseRange("bytes=50-5000", 100), { start: 50, end: 99 });
+    for (const h of ["", "items=0-1", "bytes=0-1,5-6", "bytes=5-2", "bytes=-", "bytes=a-b"]) assert.equal(pdfs.parseRange(h, 100), null, h);
+    for (const h of ["bytes=100-", "bytes=-0", "bytes=200-300"]) assert.equal(pdfs.parseRange(h, 100), "unsatisfiable", h);
+    assert.ok(pdfs.etagMatches('W/"abc", "def"', '"abc"') && pdfs.etagMatches("*", '"x"') && !pdfs.etagMatches('"abcd"', '"abc"'));
+  });
   await check("ids are 10 lowercase a-z0-9", () => { for (let i = 0; i < 50; i++) assert.match(M.newId(), M.ID_RE); });
   await check("math: $..$ inline, $$..$$ display, \\$ literal, text escaped, plain text for meta, errors listed", () => {
     const h = math.inline("Cost \\$5 <b> and $x^2$");
@@ -93,7 +189,7 @@ function sample(over = {}) {
   });
   await check("frame headers: CSP sandbox without allow-same-origin, frame-ancestors 'self', noindex, immutable", () => {
     const csp = frame.FRAME_HEADERS["Content-Security-Policy"];
-    assert.match(csp, /^sandbox allow-scripts allow-forms allow-popups allow-modals allow-downloads allow-pointer-lock; frame-ancestors 'self'$/);
+    assert.match(csp, /^sandbox allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads allow-pointer-lock; frame-ancestors 'self'$/);
     assert.doesNotMatch(csp + frame.SANDBOX, /allow-same-origin|allow-top-navigation/);
     assert.equal(frame.FRAME_HEADERS["X-Robots-Tag"], "noindex, nofollow");
     assert.match(frame.FRAME_HEADERS["Cache-Control"], /immutable/);
@@ -187,7 +283,8 @@ function sample(over = {}) {
     assert.match(h, /<link rel="canonical" href="https:\/\/josediaztutoring\.com\/resources\/unit-circle\/">/);
     assert.match(h, /hreflang="es" href="https:\/\/josediaztutoring\.com\/es\/recursos\/circulo-unitario\/"/);
     assert.match(h, /hreflang="x-default" href="https:\/\/josediaztutoring\.com\/resources\/unit-circle\/"/);
-    assert.match(h, /<iframe id="res-frame"[^>]*sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads allow-pointer-lock"/);
+    assert.match(h, /<iframe id="res-frame"[^>]*sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads allow-pointer-lock"/);
+    assert.doesNotMatch(h, /allow-top-navigation/);
     assert.doesNotMatch(h, /allow-same-origin/);
     assert.match(h, /"\/frame\/abcde12345\/v2"/);
     assert.match(h, /og:image" content="https:\/\/josediaztutoring\.com\/resources\/og\/abcde12345-en-0123abcd\.png"/);
@@ -230,6 +327,111 @@ function sample(over = {}) {
     assert.match(await r.text(), /<head><script>\(function\(\)\{\n\/\* jdt prelude/);
     assert.equal((await get("/frame/abcde12345/v1")).status, 200);
     for (const p of ["/frame/abcde12345/v3", "/frame/abcde12345/v0", "/frame/ccccc33333/v2", "/frame/bbbbb22222/v2", "/frame/zzzzz99999/v1"]) assert.equal((await get(p)).status, 404, p);
+  }));
+  const PA = PDF(3000, "A"), PB = PDF(250000, "B");
+  const sha = (b) => crypto.createHash("sha256").update(b).digest("hex");
+  const fileEntry = (id, name, buf, labelEn, labelEs) => ({ name, labelEn, labelEs, path: M.pdfPath(id, name), sizeBytes: buf.length, sha256: sha(buf), uploadedAt: NOW });
+  await check("resource page without files: no PDF section", quiet(async () => {
+    assert.doesNotMatch(await (await get("/resources/unit-circle/")).text(), /id="files"|Printable PDFs/);
+  }));
+  await mem.put({ ...doc, files: [
+    fileEntry(doc.id, "Cards_B.pdf", PB, "Newton's laws", "Leyes de Newton"),
+    fileEntry(doc.id, "Cards_A.pdf", PA, "Kinematics & vectors", "Cinemática"),
+    { name: "Cards_C.pdf", labelEn: "Pending", labelEs: "Pendiente" }, // listed, not uploaded
+  ] });
+  await mem.put({ ...unpub, files: [fileEntry(unpub.id, "Gone.pdf", PA, "g", "g")] });
+  await mem.put({ ...draft, files: [fileEntry(draft.id, "Draft.pdf", PA, "d", "d")] });
+  for (const [id, n, b] of [[doc.id, "Cards_A.pdf", PA], [doc.id, "Cards_B.pdf", PB], [unpub.id, "Gone.pdf", PA], [draft.id, "Draft.pdf", PA]]) await mem.writeObject(M.pdfPath(id, n), b, "application/pdf");
+  await mem.bump(); fresh();
+
+  await check("PDF route: 200, PDF headers (inline, nosniff, noindex, 1 h cache, ETag = sha256), the bytes, streamed", quiet(async () => {
+    const before = mem.calls.readStream;
+    const r = await get("/resources/unit-circle/files/Cards_A.pdf");
+    assert.equal(r.status, 200);
+    const H_ = Object.fromEntries(r.headers);
+    assert.equal(H_["content-type"], "application/pdf");
+    assert.equal(H_["content-disposition"], 'inline; filename="Cards_A.pdf"');
+    assert.equal(H_["x-content-type-options"], "nosniff");
+    assert.equal(H_["x-robots-tag"], "noindex");
+    assert.equal(H_["cache-control"], "public, max-age=3600");
+    assert.equal(H_.etag, `"${sha(PA)}"`);
+    assert.equal(H_["accept-ranges"], "bytes");
+    assert.equal(H_["content-length"], String(PA.length));
+    assert.match(H_["strict-transport-security"], /max-age/);
+    assert.ok(Buffer.from(await r.arrayBuffer()).equals(PA));
+    assert.equal(mem.calls.readStream, before + 1);
+  }));
+  await check("PDF route: HEAD, If-None-Match -> 304, Range -> 206, past the end -> 416, stale If-Range -> 200", quiet(async () => {
+    let r = await fetch(base + "/resources/unit-circle/files/Cards_B.pdf", { method: "HEAD" });
+    assert.equal(r.status, 200); assert.equal(r.headers.get("content-length"), String(PB.length)); assert.equal((await r.arrayBuffer()).byteLength, 0);
+    const etag = `"${sha(PB)}"`;
+    r = await get("/resources/unit-circle/files/Cards_B.pdf", { "If-None-Match": etag });
+    assert.equal(r.status, 304); assert.equal(r.headers.get("etag"), etag); assert.equal((await r.arrayBuffer()).byteLength, 0);
+    r = await get("/resources/unit-circle/files/Cards_B.pdf", { Range: "bytes=0-4" });
+    assert.equal(r.status, 206); assert.equal(r.headers.get("content-range"), `bytes 0-4/${PB.length}`); assert.equal(await r.text(), "%PDF-");
+    r = await get("/resources/unit-circle/files/Cards_B.pdf", { Range: "bytes=-10" });
+    assert.equal(r.status, 206); assert.ok(Buffer.from(await r.arrayBuffer()).equals(PB.subarray(PB.length - 10)));
+    r = await fetch(base + "/resources/unit-circle/files/Cards_B.pdf", { method: "HEAD", headers: { Range: "bytes=100-199" } });
+    assert.equal(r.status, 206); assert.equal(r.headers.get("content-length"), "100");
+    r = await get("/resources/unit-circle/files/Cards_B.pdf", { Range: `bytes=${PB.length}-` });
+    assert.equal(r.status, 416); assert.equal(r.headers.get("content-range"), `bytes */${PB.length}`);
+    r = await get("/resources/unit-circle/files/Cards_B.pdf", { Range: "bytes=0-4", "If-Range": '"old"' });
+    assert.equal(r.status, 200); assert.equal((await r.arrayBuffer()).byteLength, PB.length);
+  }));
+  await check("PDF route: old slug and uppercase slug 301 (file name's case kept); 404 for everything else", quiet(async () => {
+    let r = await get("/resources/old-unit-circle/files/Cards_A.pdf?utm_source=x");
+    assert.equal(r.status, 301); assert.equal(r.headers.get("location"), "/resources/unit-circle/files/Cards_A.pdf?utm_source=x");
+    r = await get("/RESOURCES/Unit-Circle/files/Cards_A.pdf");
+    assert.equal(r.status, 301); assert.equal(r.headers.get("location"), "/resources/unit-circle/files/Cards_A.pdf");
+    r = await get("/en/resources/unit-circle/FILES/Cards_A.pdf");
+    assert.equal(r.status, 301); assert.equal(r.headers.get("location"), "/resources/unit-circle/files/Cards_A.pdf");
+    for (const p of [
+      "/resources/unit-circle/files/cards_a.pdf",        // the name is case-sensitive
+      "/resources/unit-circle/files/Cards_C.pdf",        // listed, not uploaded
+      "/resources/unit-circle/files/Nope.pdf",
+      "/resources/unit-circle/files/",
+      "/resources/unit-circle/files/Cards_A.pdf/",
+      "/resources/gone-tool/files/Gone.pdf",             // unpublished
+      "/resources/draft-tool/files/Draft.pdf",           // draft
+      "/resources/private-tool/files/Cards_A.pdf",
+      "/es/recursos/circulo-unitario/files/Cards_A.pdf", // no ES file URL
+      "/resources/unit-circle/files/..%2F..%2Fv2.html",
+      "/resources/unit-circle/files/%2e%2e%2fCards_A.pdf",
+      "/resources/unit-circle/files/..%2Fcards_a.pdf",
+      "/resources/unit-circle/files/Cards_A%2Epdf",
+    ]) assert.equal((await fetch(base + p)).status, 404, p); // following any redirect
+    // raw dot segments (fetch would resolve them before sending): server.js resolves them like a browser
+    // (WHATWG URL), so they only ever reach the normal routes, never a bucket path
+    const raw = (p) => new Promise((ok, no) => require("node:http").get(base + "/", { path: p }, (r) => { r.resume(); ok([r.statusCode, r.headers["content-type"]]); }).on("error", no));
+    assert.deepEqual(await raw("/resources/unit-circle/files/.."), [200, "text/html; charset=utf-8"]); // = the page // = the page
+    assert.deepEqual((await raw("/resources/unit-circle/files/../../../frame/x/../../og/../v2.html"))[0], 404);
+    assert.equal((await fetch(base + "/resources/unit-circle/files/Cards_A.pdf", { method: "POST" })).status, 404);
+  }));
+  await check("page: 'Printable PDFs' after 'How to use it', label · size, new tab, uploaded only, in order; ES same URLs", quiet(async () => {
+    const h = await (await get("/resources/unit-circle/")).text();
+    const sec = h.match(/<section id="files"[\s\S]*?<\/section>/)[0];
+    assert.ok(h.indexOf('id="how"') < h.indexOf('id="files"') && h.indexOf('id="files"') < h.indexOf('id="ideas"'));
+    assert.match(sec, /<h2>Printable PDFs<\/h2>/);
+    assert.match(sec, /data-resource-slug="unit-circle"/);
+    const items = [...sec.matchAll(/<a href="([^"]+)" target="_blank" rel="noopener" data-file="([^"]+)">([^<]+)<\/a> <span class="res-file-size">· ([^<]+)<\/span>/g)].map((m) => m.slice(1));
+    assert.deepEqual(items, [
+      ["/resources/unit-circle/files/Cards_B.pdf", "Cards_B.pdf", "Newton&#39;s laws", "244 KB"],
+      ["/resources/unit-circle/files/Cards_A.pdf", "Cards_A.pdf", "Kinematics &amp; vectors", "3 KB"],
+    ]);
+    assert.doesNotMatch(sec, /Cards_C|Pending/);
+    assert.match(h, /resource_file_open/);
+    assert.match(h, /ids=\["main","tool","how","files",/);
+    const e = await (await get("/es/recursos/circulo-unitario/")).text();
+    const se = e.match(/<section id="files"[\s\S]*?<\/section>/)[0];
+    assert.match(se, /<h2>PDF para imprimir<\/h2>/);
+    assert.match(se, /href="\/resources\/unit-circle\/files\/Cards_B\.pdf"[^>]*>Leyes de Newton<\/a> <span class="res-file-size">· 244 KB/);
+    // the sitemap never lists PDFs
+    app.resources._clearCache();
+    assert.doesNotMatch(await (await get("/sitemap.xml")).text(), /files\/|\.pdf/);
+  }));
+  await check("phone bar: back link reads '← Resources' / '← Recursos' and goes to the library", quiet(async () => {
+    assert.match(await (await get("/resources/unit-circle/")).text(), /<a class="res-back" href="\/resources\/"><span aria-hidden="true">←<\/span> Resources<\/a>/);
+    assert.match(await (await get("/es/recursos/circulo-unitario/")).text(), /<a class="res-back" href="\/es\/recursos\/"><span aria-hidden="true">←<\/span> Recursos<\/a>/);
   }));
   await check("preview cards and KaTeX assets: served, long cache; unknown 404", quiet(async () => {
     let r = await get("/resources/og/abcde12345-en-0123abcd.png");
@@ -569,6 +771,87 @@ function sample(over = {}) {
         j = await r.json();
         assert.equal(j.doc.file.name, "unit-circle.html");
         assert.match(j.configProblems[0].message, /is for "trigonometry-playground\.html", but the tool file is "unit-circle\.html"/);
+      });
+      await check("PDFs: list from a config, upload one request each, name / %PDF- / size / case checks, max 20", async () => {
+        const pid = (await (await A("POST", "/api/resources", {})).json()).id;
+        let r = await A("PUT", `/api/resources/${pid}/files`, { files: [{ name: "U_A.pdf", labelEn: "A", labelEs: "A es" }, { name: "U_B.pdf", labelEn: "B", labelEs: "B es" }, { name: "U_C.pdf", labelEn: "C", labelEs: "C es" }] });
+        let j = await r.json();
+        assert.equal(r.status, 200, j.error);
+        assert.deepEqual(j.doc.files.map((f) => [f.name, f.path]), [["U_A.pdf", ""], ["U_B.pdf", ""], ["U_C.pdf", ""]]);
+        assert.ok(j.problems.includes("PDF U_A.pdf is listed but not uploaded. Drop it, or remove it from Files."));
+        // uploads
+        r = await A("POST", `/api/resources/${pid}/files/U_B.pdf`, PDF(5000, "B1"));
+        j = await r.json();
+        assert.equal(r.status, 200, j.error);
+        const b = j.doc.files.find((f) => f.name === "U_B.pdf");
+        assert.deepEqual([b.path, b.sizeBytes, b.labelEn], [M.pdfPath(pid, "U_B.pdf"), PDF(5000, "B1").length, "B"]);
+        assert.equal(b.sha256, sha(PDF(5000, "B1")));
+        assert.ok(astore._objects.get(M.pdfPath(pid, "U_B.pdf")).equals(PDF(5000, "B1")));
+        // checks
+        r = await A("POST", `/api/resources/${pid}/files/U_A.pdf`, Buffer.from("<html>not a pdf"));
+        assert.equal(r.status, 400); assert.match((await r.json()).error, /isn't a PDF/);
+        r = await A("POST", `/api/resources/${pid}/files/${encodeURIComponent("bad name.pdf")}`, PDF());
+        assert.equal(r.status, 400); assert.match((await r.json()).error, /isn't a usable PDF name/);
+        r = await A("POST", `/api/resources/${pid}/files/u_b.pdf`, PDF());
+        assert.equal(r.status, 400); assert.match((await r.json()).error, /differs only in upper\/lower case from "U_B\.pdf"/);
+        r = await A("POST", `/api/resources/${pid}/files/U_A.pdf`, PDF(10 * 1048576));
+        assert.equal(r.status, 413);
+        r = await A("PUT", `/api/resources/${pid}/files`, { files: Array.from({ length: 21 }, (_, i) => ({ name: `f${i}.pdf` })) });
+        assert.equal(r.status, 400); assert.match((await r.json()).error, /At most 20/);
+        r = await A("PUT", `/api/resources/${pid}/files`, { files: [{ name: "X.pdf" }, { name: "x.pdf" }] });
+        assert.equal(r.status, 400); assert.match((await r.json()).error, /listed twice/);
+        // a new name (not listed) gets its labels from the headers, at the end
+        r = await A("POST", `/api/resources/${pid}/files/U_Extra.pdf`, PDF(), { "X-Label-En": encodeURIComponent("Extra"), "X-Label-Es": encodeURIComponent("Más") });
+        j = await r.json();
+        assert.deepEqual(j.doc.files.map((f) => f.name), ["U_A.pdf", "U_B.pdf", "U_C.pdf", "U_Extra.pdf"]);
+        assert.equal(j.doc.files[3].labelEs, "Más");
+        // a list never drops an uploaded file (it goes to the end); pending ones not listed are dropped
+        r = await A("PUT", `/api/resources/${pid}/files`, { files: [{ name: "U_C.pdf", labelEn: "C2", labelEs: "C2" }] });
+        j = await r.json();
+        assert.deepEqual(j.doc.files.map((f) => [f.name, f.labelEn]), [["U_C.pdf", "C2"], ["U_B.pdf", "B"], ["U_Extra.pdf", "Extra"]]);
+      });
+      await check("PDFs: replace keeps the URL (new ETag); delete removes the object; publish waits for listed files", async () => {
+        const pid = (await (await A("POST", "/api/resources", {})).json()).id;
+        await A("POST", `/api/resources/${pid}/file`, Buffer.from(TOOL));
+        await A("PUT", `/api/resources/${pid}/files`, { files: [{ name: "Deck_1.pdf", labelEn: "One", labelEs: "Uno" }, { name: "Deck_2.pdf", labelEn: "Two", labelEs: "Dos" }] });
+        await A("POST", `/api/resources/${pid}/files/Deck_1.pdf`, PDF(100, "v1"));
+        const f2 = { ...fields, slugEn: "pdf-deck", slugEs: "mazo-pdf" };
+        let r = await A("POST", `/api/resources/${pid}/publish`, { doc: f2, checked: true });
+        assert.equal(r.status, 400);
+        assert.ok((await r.json()).problems.includes("PDF Deck_2.pdf is listed but not uploaded. Drop it, or remove it from Files."));
+        await A("POST", `/api/resources/${pid}/files/Deck_2.pdf`, PDF(200, "two"));
+        r = await A("POST", `/api/resources/${pid}/publish`, { doc: f2, checked: true });
+        assert.equal(r.status, 200, (await r.clone().json()).error);
+        // admin route (any status) serves it; replace: same path, new bytes and sha, marker bumped (live)
+        let g = await fetch(`${abase}/resources/pdf-deck/files/Deck_1.pdf`);
+        assert.equal(g.status, 200); assert.equal(g.headers.get("cache-control"), "no-store"); assert.equal(g.headers.get("etag"), `"${sha(PDF(100, "v1"))}"`);
+        const rev = await astore.rev();
+        r = await A("POST", `/api/resources/${pid}/files/Deck_1.pdf`, PDF(300, "v2"));
+        const d = (await r.json()).doc.files[0];
+        assert.equal(d.path, M.pdfPath(pid, "Deck_1.pdf"));
+        assert.equal(d.sha256, sha(PDF(300, "v2")));
+        assert.notEqual(await astore.rev(), rev);
+        g = await fetch(`${abase}/resources/pdf-deck/files/Deck_1.pdf`);
+        assert.ok(Buffer.from(await g.arrayBuffer()).equals(PDF(300, "v2")));
+        // preview: the PDF list links to the admin's own copy (drafts too)
+        const pv = await (await fetch(`${abase}/preview/${pid}/es`)).text();
+        assert.match(pv, new RegExp(`href="http://127\\.0\\.0\\.1:\\d+/resources/pdf-deck/files/Deck_1\\.pdf" target="_blank"[^>]*>Uno</a>`));
+        // delete
+        r = await A("DELETE", `/api/resources/${pid}/files/Deck_2.pdf`);
+        assert.deepEqual((await r.json()).doc.files.map((f) => f.name), ["Deck_1.pdf"]);
+        assert.ok(!astore._objects.has(M.pdfPath(pid, "Deck_2.pdf")));
+        assert.equal((await fetch(`${abase}/resources/pdf-deck/files/Deck_2.pdf`)).status, 404);
+        assert.equal((await A("DELETE", `/api/resources/${pid}/files/Deck_2.pdf`)).status, 404);
+        // a normal page save keeps the files (they're not part of the form)
+        r = await A("PUT", `/api/resources/${pid}`, { doc: { ...f2, related: ["projectile", "pdf-deck", "unit-circle"] }, checked: true });
+        const saved = (await r.json()).doc;
+        assert.deepEqual(saved.files.map((f) => f.name), ["Deck_1.pdf"]);
+        assert.deepEqual(saved.related, ["projectile", "unit-circle"], "itself dropped");
+        // a deleted draft takes its PDFs with it
+        const did = (await (await A("POST", "/api/resources", {})).json()).id;
+        await A("POST", `/api/resources/${did}/files/Z.pdf`, PDF());
+        await A("DELETE", `/api/resources/${did}`);
+        assert.ok(!astore._objects.has(M.pdfPath(did, "Z.pdf")));
       });
       await check("math preview endpoint", async () => {
         const j = await (await A("POST", "/api/math", { text: "$x^2$ and $\\frac{1}$" })).json();

@@ -261,6 +261,74 @@ async function check(name, fn) {
       assert.match(await page.textContent("#msg"), /Drop one tool at a time/);
       assert.match(await page.textContent("#file-info"), /No file yet/);
     });
+    await check("html + json + PDFs in one drop: listed files uploaded in order, checklist (found / missing / extra), related filled", async () => {
+      const pid = await newResource();
+      const pdf = (name, n) => ({ name, type: "application/pdf", body: Buffer.concat([Buffer.from("%PDF-1.4\n"), Buffer.alloc(n, 0x41)]) });
+      const cfg = { ...CFG, en: { ...CFG.en, slug: "trig-pdfs" }, es: { ...CFG.es, slug: "trig-pdfs-es" },
+        files: [{ file: "Trig_B.pdf", en: "Part B", es: "Parte B" }, { file: "Trig_A.pdf", en: "Part A", es: "Parte A" }, { file: "Trig_C.pdf", en: "Part C", es: "Parte C" }],
+        related: ["trigonometry-playground"] };
+      dialogs = [];
+      await dropFiles([pdf("Trig_A.pdf", 2000), html, pdf("Extra_Notes.pdf", 500), json(cfg), pdf("Trig_B.pdf", 300000)]);
+      await page.waitForFunction(() => !document.getElementById("files-check").hidden);
+      let doc = M.normalize(await store.get(pid));
+      assert.deepEqual(doc.files.map((f) => [f.name, !!f.path, f.labelEs]), [["Trig_B.pdf", true, "Parte B"], ["Trig_A.pdf", true, "Parte A"], ["Trig_C.pdf", false, "Parte C"]]);
+      const check_ = await page.textContent("#files-check");
+      assert.match(check_, /PDFs: 2 uploaded, 1 listed but not dropped, 1 not in trigonometry-playground\.json\./);
+      assert.match(check_, /✓ Trig_B\.pdf: uploaded/);
+      assert.match(check_, /✗ Trig_C\.pdf: listed in trigonometry-playground\.json but not dropped/);
+      assert.match(check_, /\+ Extra_Notes\.pdf: not in trigonometry-playground\.json/);
+      // publish is blocked while Trig_C is missing
+      assert.match(await page.textContent("#problems"), /PDF Trig_C\.pdf is listed but not uploaded/);
+      // related picker filled from the config (that slug is published by the first check)
+      assert.deepEqual(await page.$$eval("#related-list li", (l) => l.map((x) => x.getAttribute("data-slug"))), ["trigonometry-playground"]);
+      // add the extra one with edited labels
+      await page.fill('[aria-label="EN label for Extra_Notes.pdf"]', "Extra notes");
+      await page.fill('[aria-label="ES label for Extra_Notes.pdf"]', "Notas extra");
+      await page.click('[data-check="Extra_Notes.pdf"] button');
+      await page.waitForFunction(() => /added/.test(document.querySelector('[data-check="Extra_Notes.pdf"]').textContent));
+      // remove the missing one, reorder (A first), relabel, save
+      await page.click('.file-row[data-name="Trig_C.pdf"] .btn-quiet');
+      await settle();
+      await page.click('.file-row[data-name="Trig_A.pdf"] button:text("↑")');
+      await page.fill('.file-row[data-name="Trig_A.pdf"] input[data-label="En"]', "Part A (angles)");
+      await page.click("#files-save");
+      await settle();
+      doc = M.normalize(await store.get(pid));
+      assert.deepEqual(doc.files.map((f) => [f.name, f.labelEn]), [["Trig_A.pdf", "Part A (angles)"], ["Trig_B.pdf", "Part B"], ["Extra_Notes.pdf", "Extra notes"]]);
+      assert.doesNotMatch(await page.textContent("#problems"), /PDF/);
+      // publish, then the preview pages list them (EN + ES) with sizes, linking to the admin's copy
+      await page.check("#checked");
+      await page.click("#publish");
+      await page.waitForFunction(() => /Published/.test(document.getElementById("msg").textContent));
+      for (const [l, head, label] of [["en", "Printable PDFs", "Part A (angles)"], ["es", "PDF para imprimir", "Parte A"]]) {
+        const pv = await (await page.request.get(`${base}/preview/${pid}/${l}`)).text();
+        assert.match(pv, new RegExp(`<h2>${head}</h2>`));
+        assert.match(pv, new RegExp(`/resources/trig-pdfs/files/Trig_A\\.pdf" target="_blank" rel="noopener" data-file="Trig_A\\.pdf">${label.replace(/[()]/g, "\\$&")}</a> <span class="res-file-size">· 2 KB`));
+        assert.match(pv, /Trig_B\.pdf[^<]*<\/a> <span class="res-file-size">· 293 KB/);
+      }
+      // Replace (row button) keeps the URL; the live page is asked about first
+      const before = doc.files[0].sha256;
+      dialogs = [];
+      await page.click('.file-row[data-name="Trig_A.pdf"] button:text("Replace…")');
+      await page.setInputFiles("#pdf-input", { name: "renamed-on-disk.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.7 new") });
+      await settle();
+      assert.ok(dialogs.some((d) => /Replace Trig_A\.pdf on the live page\? Its URL stays the same/.test(d)));
+      doc = M.normalize(await store.get(pid));
+      assert.equal(doc.files[0].name, "Trig_A.pdf");
+      assert.notEqual(doc.files[0].sha256, before);
+      const g = await page.request.get(`${base}/resources/trig-pdfs/files/Trig_A.pdf`);
+      assert.equal(await g.text(), "%PDF-1.7 new");
+    });
+    await check("PDFs alone, a bad name and a non-PDF: refused with plain messages, nothing stored", async () => {
+      const pid = await newResource();
+      await dropFiles([{ name: "my notes.pdf", type: "application/pdf", body: Buffer.from("%PDF-1.4") }, { name: "fake.pdf", type: "application/pdf", body: Buffer.from("<html>") }]);
+      await page.waitForFunction(() => !document.getElementById("files-check").hidden);
+      const t = await page.textContent("#files-check");
+      assert.match(t, /my notes\.pdf: not in the list\. my notes\.pdf: use only letters, numbers, dots, hyphens and underscores/);
+      await page.click('[data-check="fake.pdf"] button');
+      await page.waitForFunction(() => /isn't a PDF/.test(document.getElementById("msg").textContent));
+      assert.deepEqual(M.normalize(await store.get(pid)).files, []);
+    });
     assert.deepEqual(errors, []);
   } finally {
     console.log = log; console.warn = warn;

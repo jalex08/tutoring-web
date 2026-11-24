@@ -100,3 +100,23 @@ legend.cfg-invalid{color:var(--red)}
 .configs{margin-top:12px}
 .configs ul{margin:4px 0 0;padding-left:1.2em}
 .configs[hidden]{display:none}
+/* Files (PDFs) and Related */
+.files-list{list-style:none;margin:10px 0 12px;padding:0;counter-reset:f}
+.file-row{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;padding:10px 0;border-top:1px solid var(--line)}
+.file-row .fr-head{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.file-row .fr-name{font-weight:700;word-break:break-all}
+.file-row .fr-tools{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px}
+.file-row label{font-size:.88rem;font-weight:700}
+.file-row input{width:100%}
+.badge-missing{color:var(--red);border-color:var(--red)}
+.files-check{margin:8px 0;padding:10px 14px;border:1.5px solid var(--line);border-radius:10px}
+.files-check ul{margin:4px 0 0;padding-left:0;list-style:none}
+.files-check li{margin:4px 0}
+.files-check .ok{color:var(--ok)}
+.files-check .bad{color:var(--red);font-weight:700}
+.files-check .extra-labels{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.field-wide{grid-column:1/-1}
+.related-list{margin:0 0 8px;padding-left:1.4em}
+.related-list li{margin:4px 0}
+.related-list .hint{margin-left:6px}
+@media (max-width:640px){.file-row{grid-template-columns:1fr}}

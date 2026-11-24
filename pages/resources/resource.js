@@ -150,6 +150,12 @@
     try { target.focus({ preventScroll: true }); } catch (err) { target.focus(); }
   });
 
+  // printable PDFs (the list under "How to use it"; links inside the tool can't be counted: sandbox)
+  var filesSec = document.getElementById("files");
+  if (filesSec) [].forEach.call(filesSec.querySelectorAll("a[data-file]"), function (a) {
+    a.addEventListener("click", function () { track("resource_file_open", { resource_slug: filesSec.getAttribute("data-resource-slug"), file_name: a.getAttribute("data-file") }); });
+  });
+
   // booking clicks (bar and the CTA at the bottom)
   [].forEach.call(document.querySelectorAll('a[data-loc="bar"], a[data-loc="cta"]'), function (a) {
     a.addEventListener("click", function () { track("resource_book_click", { resource_id: id, link_location: a.getAttribute("data-loc") }); });

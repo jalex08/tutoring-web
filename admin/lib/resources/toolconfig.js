@@ -9,8 +9,11 @@
  * Version 1:
  *   { version: 1, file: "<name>.html", subject, levels[], courseTags[],
  *     en: { title, slug, description, intro, howTo[], keyIdeas[], faq[{q, a}], keywords[] },
- *     es: { same keys } }
+ *     es: { same keys },
+ *     files: [{ file: "<Name>.pdf", en: "label", es: "label" }],   optional: PDFs, in display order
+ *     related: ["<slug-en>", ...] }                                 optional: shown first under "Related"
  * intro: a blank line between paragraphs. keyIdeas (and the other text) may contain $...$ LaTeX.
+ * A config without `files` or `related` leaves those as they are (fields.files / fields.related undefined).
  */
 "use strict";
 
@@ -18,7 +21,7 @@ const M = require("./model.js");
 
 const VERSION = 1;
 const MAX_BYTES = 256 * 1024;
-const TOP_KEYS = ["version", "file", "subject", "levels", "courseTags", "en", "es"];
+const TOP_KEYS = ["version", "file", "subject", "levels", "courseTags", "en", "es", "files", "related"];
 const LANG_KEYS = ["title", "slug", "description", "intro", "howTo", "keyIdeas", "faq", "keywords"];
 const REQUIRED = ["title", "slug", "description", "intro", "howTo", "keyIdeas"];
 const LABEL = { title: "title", slug: "slug", description: "description", intro: "intro", howTo: "how-to steps", keyIdeas: "key ideas", faq: "FAQ", keywords: "keywords" };
@@ -56,6 +59,9 @@ function freeSlug(base, lang, others) {
  *              (null when the file can't be used at all: bad JSON, not an object, unknown version)
  *   problems = [{ field, message, level: "error" | "warning", suggestion? }]
  *              field: "json" | "version" | "file" | "subject" | "levels" | "courseTags" | "<lang>.<key>" | "<lang>"
+ *                     | "files" | "related"
+ *   fields.files   = [{ name, labelEn, labelEs }] (only when the config has "files")
+ *   fields.related = ["<slug-en>"] (only when the config has "related")
  */
 function readConfig(text, { htmlName = "", others = [], selfId = "" } = {}) {
   const problems = [];
@@ -150,7 +156,60 @@ function readConfig(text, { htmlName = "", others = [], selfId = "" } = {}) {
       }
     }
   }
+  // PDFs
+  if (c.files !== undefined) {
+    if (!Array.isArray(c.files)) add("files", `"files" must be a list of {"file", "en", "es"}, got ${show(c.files)}.`);
+    else {
+      fields.files = [];
+      const seen = new Map();
+      c.files.forEach((x, i) => {
+        if (!x || typeof x !== "object" || typeof x.file !== "string") { add("files", `File ${i + 1} needs a "file" (the PDF's name): ${show(x)}.`); return; }
+        const name = baseName(x.file.trim());
+        if (!M.validFileName(name)) { add("files", M.fileNameProblem(name)); return; }
+        if (seen.has(name.toLowerCase())) { add("files", `"${name}" is listed twice${seen.get(name.toLowerCase()) !== name ? ` (as "${seen.get(name.toLowerCase())}" too; names can't differ only in upper/lower case)` : ""}.`); return; }
+        if (fields.files.length >= M.MAX_FILES) { add("files", `More than ${M.MAX_FILES} files; "${name}" and the rest weren't added.`); return; }
+        seen.set(name.toLowerCase(), name);
+        const label = (k) => (typeof x[k] === "string" ? x[k].trim() : "");
+        if (!label("en") || !label("es")) add("files", `"${name}" needs an "en" and an "es" label.`);
+        for (const k of Object.keys(x)) if (!["file", "en", "es"].includes(k)) add("files", `"${name}": unknown key "${k}" (not used).`, "warning");
+        fields.files.push({ name, labelEn: label("en"), labelEs: label("es") });
+      });
+    }
+  }
+
+  // related resources (EN slugs)
+  if (c.related !== undefined) {
+    if (!Array.isArray(c.related)) add("related", `"related" must be a list of EN slugs, got ${show(c.related)}.`);
+    else {
+      fields.related = [];
+      for (const x of c.related) {
+        const s = typeof x === "string" ? x.trim().toLowerCase() : "";
+        if (!M.SLUG_RE.test(s)) { add("related", `Related: ${show(x)} isn't a slug.`); continue; }
+        if (s === fields.slugEn) { add("related", `Related: "${s}" is this resource itself (skipped).`, "warning"); continue; }
+        if (fields.related.includes(s)) continue;
+        const o = others_.find((d) => M.slugOf(d, "en") === s || M.historyOf(d, "en").includes(s));
+        if (!o) add("related", `Related: no resource has the EN slug "${s}" yet. It's kept and shows up once that resource is published.`, "warning");
+        else if (!M.isLive(o)) add("related", `Related: "${s}" isn't published, so it's skipped on the page until it is.`, "warning");
+        fields.related.push(s);
+        if (fields.related.length >= M.RELATED_MAX) break;
+      }
+    }
+  }
   return { ok: true, fields, problems, file };
 }
 
-module.exports = { VERSION, MAX_BYTES, readConfig, parseJson, freeSlug, stem, baseName };
+/**
+ * Dropped PDFs vs. the files a config (or the editor) lists, by exact name:
+ * { found: [listed and dropped], missing: [listed, not dropped], extra: [dropped, not listed] }.
+ */
+function matchFiles(listed, droppedNames) {
+  const names = (listed || []).map((f) => (typeof f === "string" ? f : f.name));
+  const dropped = [...new Set(droppedNames || [])];
+  return {
+    found: names.filter((n) => dropped.includes(n)),
+    missing: names.filter((n) => !dropped.includes(n)),
+    extra: dropped.filter((n) => !names.includes(n)),
+  };
+}
+
+module.exports = { VERSION, MAX_BYTES, readConfig, parseJson, freeSlug, stem, baseName, matchFiles };

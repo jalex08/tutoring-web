@@ -67,7 +67,10 @@ gcloud storage buckets update gs://josediaz-tutoring-res --uniform-bucket-level-
 
 (Starting over in another project: `gcloud storage buckets create gs://NAME --location=us-east1 --uniform-bucket-level-access --public-access-prevention --project=jalex-hub`, then put NAME in `RESOURCES_BUCKET` in both yaml files.)
 
-Objects are never public: the site streams them (`/frame/...`, `/resources/og/...`).
+Objects are never public: the site streams them (`/frame/...`, `/resources/og/...`,
+`/resources/<slug>/files/<name>.pdf`). Layout: `resources/<id>/v<N>.html` (tool versions),
+`resources/<id>/config-<n>.json` (configs as uploaded), `resources/<id>/files/<name>.pdf` (printable PDFs,
+replaced in place so the URL never changes), `og/<id>-<lang>-<hash>.png` (preview cards).
 
 ## 4. Permissions
 
