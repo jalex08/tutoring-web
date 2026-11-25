@@ -26,11 +26,12 @@
   var dataEl = document.getElementById("doc-data");
   if (!dataEl) return;
   var data = JSON.parse(dataEl.textContent);
-  var doc = data.doc, MAX = data.maxBytes;
+  var doc = data.doc, MAX = data.maxBytes, MAX_FILE = data.maxFileBytes, MAX_FILES = data.maxFiles, PUBLISHED = data.published || [];
   var form = document.getElementById("edit");
   var checked = document.getElementById("checked");
   var $ = function (id) { return document.getElementById(id); };
   var dirty = false;
+  var clone = function (x) { return JSON.parse(JSON.stringify(x)); };
 
   // slugs: lowercase ASCII with hyphens (same rule as lib/resources/model.js slugify)
   function slugify(t) {
@@ -89,7 +90,7 @@
   function collect() {
     var out = { slugEn: $("en-slug").value.trim(), slugEs: $("es-slug").value.trim(), subject: $("subject").value, relatedExamPage: $("relatedExamPage").value,
       levels: [].map.call(form.querySelectorAll('input[name="levels"]:checked'), function (c) { return c.value; }),
-      courseTags: commas($("courseTags").value) };
+      courseTags: commas($("courseTags").value), related: related.slice() };
     ["en", "es"].forEach(function (l) {
       out[l] = {
         title: $(l + "-title").value.trim(), description: $(l + "-description").value.trim(), intro: $(l + "-intro").value.trim(),
@@ -118,6 +119,10 @@
       t.faq.forEach(function (x) { if (!x.q || !x.a) p.push(L + ": every FAQ item needs a question and an answer."); });
     });
     if (!f.levels.length) p.push("Pick at least one level.");
+    files.forEach(function (x) {
+      if (!x.path) p.push("PDF " + x.name + " is listed but not uploaded. Drop it, or remove it from Files.");
+      if (!x.labelEn || !x.labelEs) p.push("PDF " + x.name + " needs an EN and an ES label.");
+    });
     return p.filter(function (x, i) { return p.indexOf(x) === i; });
   }
   var serverProblems = data.problems || [];
@@ -138,12 +143,13 @@
   form.addEventListener("input", function () { dirty = true; refresh(); });
   form.addEventListener("change", function () { dirty = true; refresh(); });
   checked.addEventListener("change", refresh);
-  window.addEventListener("beforeunload", function (e) { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+  window.addEventListener("beforeunload", function (e) { if (dirty || filesDirty) { e.preventDefault(); e.returnValue = ""; } });
 
   function apply(j, text) {
     doc = j.doc;
     serverProblems = j.problems || [];
     dirty = false;
+    if (!filesDirty) { files = clone(doc.files || []); renderFiles(); }
     $("status-badge").textContent = { draft: "Draft", published: "Published", unpublished: "Unpublished" }[doc.status];
     $("status-badge").className = "badge badge-" + doc.status;
     $("publish").hidden = doc.status === "published";
@@ -171,13 +177,13 @@
 
   $("save").addEventListener("click", function () {
     var b = this; busy(b, true); say("Saving…");
-    api("PUT", "/api/resources/" + doc.id, { doc: collect(), checked: checked.checked })
+    saveFilesIfDirty().then(function () { return api("PUT", "/api/resources/" + doc.id, { doc: collect(), checked: checked.checked }); })
       .then(function (j) { apply(j, doc.status === "published" ? "Saved. The live page updates within about 30 seconds." : "Draft saved."); }, fail)
       .then(function () { busy(b, false); refresh(); });
   });
   $("publish").addEventListener("click", function () {
     var b = this; busy(b, true); say("Publishing (making the preview cards)…");
-    api("POST", "/api/resources/" + doc.id + "/publish", { doc: collect(), checked: checked.checked })
+    saveFilesIfDirty().then(function () { return api("POST", "/api/resources/" + doc.id + "/publish", { doc: collect(), checked: checked.checked }); })
       .then(function (j) { checked.checked = false; apply(j, "Published. Live within about 30 seconds."); }, fail)
       .then(function () { busy(b, false); refresh(); });
   });
@@ -195,7 +201,7 @@
   // Dropped or picked together (any order) or one at a time. Paired by base name.
   var drop = $("drop"), input = $("file-input");
   var stemOf = function (n) { return String(n).replace(/\.(html?|json)$/i, ""); };
-  var kindOf = function (n) { return /\.html?$/i.test(n) ? "html" : /\.json$/i.test(n) ? "json" : ""; };
+  var kindOf = function (n) { return /\.html?$/i.test(n) ? "html" : /\.json$/i.test(n) ? "json" : /\.pdf$/i.test(n) ? "pdf" : ""; };
 
   function uploadHtml(file) {
     if (file.size > MAX) return Promise.reject(new Error(file.name + " is " + (file.size / 1048576).toFixed(1) + " MB; the limit is " + (MAX / 1048576).toFixed(1) + " MB."));
@@ -239,31 +245,36 @@
   }
 
   function handleFiles(list) {
-    var files = [].slice.call(list || []);
-    if (!files.length) return;
-    var bad = files.filter(function (f) { return !kindOf(f.name); });
-    if (bad.length) { say("Only .html, .htm and .json files: " + bad.map(function (f) { return f.name; }).join(", "), "err"); return; }
-    var groups = {};
-    files.forEach(function (f) { var k = stemOf(f.name).toLowerCase(); (groups[k] = groups[k] || {})[kindOf(f.name)] = f; });
-    var keys = Object.keys(groups);
-    if (keys.length > 1) { say("Drop one tool at a time: these files have different names (" + files.map(function (f) { return f.name; }).join(", ") + ").", "err"); return; }
-    if (files.filter(function (f) { return kindOf(f.name) === "html"; }).length > 1 || files.filter(function (f) { return kindOf(f.name) === "json"; }).length > 1) {
-      say("Drop one .html and at most one .json.", "err"); return;
+    var all = [].slice.call(list || []);
+    if (!all.length) return;
+    var bad = all.filter(function (f) { return !kindOf(f.name); });
+    if (bad.length) { say("Only .html, .htm, .json and .pdf files: " + bad.map(function (f) { return f.name; }).join(", "), "err"); return; }
+    var pdfList = all.filter(function (f) { return kindOf(f.name) === "pdf"; });
+    var tool = all.filter(function (f) { return kindOf(f.name) !== "pdf"; });
+    var html = null, cfg = null;
+    if (tool.length) {
+      var groups = {};
+      tool.forEach(function (f) { var k = stemOf(f.name).toLowerCase(); (groups[k] = groups[k] || {})[kindOf(f.name)] = f; });
+      var keys = Object.keys(groups);
+      if (keys.length > 1) { say("Drop one tool at a time: these files have different names (" + tool.map(function (f) { return f.name; }).join(", ") + ").", "err"); return; }
+      if (tool.filter(function (f) { return kindOf(f.name) === "html"; }).length > 1 || tool.filter(function (f) { return kindOf(f.name) === "json"; }).length > 1) {
+        say("Drop one .html and at most one .json (plus its PDFs).", "err"); return;
+      }
+      html = groups[keys[0]].html || null; cfg = groups[keys[0]].json || null;
     }
-    var g = groups[keys[0]], html = g.html, cfg = g.json;
     var hasText = !!(doc.file || $("en-title").value.trim() || $("es-title").value.trim());
     if (html && doc.status === "published" && !confirm("This resource is live. The new tool file goes live right away. Continue?")) return;
     clearConfigProblems();
-    if (html && cfg) {
-      // a new resource: fill without asking. Replacing: ask (OK = yes, the default)
-      var fill = !hasText || confirm("Update the page text from the config?\n\n" + cfg.name + "\n\nOK = yes (recommended). Cancel = replace only the tool; the page text stays as it is.");
-      uploadHtml(html).then(function () { return uploadConfig(cfg, html.name, fill); }).catch(fail);
-    } else if (html) {
-      uploadHtml(html).then(function (j) { if (j.configProblems && j.configProblems.length) showConfigProblems(j.configProblems); }).catch(fail);
-    } else {
-      // a config alone: updates only the page text (checked against the tool already uploaded, if any)
-      uploadConfig(cfg, doc.file && doc.file.name, true).catch(fail);
-    }
+    // a new resource: fill without asking. Replacing: ask (OK = yes, the default). A config alone: fill.
+    var fill = html && cfg ? (!hasText || confirm("Update the page text from the config?\n\n" + cfg.name + "\n\nOK = yes (recommended). Cancel = replace only the tool; the page text and the files list stay as they are.")) : true;
+    var listedByConfig = false;
+    var chain = Promise.resolve();
+    if (html) chain = chain.then(function () { return uploadHtml(html); }).then(function (j) { if (!cfg && j.configProblems && j.configProblems.length) showConfigProblems(j.configProblems); });
+    if (cfg) chain = chain.then(function () { return uploadConfig(cfg, html ? html.name : doc.file && doc.file.name, fill); }).then(function (j) {
+      // the config's "files": its order and labels become the list (uploaded files it doesn't name stay, at the end)
+      if (fill && j && j.fields && j.fields.files) { listedByConfig = true; return putFiles(j.fields.files); }
+    });
+    chain.then(function () { if (pdfList.length || listedByConfig) return uploadPdfs(pdfList, cfg ? cfg.name : ""); }).catch(fail);
   }
   drop.addEventListener("click", function (e) { if (e.target.tagName !== "LABEL") input.click(); });
   drop.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } });
@@ -271,6 +282,195 @@
   ["dragenter", "dragover"].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.add("over"); }); });
   ["dragleave", "drop"].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.remove("over"); }); });
   drop.addEventListener("drop", function (e) { handleFiles(e.dataTransfer.files); });
+
+  // ---- files (PDFs) ----------------------------------------------------------------------------
+  // `files` = the list as shown (order, labels), saved with "Save order and labels" (or before Save /
+  // Publish). Uploads, replacements and deletes are saved right away, one request per file.
+  var files = clone(doc.files || []), filesDirty = false;
+  var PDF_NAME = /^(?!\.)[A-Za-z0-9._-]+\.pdf$/;
+  var nameProblem = function (n) { return PDF_NAME.test(n) && n.length <= 120 ? "" : n + ": use only letters, numbers, dots, hyphens and underscores, ending in .pdf."; };
+  var kb = function (b) { return b < 1048576 ? Math.max(1, Math.round(b / 1024)) + " KB" : (b / 1048576).toFixed(1) + " MB"; };
+  var fileHref = function (name) { return "/resources/" + doc.slugEn + "/files/" + encodeURIComponent(name); };
+  function el(tag, attrs, text) {
+    var e = document.createElement(tag);
+    for (var k in (attrs || {})) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function setFilesDirty(on) { filesDirty = on; $("files-save").disabled = !on; refresh(); }
+  function renderFiles() {
+    var ol = $("files-list");
+    ol.innerHTML = "";
+    $("files-empty").hidden = files.length > 0;
+    files.forEach(function (f, i) {
+      var li = el("li", { "class": "file-row", "data-name": f.name });
+      var head = el("div", { "class": "fr-head" });
+      head.appendChild(el("span", { "class": "fr-n" }, (i + 1) + "."));
+      if (f.path && doc.slugEn) { var a = el("a", { "class": "fr-name", href: fileHref(f.name), target: "_blank", rel: "noopener" }, f.name); head.appendChild(a); }
+      else head.appendChild(el("span", { "class": "fr-name" }, f.name));
+      head.appendChild(f.path ? el("span", { "class": "hint" }, kb(f.sizeBytes) + " · uploaded " + String(f.uploadedAt).slice(0, 16).replace("T", " ") + " UTC")
+        : el("span", { "class": "badge badge-missing" }, "Not uploaded"));
+      li.appendChild(head);
+      ["En", "Es"].forEach(function (L) {
+        var id = "file-" + i + "-label" + L, wrap = el("div");
+        wrap.appendChild(el("label", { "for": id }, "Label " + L.toUpperCase()));
+        var inp = el("input", { id: id, "data-label": L, value: f["label" + L] || "" });
+        inp.value = f["label" + L] || "";
+        inp.addEventListener("input", function () { files[i]["label" + L] = inp.value.trim(); setFilesDirty(true); });
+        wrap.appendChild(inp); li.appendChild(wrap);
+      });
+      var tools = el("div", { "class": "fr-tools" });
+      var btn = function (label, fn, extra) { var b = el("button", { type: "button", "class": "btn btn-small" + (extra || "") }, label); b.addEventListener("click", fn); tools.appendChild(b); return b; };
+      btn("↑", function () { move(i, -1); }).disabled = i === 0;
+      btn("↓", function () { move(i, 1); }).disabled = i === files.length - 1;
+      btn(f.path ? "Replace…" : "Upload…", function () { pickFor = f.name; $("pdf-input").click(); });
+      btn(f.path ? "Delete" : "Remove", function () { removeFile(f); }, " btn-quiet");
+      li.appendChild(tools);
+      ol.appendChild(li);
+    });
+  }
+  function move(i, d) { var x = files.splice(i, 1)[0]; files.splice(i + d, 0, x); renderFiles(); setFilesDirty(true); }
+  function applyFiles(j) {
+    // keep unsaved label / order edits for the files that were already listed
+    var local = filesDirty ? files : null;
+    doc = j.doc; serverProblems = j.problems || serverProblems;
+    files = clone(doc.files || []);
+    if (local) {
+      var order = local.map(function (f) { return f.name; });
+      files.forEach(function (f) { var l = local.filter(function (x) { return x.name === f.name; })[0]; if (l) { f.labelEn = l.labelEn; f.labelEs = l.labelEs; } });
+      files.sort(function (a, b) { var ia = order.indexOf(a.name), ib = order.indexOf(b.name); return (ia < 0 ? 1e9 : ia) - (ib < 0 ? 1e9 : ib); });
+    }
+    renderFiles(); refresh();
+    return j;
+  }
+  function putFiles(list) {
+    return api("PUT", "/api/resources/" + doc.id + "/files", { files: list.map(function (f) { return { name: f.name, labelEn: f.labelEn, labelEs: f.labelEs }; }) })
+      .then(function (j) { filesDirty = false; $("files-save").disabled = true; return applyFiles(j); });
+  }
+  function saveFilesIfDirty() { return filesDirty ? putFiles(files) : Promise.resolve(); }
+  $("files-save").addEventListener("click", function () {
+    var b = this; busy(b, true);
+    putFiles(files).then(function () { say("Files saved." + (doc.status === "published" ? " The live page updates within about 30 seconds." : ""), "ok"); }, fail)
+      .then(function () { busy(b, false); $("files-save").disabled = !filesDirty; });
+  });
+  function uploadPdf(file, name, labels) {
+    var err = nameProblem(name);
+    if (err) return Promise.reject(new Error(err));
+    if (file.size > MAX_FILE) return Promise.reject(new Error(file.name + " is " + (file.size / 1048576).toFixed(1) + " MB; the limit is " + Math.round(MAX_FILE / 1048576) + " MB."));
+    say("Uploading " + name + "…");
+    return file.arrayBuffer().then(function (buf) {
+      var h = {};
+      if (labels && labels.labelEn) h["X-Label-En"] = encodeURIComponent(labels.labelEn);
+      if (labels && labels.labelEs) h["X-Label-Es"] = encodeURIComponent(labels.labelEs);
+      return api("POST", "/api/resources/" + doc.id + "/files/" + encodeURIComponent(name), undefined, buf, h);
+    }).then(applyFiles);
+  }
+  function removeFile(f) {
+    var live = doc.status === "published" && f.path;
+    if (!confirm((f.path ? "Delete " : "Remove ") + f.name + "?" + (live ? "\n\nIt's live: its link (on the page and inside the tool) stops working." : ""))) return;
+    api("DELETE", "/api/resources/" + doc.id + "/files/" + encodeURIComponent(f.name)).then(function (j) { applyFiles(j); say("Removed " + f.name + ".", "ok"); }, fail);
+  }
+  var pickFor = "";
+  $("pdf-input").addEventListener("change", function () {
+    var f = this.files[0], name = pickFor; this.value = ""; pickFor = "";
+    if (!f || !name) return;
+    var row = files.filter(function (x) { return x.name === name; })[0];
+    if (row && row.path && doc.status === "published" && !confirm("Replace " + name + " on the live page? Its URL stays the same.")) return;
+    uploadPdf(f, name).then(function () { say((row && row.path ? "Replaced " : "Uploaded ") + name + (f.name !== name ? " (from " + f.name + ")" : "") + ".", "ok"); }, fail);
+  });
+
+  // dropped PDFs vs. the list: same rule as toolconfig.matchFiles (exact names)
+  function matchFiles(listed, dropped) {
+    return {
+      found: listed.filter(function (n) { return dropped.indexOf(n) >= 0; }),
+      missing: listed.filter(function (n) { return dropped.indexOf(n) < 0; }),
+      extra: dropped.filter(function (n) { return listed.indexOf(n) < 0; }),
+    };
+  }
+  function uploadPdfs(pdfList, cfgName) {
+    var byName = {};
+    pdfList.forEach(function (f) { byName[f.name] = f; });
+    var m = matchFiles(files.map(function (f) { return f.name; }), Object.keys(byName));
+    var results = {}; // name -> "" (ok) or an error
+    var replacing = m.found.filter(function (n) { return files.some(function (f) { return f.name === n && f.path; }); });
+    var skip = replacing.length && doc.status === "published" && !confirm("This resource is live. Replace " + replacing.length + " PDF(s) on the live page? Their URLs stay the same.") ? replacing : [];
+    var seq = Promise.resolve();
+    m.found.forEach(function (n) {
+      if (skip.indexOf(n) >= 0) { results[n] = "kept the current file"; return; }
+      seq = seq.then(function () { return uploadPdf(byName[n], n).then(function () { results[n] = ""; }, function (e) { results[n] = e.message; }); });
+    });
+    return seq.then(function () { showChecklist(m, results, byName, cfgName); });
+  }
+  function showChecklist(m, results, byName, cfgName) {
+    var box = $("files-check");
+    box.innerHTML = "";
+    var src = cfgName ? "in " + cfgName : "in the list";
+    box.appendChild(el("p", {}, "PDFs: " + m.found.filter(function (n) { return results[n] === ""; }).length + " uploaded" +
+      (m.missing.length ? ", " + m.missing.length + " listed but not dropped" : "") + (m.extra.length ? ", " + m.extra.length + " not " + src : "") + "."));
+    var ul = el("ul");
+    files.forEach(function (f) {
+      var n = f.name, li = el("li", { "data-check": n });
+      if (m.found.indexOf(n) >= 0) li.appendChild(el("span", { "class": results[n] ? "bad" : "ok" }, (results[n] ? "✗ " : "✓ ") + n + (results[n] ? ": " + results[n] : ": uploaded")));
+      else if (f.path) li.appendChild(el("span", { "class": "ok" }, "✓ " + n + ": already uploaded"));
+      else li.appendChild(el("span", { "class": "bad" }, "✗ " + n + ": listed " + src + " but not dropped. Drop it, or remove it below."));
+      ul.appendChild(li);
+    });
+    m.extra.forEach(function (n) {
+      var li = el("li", { "data-check": n, "class": "extra" });
+      var bad = nameProblem(n);
+      li.appendChild(el("span", { "class": "bad" }, "+ " + n + ": not " + src + (bad ? ". " + bad : ". Add it with these labels:")));
+      if (!bad) {
+        var row = el("div", { "class": "extra-labels" });
+        var guess = n.replace(/\.pdf$/i, "").replace(/[_-]+/g, " ");
+        var en = el("input", { "aria-label": "EN label for " + n, placeholder: "EN label" }), es = el("input", { "aria-label": "ES label for " + n, placeholder: "ES label" });
+        en.value = guess; es.value = guess;
+        var add = el("button", { type: "button", "class": "btn btn-small" }, "Add");
+        add.addEventListener("click", function () {
+          add.disabled = true;
+          uploadPdf(byName[n], n, { labelEn: en.value.trim(), labelEs: es.value.trim() }).then(function () {
+            li.innerHTML = ""; li.appendChild(el("span", { "class": "ok" }, "✓ " + n + ": added"));
+          }, function (e) { add.disabled = false; fail(e); });
+        });
+        row.appendChild(en); row.appendChild(es); row.appendChild(add); li.appendChild(row);
+      }
+      ul.appendChild(li);
+    });
+    box.appendChild(ul);
+    box.hidden = false;
+    say(m.missing.some(function (n) { return files.some(function (f) { return f.name === n && !f.path; }); }) || m.extra.length ? "Check the PDF list under Files." : "Files uploaded.", "ok");
+  }
+  renderFiles();
+
+  // ---- related resources (EN slugs, in order) ---------------------------------------------------
+  var related = (doc.related || []).slice();
+  function renderRelated() {
+    var ol = $("related-list"), sel = $("related-add");
+    ol.innerHTML = "";
+    related.forEach(function (slug, i) {
+      var p = PUBLISHED.filter(function (x) { return x.slugEn === slug; })[0];
+      var li = el("li", { "data-slug": slug });
+      li.appendChild(el("span", {}, p ? p.title : slug));
+      li.appendChild(el("span", { "class": "hint" }, p ? "/" + slug + "/" : "/" + slug + "/ · not published: skipped until it is"));
+      [["↑", -1], ["↓", 1]].forEach(function (x) {
+        var b = el("button", { type: "button", "class": "btn btn-small btn-quiet", "aria-label": (x[1] < 0 ? "Move up " : "Move down ") + slug }, x[0]);
+        b.disabled = i + x[1] < 0 || i + x[1] >= related.length;
+        b.addEventListener("click", function () { var v = related.splice(i, 1)[0]; related.splice(i + x[1], 0, v); renderRelated(); dirty = true; refresh(); });
+        li.appendChild(b);
+      });
+      var rm = el("button", { type: "button", "class": "btn btn-small btn-quiet", "aria-label": "Remove " + slug }, "Remove");
+      rm.addEventListener("click", function () { related.splice(i, 1); renderRelated(); dirty = true; refresh(); });
+      li.appendChild(rm);
+      ol.appendChild(li);
+    });
+    sel.innerHTML = "";
+    sel.appendChild(el("option", { value: "" }, "Add a published resource…"));
+    PUBLISHED.forEach(function (p) { if (related.indexOf(p.slugEn) < 0) sel.appendChild(el("option", { value: p.slugEn }, p.title + " (" + p.slugEn + ")")); });
+  }
+  $("related-add").addEventListener("change", function () {
+    var v = this.value;
+    if (v && related.indexOf(v) < 0) { related.push(v); renderRelated(); dirty = true; refresh(); }
+  });
+  renderRelated();
 
   // the config's fields -> the form (same shape as collect())
   function setVal(id, v) { var el = $(id); el.value = v; el.dispatchEvent(new Event("input", { bubbles: true })); }
@@ -295,6 +495,7 @@
     if (f.subject) $("subject").value = f.subject;
     [].forEach.call(form.querySelectorAll('input[name="levels"]'), function (c) { c.checked = (f.levels || []).indexOf(c.value) >= 0; });
     $("courseTags").value = (f.courseTags || []).join(", ");
+    if (f.related) { related = f.related.slice(); renderRelated(); }
     [].forEach.call(document.querySelectorAll("textarea[data-math]"), mathPreview);
     checked.checked = false; // the check is about this text: tick it again after reviewing
     dirty = true;

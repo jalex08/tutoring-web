@@ -16,6 +16,11 @@
  *         POST /api/resources/<id>/publish · POST /api/resources/<id>/unpublish · DELETE /api/resources/<id>
  *         POST /api/resources/<id>/config (a tool's .json: stored as is, read, mapped to the form; see toolconfig.js)
  *         POST /api/math (KaTeX preview) · GET /download/<id>/config/<n> (an uploaded config, as it was)
+ *         PDFs (../lib/resources/files.js), one request per file so no request nears App Engine's 32 MB limit:
+ *         POST /api/resources/<id>/files/<name> (raw PDF body; X-Label-En / X-Label-Es for a new one)
+ *         DELETE /api/resources/<id>/files/<name> · PUT /api/resources/<id>/files {files:[{name,labelEn,labelEs}]}
+ *         (order + labels; a name not uploaded yet is "listed", and blocks Publish until it is)
+ *         GET /resources/<slug-en>/files/<name>: any status (the preview and the tool inside it link there)
  */
 "use strict";
 
@@ -30,11 +35,13 @@ const frame = require("./lib/resources/frame.js");
 const math = require("./lib/resources/math.js");
 const storeLib = require("./lib/resources/store.js");
 const toolconfig = require("./lib/resources/toolconfig.js");
+const pdfs = require("./lib/resources/files.js");
 const iap = require("./iap.js");
 const authLib = require("./auth.js");
 
 const PORT = Number(process.env.PORT) || 8081;
 const MAX_UPLOAD = Math.round((Number(process.env.MAX_UPLOAD_MB) || 2) * 1048576);
+const MAX_FILE = Math.round((Number(process.env.MAX_FILE_MB) || 10) * 1048576); // each PDF
 const SHELL = JSON.parse(fs.readFileSync(path.join(__dirname, "lib/resources-shell.json"), "utf8"));
 const UI = path.join(__dirname, "ui");
 const KATEX_DIST = path.join(path.dirname(require.resolve("katex/package.json")), "dist");
@@ -110,7 +117,9 @@ function edited(doc, body) {
     en: f.en ?? doc.en, es: f.es ?? doc.es,
     subject: f.subject ?? doc.subject, levels: f.levels ?? doc.levels,
     courseTags: f.courseTags ?? doc.courseTags, relatedExamPage: f.relatedExamPage ?? doc.relatedExamPage,
+    related: f.related ?? doc.related,
   });
+  next.related = next.related.filter((s) => s !== next.slugEn);
   next.slugEn = next.slugEn.toLowerCase();
   next.slugEs = next.slugEs.toLowerCase();
   return M.applySlugChange(doc, next);
@@ -156,6 +165,8 @@ async function api(req, res, pathname, email) {
     log("resource_created", email, doc.id);
     return json(res, 200, { ok: true, id: doc.id });
   }
+  const fm = pathname.match(/^\/api\/resources\/([a-z0-9]{10})\/files(?:\/([^/]+))?$/);
+  if (fm) return filesApi(req, res, fm[1], fm[2], email);
   const m = pathname.match(/^\/api\/resources\/([a-z0-9]{10})(?:\/(file|config|publish|unpublish))?$/);
   if (!m) throw fail(404, "Not found.");
   const [, id, action] = m;
@@ -259,11 +270,88 @@ async function api(req, res, pathname, email) {
     if (doc.publishedAt) throw fail(400, "It was published once, so its URLs may be shared or indexed. Unpublish it instead (visitors get a 410).");
     for (let v = 1; v <= ((doc.file && doc.file.version) || 0); v++) await s.deleteObject(M.filePath(id, v));
     for (const l of M.LANGS) if (doc.og[l]) await s.deleteObject(doc.og[l]);
+    for (const f of doc.files) if (f.path) await s.deleteObject(f.path);
     await s.remove(id);
     log("resource_deleted", email, id);
     return json(res, 200, { ok: true });
   }
   throw fail(405, "Method not allowed.");
+}
+
+/** PDFs: upload / replace one, delete one, or set the list (order, labels, files still to upload). */
+async function filesApi(req, res, id, name, email) {
+  const s = getStore();
+  const doc = await getDoc(id);
+  const others = (await all()).filter((d) => d.id !== id);
+  const save = async (files, event, extra) => {
+    const next = M.normalize({ ...doc, files, updatedAt: now() });
+    await s.put(next);
+    if (doc.status === "published") await s.bump();
+    log(event, email, id, extra);
+    return json(res, 200, { ok: true, doc: next, problems: publishProblems(next, others) });
+  };
+  const header = (h) => { let v = String(req.headers[h] || ""); try { v = decodeURIComponent(v); } catch {} return v.trim().slice(0, 200); };
+
+  if (name === undefined && req.method === "PUT") {
+    const body = await readJson(req);
+    const list = Array.isArray(body.files) ? body.files : null;
+    if (!list) throw fail(400, 'Send {"files": [...]}.');
+    if (list.length > M.MAX_FILES) throw fail(400, `At most ${M.MAX_FILES} files.`);
+    const seen = new Set(), out = [];
+    for (const f of list) {
+      const n = f && typeof f.name === "string" ? f.name : "";
+      if (!M.validFileName(n)) throw fail(400, M.fileNameProblem(n));
+      if (seen.has(n.toLowerCase())) throw fail(400, `"${n}" is listed twice (names can't differ only in upper/lower case).`);
+      seen.add(n.toLowerCase());
+      const have = doc.files.find((x) => x.name === n);
+      if (!have && doc.files.some((x) => x.name.toLowerCase() === n.toLowerCase())) throw fail(400, `"${n}" differs only in upper/lower case from a file already here.`);
+      out.push({ ...(have || { name: n }), labelEn: String(f.labelEn ?? (have && have.labelEn) ?? ""), labelEs: String(f.labelEs ?? (have && have.labelEs) ?? "") });
+    }
+    // an uploaded file is never removed by a list: it stays, at the end (Delete removes it)
+    for (const f of doc.files) if (f.path && !seen.has(f.name.toLowerCase())) out.push(f);
+    if (out.length > M.MAX_FILES) throw fail(400, `That makes more than ${M.MAX_FILES} files. Delete some first.`);
+    return save(out, "resource_files_set", { files: out.length });
+  }
+  if (name === undefined || !M.validFileName(name)) throw fail(400, M.fileNameProblem(name || ""));
+  const i = doc.files.findIndex((f) => f.name === name);
+
+  if (req.method === "POST") {
+    const clash = doc.files.find((f) => f.name !== name && f.name.toLowerCase() === name.toLowerCase());
+    if (clash) throw fail(400, `"${name}" differs only in upper/lower case from "${clash.name}". Rename one of them.`);
+    if (i < 0 && doc.files.length >= M.MAX_FILES) throw fail(400, `A resource can have at most ${M.MAX_FILES} files.`);
+    const buf = await readBody(req, MAX_FILE);
+    try { pdfs.validatePdf(name, buf, MAX_FILE); } catch (err) { throw fail(400, err.message); }
+    const p = M.pdfPath(id, name);
+    await s.writeObject(p, buf, "application/pdf");
+    const prev = i >= 0 ? doc.files[i] : { name, labelEn: "", labelEs: "" };
+    const entry = {
+      ...prev,
+      labelEn: header("x-label-en") || prev.labelEn, labelEs: header("x-label-es") || prev.labelEs,
+      path: p, sizeBytes: buf.length, sha256: crypto.createHash("sha256").update(buf).digest("hex"), uploadedAt: now(),
+    };
+    const files = i >= 0 ? doc.files.map((f, k) => (k === i ? entry : f)) : [...doc.files, entry];
+    return save(files, "resource_pdf", { name, bytes: buf.length, replaced: !!(prev.path) });
+  }
+  if (req.method === "DELETE") {
+    if (i < 0) throw fail(404, `No file "${name}".`);
+    if (doc.files[i].path) await s.deleteObject(doc.files[i].path);
+    return save(doc.files.filter((_, k) => k !== i), "resource_pdf_deleted", { name });
+  }
+  throw fail(405, "Method not allowed.");
+}
+
+/** GET /resources/<slug-en>/files/<name>: an attached PDF of any resource (drafts too), for the preview. */
+async function adminPdf(req, res, slug, name) {
+  if (!M.validFileName(name)) throw fail(404, "No such file.");
+  const docs = await all();
+  const doc = docs.find((d) => d.slugEn === slug && M.uploadedFiles(d).some((f) => f.name === name));
+  const file = doc && M.uploadedFiles(doc).find((f) => f.name === name);
+  if (!file) throw fail(404, `No uploaded file "${name}" for the EN slug "${slug}". (Save the EN slug first if you just changed it.)`);
+  await pdfs.send(req, res, {
+    file, baseHeaders: SECURITY, cacheControl: "no-store",
+    open: (range) => getStore().readStream(file.path, range),
+    onMissing: () => send(res, 404, { "Content-Type": "text/plain; charset=utf-8" }, "File missing in storage."),
+  });
 }
 
 /** The uploaded file's own name (header X-File-Name, URI-encoded), just the base name. */
@@ -370,19 +458,21 @@ async function editPage(res, id) {
   const levels = Object.entries(M.LEVELS).map(([k, v]) => `<label class="check"><input type="checkbox" name="levels" value="${k}"${doc.levels.includes(k) ? " checked" : ""}> ${esc(v.en)}</label>`).join("");
   const exams = [`<option value="">None</option>`, ...M.EXAM_LINKS.map((x) => `<option value="${x.en}"${doc.relatedExamPage === x.en ? " selected" : ""}>${esc(x.label.en)}</option>`)].join("");
   const f = doc.file;
+  // for the Related picker: every published resource but this one
+  const published = render.newest(others.filter(M.isLive)).map((d) => ({ slugEn: d.slugEn, title: math.plain(d.en.title) }));
   const body = `<p class="crumb"><a href="/">← All resources</a></p>
 <div class="head-row">
   <h1>${esc(doc.en.title || "New resource")}</h1>
   <span class="badge badge-${doc.status}" id="status-badge">${STATUS_LABEL[doc.status]}</span>
 </div>
-<script type="application/json" id="doc-data">${JSON.stringify({ doc, problems: probs, maxBytes: MAX_UPLOAD }).replace(/</g, "\\u003c")}</script>
+<script type="application/json" id="doc-data">${JSON.stringify({ doc, problems: probs, maxBytes: MAX_UPLOAD, maxFileBytes: MAX_FILE, maxFiles: M.MAX_FILES, published }).replace(/</g, "\\u003c")}</script>
 
 <section class="card" aria-labelledby="file-h">
   <h2 id="file-h">Tool file</h2>
   <div class="drop" id="drop" tabindex="0" role="button" aria-describedby="drop-hint">
-    <p><b>Drop the tool here: <code>name.html</code> and <code>name.json</code></b> or <label class="link" for="file-input">choose files</label></p>
-    <p class="hint" id="drop-hint">The .html is the tool (up to ${(MAX_UPLOAD / 1048576).toFixed(1)} MB); the .json with the same name fills the page text. Both at once, in any order, or one at a time. Replacing the .html makes a new version; the page URL stays the same${doc.status === "published" ? " and the live page switches to it right away" : ""}.</p>
-    <input type="file" id="file-input" accept=".html,.htm,.json,text/html,application/json" multiple hidden>
+    <p><b>Drop the tool here: <code>name.html</code>, <code>name.json</code> and its PDFs</b> or <label class="link" for="file-input">choose files</label></p>
+    <p class="hint" id="drop-hint">The .html is the tool (up to ${(MAX_UPLOAD / 1048576).toFixed(1)} MB); the .json with the same name fills the page text, and its <code>files</code> list names the PDFs (up to ${M.MAX_FILES}, ${(MAX_FILE / 1048576).toFixed(0)} MB each). All at once, in any order, or one at a time. Replacing the .html makes a new version; the page URL stays the same${doc.status === "published" ? " and the live page switches to it right away" : ""}.</p>
+    <input type="file" id="file-input" accept=".html,.htm,.json,.pdf,text/html,application/json,application/pdf" multiple hidden>
   </div>
   <p class="file-info" id="file-info">${f ? `Version ${f.version} · ${(f.sizeBytes / 1024).toFixed(0)} KB · uploaded ${esc(f.uploadedAt.slice(0, 16).replace("T", " "))} UTC` : "No file yet."}</p>
   <ul class="warnings" id="warnings">${f ? f.warnings.map((w) => `<li>${esc(w)}</li>`).join("") : ""}</ul>
@@ -396,6 +486,16 @@ async function editPage(res, id) {
       <span><button type="button" class="btn btn-small" data-preview-lang="en" aria-pressed="true">EN</button><button type="button" class="btn btn-small" data-preview-lang="es" aria-pressed="false">ES</button></span></div>
     <iframe id="tool-frame" title="Tool preview" sandbox="${frame.SANDBOX}" allow="fullscreen"${f ? ` src="/frame/${doc.id}/v${f.version}"` : ""}></iframe>
   </div>
+</section>
+
+<section class="card" aria-labelledby="files-h" id="files-card">
+  <h2 id="files-h">Files (printable PDFs)</h2>
+  <p class="hint">Shown on the page under “How to use it”, in this order, and linked at <code>/resources/&lt;EN slug&gt;/files/&lt;name&gt;</code> (the Spanish page links there too). Replacing a file keeps its URL. Drop PDFs in the box above, or use Replace on a row.</p>
+  <div class="files-check" id="files-check" role="status" aria-live="polite" hidden></div>
+  <p class="empty" id="files-empty"${doc.files.length ? " hidden" : ""}>No files.</p>
+  <ol class="files-list" id="files-list"></ol>
+  <div class="buttons"><button type="button" class="btn" id="files-save" disabled>Save order and labels</button></div>
+  <input type="file" id="pdf-input" accept=".pdf,application/pdf" hidden>
 </section>
 
 <div class="banner" id="cfg-banner" role="status" aria-live="polite" hidden></div>
@@ -412,6 +512,12 @@ async function editPage(res, id) {
     <div class="field"><span class="label">Levels</span><div class="checks">${levels}</div></div>
     <div class="field"><label for="courseTags">Course tags (comma-separated)</label><input id="courseTags" name="courseTags" value="${esc(doc.courseTags.join(", "))}" placeholder="AP Physics 1, Algebra 1 EOC"></div>
     <div class="field"><label for="relatedExamPage">Related exam page</label><select id="relatedExamPage" name="relatedExamPage">${exams}</select></div>
+    <div class="field field-wide" id="related-field">
+      <label for="related-add">Related resources (shown first, in this order)</label>
+      <ol class="related-list" id="related-list"></ol>
+      <select id="related-add"><option value="">Add a published resource…</option></select>
+      <p class="hint">After these: resources sharing a course tag, then the same subject. 3 on the page.</p>
+    </div>
   </div>
 </form>
 
@@ -449,7 +555,8 @@ async function previewPage(req, res, id, lang) {
   const doc = await getDoc(id);
   if (!doc.file) throw fail(404, "Upload a file first.");
   const proto = req.headers["x-forwarded-proto"] || "http";
-  const html = render.resourcePage({ doc, lang, shell: SHELL[lang], all: await all(), preview: true, frameBase: `${proto}://${req.headers.host}/frame` });
+  const origin = `${proto}://${req.headers.host}`;
+  const html = render.resourcePage({ doc, lang, shell: SHELL[lang], all: await all(), preview: true, frameBase: `${origin}/frame`, filesBase: origin });
   // the public template: its inline scripts and styles need a looser policy than the admin pages
   send(res, 200, { "Content-Type": "text/html; charset=utf-8", "X-Frame-Options": "DENY", "Content-Security-Policy": "frame-ancestors 'none'; base-uri https://josediaztutoring.com" }, html);
 }
@@ -500,6 +607,7 @@ async function handle(req, res) {
     if ((m = p.match(/^\/preview\/([a-z0-9]{10})\/(en|es)$/))) return await previewPage(req, res, m[1], m[2]);
     if ((m = p.match(/^\/frame\/([a-z0-9]{10})\/v([0-9]{1,6})$/))) return await adminFrame(res, m[1], Number(m[2]));
     if ((m = p.match(/^\/download\/([a-z0-9]{10})\/config\/([0-9]{1,4})$/))) return await downloadConfig(res, m[1], Number(m[2]));
+    if ((m = p.match(/^\/resources\/([a-z0-9-]{1,100})\/files\/([^/]+)$/))) return await adminPdf(req, res, m[1], m[2]);
     throw fail(404, "Not found.");
   } catch (err) {
     const status = err.status || 500;

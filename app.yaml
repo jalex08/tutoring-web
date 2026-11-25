@@ -112,6 +112,9 @@ handlers:
 #                           free interactive tools (resources.js; data from Firestore + Cloud Storage,
 #                           published from the admin service). /resources -> /resources/ (301);
 #                           /resources/ with lang=es -> /es/recursos/ (302); old slugs 301; unpublished 410
+#   /resources/<slug>/files/<Name>.pdf
+#                           a PDF attached to a live resource, streamed from the bucket (noindex, 1-hour
+#                           cache, ETag, Range); old slug 301; the file name keeps its case
 #   /frame/<id>/v<N>        the uploaded tool, with CSP sandbox + frame-ancestors 'self', noindex
 #   /resources/og/*.png     preview cards (1 year, immutable)
 #   /sitemap.xml            www/sitemap.xml + the library and each published resource

@@ -22,6 +22,8 @@ env_variables:
   RESOURCES_BUCKET: "josediaz-tutoring-res"
   FIRESTORE_DATABASE: "(default)"
   MAX_UPLOAD_MB: "2"
+  # each printable PDF attached to a resource (one request per file; App Engine's request limit is 32 MB)
+  MAX_FILE_MB: "10"
 
 handlers:
 - url: /.*

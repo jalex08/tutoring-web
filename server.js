@@ -669,9 +669,15 @@ function redirectFor(pathname, query) {
 /**
  * The normalized form of a raw request path: A-Z lowercased (%XX escapes untouched), then any
  * leading /en segment dropped (/en, /en/ -> /, /en/<path> -> /<path>; repeated, so /en/en/x is
- * one hop too). URLs are all lowercase and English has no /en/ prefix.
+ * one hop too). URLs are all lowercase and English has no /en/ prefix, except the file name in
+ * /resources/<slug>/files/<Name>.pdf, which is kept as uploaded.
  */
 function normalizePath(raw) {
+  // a resource's attached file keeps its name's case: /resources/<slug>/files/<Name>.pdf (resources.js)
+  const f = raw.match(/^((?:\/en)*\/resources\/[^/]*\/files\/)([^/]*)$/i);
+  return f ? normalizeCase(f[1]) + f[2] : normalizeCase(raw);
+}
+function normalizeCase(raw) {
   let p = raw.replace(/%[0-9A-Fa-f]{2}|[A-Z]+/g, (m) => (m[0] === "%" ? m : m.toLowerCase()));
   while (p === "/en" || p.startsWith("/en/")) p = p.slice(3) || "/";
   return p;

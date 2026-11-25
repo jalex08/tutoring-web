@@ -5,6 +5,11 @@
  *   /resources/<slug>/, /es/recursos/<slug>/  a resource page. Old slug -> 301 to the current one;
  *                                             unpublished -> 410 (404 template, noindex); unknown -> 404.
  *                                             /resources/<slug> (no slash) -> 301 to the slash URL.
+ *   /resources/<slug-en>/files/<name>         a PDF attached to a live resource (lib/resources/files.js): streamed
+ *                                             from the bucket, noindex, ETag/304, HEAD, Range. Old EN slug -> 301
+ *                                             to the current one; anything else (draft, unpublished, unknown name,
+ *                                             not uploaded yet, the ES path) -> 404. The name keeps its case
+ *                                             (server.js doesn't lowercase this last segment).
  *   /frame/<id>/v<N>                          the uploaded tool, sandboxed (lib/resources/frame.js). Only
  *                                             live resources, current or previous version; else 404.
  *   /resources/og/<id>-<lang>-<hash>.png      preview cards (made by the admin on publish)
@@ -25,6 +30,7 @@ const M = require("./lib/resources/model.js");
 const render = require("./lib/resources/render.js");
 const frame = require("./lib/resources/frame.js");
 const storeLib = require("./lib/resources/store.js");
+const pdfs = require("./lib/resources/files.js");
 
 const CACHE_TTL = 15e3;
 const SITEMAP_TTL = 5 * 60e3;
@@ -32,6 +38,7 @@ const HOME_WAIT = 1500; // the home page never waits longer than this for a cold
 const PAGE_CACHE = { "Cache-Control": "private, max-age=30" };
 const OG_RE = /^\/resources\/og\/([a-z0-9]{10}-(?:en|es)-[a-f0-9]{8})\.png$/;
 const FRAME_RE = /^\/frame\/([a-z0-9]{10})\/v([1-9][0-9]{0,5})$/;
+const FILE_RE = /^\/resources\/([a-z0-9-]{1,100})\/files\/([^/]*)$/;
 // KaTeX's stylesheet and fonts, from node_modules (no third-party request for the math on the pages)
 // URLs are all lowercase (server.js 301s uppercase paths), so the fonts are served under lowercased names
 // and the stylesheet's url(fonts/KaTeX_...) references are rewritten to match.
@@ -125,6 +132,7 @@ async function handle(req, res, pathname, search) {
   if ((m = pathname.match(FRAME_RE))) return toolFrame(req, res, m[1], Number(m[2]));
   if ((m = pathname.match(OG_RE))) return ogCard(req, res, m[1]);
   if ((m = pathname.match(KATEX_RE))) return katexFile(req, res, m[1], m[2]);
+  if ((m = pathname.match(FILE_RE))) return attachedFile(req, res, m[1], m[2], search);
   for (const lang of M.LANGS) {
     const base = M.BASE[lang];
     if (!pathname.startsWith(base)) continue;
@@ -157,6 +165,24 @@ async function resourcePage(req, res, lang, slug, search) {
   if (!doc.file) return H.notFoundPage(req, res);
   const body = render.resourcePage({ doc, lang, shell: getShell()[lang], all: c.docs });
   send(req, res, 200, { "Content-Type": "text/html; charset=utf-8", ...H.htmlHeaders(req, null), ...PAGE_CACHE }, body);
+}
+
+async function attachedFile(req, res, slug, name, search) {
+  if (!M.validFileName(name)) return H.notFoundPage(req, res); // also anything %-encoded (..%2F etc.)
+  let c;
+  try { c = await current(); } catch (err) { return unavailable(req, res, err); }
+  const hit = c.bySlug.en.get(slug);
+  const doc = hit && hit.doc;
+  const file = doc && M.isLive(doc) && M.uploadedFiles(doc).find((f) => f.name === name);
+  if (!file) return H.notFoundPage(req, res);
+  if (hit.old) return redirect(req, res, M.fileUrl(doc, name), search);
+  try {
+    await pdfs.send(req, res, {
+      file, baseHeaders: H.SECURITY_HEADERS,
+      open: (range) => getStore().readStream(file.path, range),
+      onMissing: () => H.notFoundPage(req, res),
+    });
+  } catch (err) { if (!res.headersSent) return unavailable(req, res, err); res.destroy(); }
 }
 
 async function toolFrame(req, res, id, version) {

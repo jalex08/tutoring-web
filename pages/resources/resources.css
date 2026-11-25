@@ -7,7 +7,7 @@
 .crumbs a{color:var(--muted)}
 
 /* ---- tool page: thin bar. Three layouts, never crowded:
-   < 600px      "← Tools" · Share (icon) · CTA (short) · ⋯ menu (Home, other language, Full screen)
+   < 600px      "← Resources" · Share (icon) · CTA (short) · ⋯ menu (Home, other language, Full screen)
    600–1099px   wordmark · All resources (icon) · EN/ES · Share (icon) · Full screen (icon) · CTA
    1100px +     wordmark · title · All resources · EN/ES · Share · Full screen (icon) · CTA
    8px between items, 44px targets, bar 48px. ---- */
@@ -85,6 +85,10 @@
 .res-steps li::marker{font-weight:700;color:var(--ink)}
 .res-ideas li::marker{color:var(--ink)}
 .res-sheet .faq{max-width:none}
+.res-files{list-style:none;margin:0;padding:0;max-width:40em}
+.res-files li{margin:0 0 14px;line-height:1.5}
+.res-files a{padding:10px 0;font-weight:700} /* inline: the size stays after the last word; padding = tap area */
+.res-file-size{color:var(--muted);white-space:nowrap}
 .res-see-also{margin-top:28px;color:var(--muted)}
 .res-see-also a{font-weight:700}
 .res-related{margin-top:56px}
