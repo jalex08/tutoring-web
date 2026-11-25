@@ -274,11 +274,11 @@ srv.listen(0, async () => {
       assert.ok(desc.length <= 155, `description is ${desc.length} chars`);
     });
     await check(`${lang}: compact header menu (button, panel, labels by state, no-JS row)`, () => {
-      const t = lang === "es" ? { open: "Abrir menú", close: "Cerrar menú", label: "Menú" } : { open: "Open menu", close: "Close menu", label: "Menu" };
+      const t = lang === "es" ? { open: "Abrir menú", close: "Cerrar menú" } : { open: "Open menu", close: "Close menu" };
       const btn = (html.match(/<button class="menu-btn"[^>]*>[\s\S]*?<\/button>/) || [""])[0];
       assert.ok(btn.includes('aria-expanded="false"') && btn.includes('aria-controls="site-menu"'), "menu button: aria-expanded / aria-controls");
       assert.ok(btn.includes(`aria-label="${t.open}"`) && btn.includes(`data-open="${t.open}"`) && btn.includes(`data-close="${t.close}"`), "menu button: names by state");
-      assert.ok(btn.includes(`>${t.label}</span>`), "menu button: visible label");
+      assert.ok(/<\/svg><\/button>$/.test(btn) && btn.includes('<svg viewBox="0 0 24 24" aria-hidden="true">'), "menu button: icon only (name from aria-label)");
       const panel = (html.match(/<div class="head-menu" id="site-menu">[\s\S]*?<\/div>/) || [""])[0];
       assert.equal((panel.match(/<a /g) || []).length, 8, "panel: six nav links + EN/ES");
       assert.ok(/<noscript><style>@media \(max-width:959px\)/.test(html), "no-JS fallback style");

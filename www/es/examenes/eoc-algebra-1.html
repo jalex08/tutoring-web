@@ -120,7 +120,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   /* header. Two layouts, one breakpoint (960px: the narrowest width where the full nav fits on one line in
      both languages, measured; ES needs ~935px with the tight spacing below, +25px of margin for font metrics).
      960px +   wordmark · nav · EN/ES · CTA (the desktop header)
-     < 960px   compact bar: "Jose Diaz" · CTA · Menu button; the nav and EN/ES drop down in a panel (#site-menu)
+     < 960px   compact bar: "Jose Diaz" · CTA · menu button (icon only, 44px); the nav and EN/ES drop down in a panel (#site-menu)
      The panel's wrapper (.head-menu) is display:contents on desktop, so the nav and EN/ES lay out as before. */
   .site-head{position:sticky;top:0;z-index:20;background:rgba(251,252,250,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--rule)}
   .head-in{display:flex;align-items:center;gap:24px;height:68px}
@@ -153,21 +153,22 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     html[lang="en"] .nav{gap:16px}
   }
   /* compact bar (< 960px): the Resources bar's look (pad green, grid-green rule), 56px, 44px+ targets, never
-     the highlighter. CTA: "Book a free intro" (EN, "Free intro" under 360px) / "Llamada gratis" (ES). */
+     the highlighter. CTA: "Book a free intro" (EN, "Free intro" under 360px) / "Llamada gratis" (ES), 20px a side.
+     Menu button: ☰ / × only; its name comes from aria-label ("Open menu" / "Close menu", set by state). */
   @media (max-width:959px){
     html{scroll-padding-top:56px} /* + section[id] scroll-margin 12px = bar (57px) + ~11px */
     .site-head{background:var(--pad);backdrop-filter:none;border-bottom-color:var(--grid)}
-    .head-in{height:56px;gap:8px;padding:0 12px}
+    .head-in{height:56px;gap:12px;padding:0 12px}
     .mark{display:inline-flex;align-items:center;min-height:44px;font-size:1.05rem;border-radius:8px}
     .mark small,.mark-x,.head-cta:not(.bar-cta){display:none}
-    /* fixed widths (measured text + 12px a side), so the web-font swap can't move the right-aligned controls (CLS 0) */
-    .bar-cta{display:inline-flex;width:140px;min-height:44px;padding:0;font-size:.9rem}
-    html[lang="es"] .bar-cta{width:128px}
+    /* fixed widths (measured text + 20px a side), so the web-font swap can't move the right-aligned controls (CLS 0) */
+    .bar-cta{display:inline-flex;width:154px;min-height:44px;padding:0;font-size:.9rem}
+    html[lang="es"] .bar-cta{width:142px}
     html[lang="es"] .bar-cta .cta-full{display:none}
     html[lang="es"] .bar-cta .cta-mini{display:inline}
-    .menu-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:none;width:80px;min-height:44px;padding:0;
+    .menu-btn{display:inline-flex;align-items:center;justify-content:center;flex:none;width:44px;height:44px;padding:0;
       font:700 .9rem/1 var(--body);color:var(--ink);background:transparent;border:0;border-radius:8px;cursor:pointer}
-    .menu-btn svg{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+    .menu-btn svg{width:24px;height:24px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
     .menu-btn .mi-x,.menu-btn[aria-expanded="true"] .mi-bars{display:none}
     .menu-btn[aria-expanded="true"] .mi-x{display:inline}
     .menu-btn[aria-expanded="true"]{background:#fff}
@@ -190,8 +191,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   }
   @media (max-width:959px) and (prefers-reduced-motion:no-preference){.site-head.is-open .head-menu{animation:menu-in .15s ease-out}}
   @keyframes menu-in{from{opacity:0}}
-  @media (max-width:379px){.head-in{gap:6px;padding:0 8px}.menu-btn{gap:4px;width:74px}}
-  @media (max-width:359px){html[lang="en"] .bar-cta{width:88px}html[lang="en"] .bar-cta .cta-full{display:none}html[lang="en"] .bar-cta .cta-mini{display:inline}}
+  @media (max-width:379px){.head-in{gap:10px;padding:0 8px}}
+  @media (max-width:359px){html[lang="en"] .bar-cta{width:106px}html[lang="en"] .bar-cta .cta-full{display:none}html[lang="en"] .bar-cta .cta-mini{display:inline}}
 
   /* floating WhatsApp */
   .wa-float{position:fixed;right:18px;bottom:18px;z-index:30;display:inline-flex;align-items:center;gap:9px;
@@ -681,7 +682,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <div class="wrap head-in">
     <a class="mark" href="/es/">Jose Diaz<span class="mark-x"> Tutoring</span><small data-i18n="markSub">Tutorías de matemáticas, física e ingeniería</small></a>
     <a class="btn btn-primary head-cta bar-cta" href="/es/#contact"><span class="cta-full" data-i18n="ctaShort">Agenda una llamada gratis</span><span class="cta-mini" data-i18n="ctaMini">Llamada gratis</span></a>
-    <button class="menu-btn" type="button" id="menu-btn" aria-expanded="false" aria-controls="site-menu" aria-label="Abrir menú" data-open="Abrir menú" data-close="Cerrar menú" data-i18n-attr="aria-label:menuOpen;data-open:menuOpen;data-close:menuClose"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="mi-bars" d="M4 7h16M4 12h16M4 17h16"/><path class="mi-x" d="M6 6l12 12M18 6L6 18"/></svg><span data-i18n="menuLabel">Menú</span></button>
+    <button class="menu-btn" type="button" id="menu-btn" aria-expanded="false" aria-controls="site-menu" aria-label="Abrir menú" data-open="Abrir menú" data-close="Cerrar menú" data-i18n-attr="aria-label:menuOpen;data-open:menuOpen;data-close:menuClose"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="mi-bars" d="M4 7h16M4 12h16M4 17h16"/><path class="mi-x" d="M6 6l12 12M18 6L6 18"/></svg></button>
     <div class="head-menu" id="site-menu">
     <nav class="nav" aria-label="Principal" data-i18n-attr="aria-label:navLabel">
       <a href="/es/#subjects" data-i18n="navSubjects">Materias</a>
