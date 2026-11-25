@@ -125,6 +125,178 @@ function sample(over = {}) {
     // an exam page that isn't one of the site's is named, not kept
     assert.match(toolconfig.readConfig(JSON.stringify({ ...fx, relatedExamPage: "/nope/" })).problems.map((p) => p.message).join(), /relatedExamPage "\/nope\/" isn't one of/);
   });
+  // ---- the config schema (schemas/resource-config.schema.json) and its cross-checks ----------------
+  const configcheck = require("../lib/resources/configcheck.js");
+  const configdiff = require("../lib/resources/configdiff.js");
+  const LIVE_DIR = path.join(ROOT, "test/fixtures/live-configs");
+  const liveConfigs = fs.readdirSync(LIVE_DIR).filter((f) => f.endsWith(".json") && f !== "_export.json").sort()
+    .map((f) => ({ name: f, text: fs.readFileSync(path.join(LIVE_DIR, f), "utf8") }));
+  // the live resources as stored: each config applied to a published doc whose PDFs are uploaded
+  const liveDocs = () => liveConfigs.map(({ text }, i) => {
+    const c = JSON.parse(text);
+    return configcheck.apply(M.normalize({
+      id: `live${String(i).padStart(6, "0")}`, status: "published", publishedAt: `2026-11-2${i}T00:00:00Z`,
+      file: { path: "p", version: 1, name: c.file }, files: (c.files || []).map((f) => ({ name: f.file, path: `resources/x/files/${f.file}`, sizeBytes: 1 })),
+    }), c);
+  });
+  await check("schema: its subjects, levels and exam pages are the model's", () => {
+    const P = configcheck.SCHEMA.properties;
+    assert.deepEqual(P.subject.enum, Object.keys(M.SUBJECTS));
+    assert.deepEqual(P.levels.items.enum, Object.keys(M.LEVELS));
+    assert.deepEqual(P.relatedExamPage.enum, M.EXAM_LINKS.map((x) => x.en));
+    assert.equal(configcheck.SCHEMA.$defs.text.properties.description.maxLength, M.DESC_MAX);
+    assert.equal(P.related.maxItems, M.RELATED_MAX);
+    assert.equal(P.files.maxItems, M.MAX_FILES);
+  });
+  await check(`schema + cross-checks accept the ${liveConfigs.length} live configs as stored (test/fixtures/live-configs), and toConfig gives them back byte for byte`, () => {
+    assert.equal(liveConfigs.length, 5);
+    const docs = liveDocs();
+    liveConfigs.forEach(({ name, text }, i) => {
+      const r = configcheck.validate(text, { doc: docs[i], others: docs, mode: "json" });
+      assert.deepEqual(r.errors, [], name);
+      assert.deepEqual(r.warnings, [], name);
+      assert.equal(toolconfig.configText(docs[i]), text, `${name}: export -> apply -> export is stable`);
+    });
+  });
+  await check("schema errors: plain words, field path, line", () => {
+    const docs = liveDocs(), doc = docs.find((d) => d.slugEn === "rc-circuit-lab"), base = toolconfig.toConfig(doc);
+    const errs = (c, ctx = {}) => configcheck.validate(typeof c === "string" ? c : JSON.stringify(c, null, 2), { doc, others: docs, ...ctx }).errors;
+    const one = (mut) => { const c = JSON.parse(JSON.stringify(base)); mut(c); return errs(c).map((e) => `${e.path}: ${e.message}`); };
+    assert.deepEqual(one((c) => { c.es.description = "x".repeat(171); }), ["es.description: es.description is 171 characters; max 155."]);
+    assert.deepEqual(one((c) => { c.en.howTo = c.en.howTo.slice(0, 2); }), ["en.howTo: en.howTo has 2 items; it needs 3 to 6 items."]);
+    assert.deepEqual(one((c) => { c.es.keyIdeas.push("a", "b"); }), ["es.keyIdeas: es.keyIdeas has 7 items; it needs 3 to 5 items."]);
+    assert.deepEqual(one((c) => { c.en.faq = c.en.faq.slice(0, 2); }), ["en.faq: en.faq has 2 items; it needs 3 to 5 items."]);
+    assert.deepEqual(one((c) => { c.en.keywords = c.en.keywords.slice(0, 4); }), ["en.keywords: en.keywords has 4 items; it needs 5 to 8 items."]);
+    assert.deepEqual(one((c) => { c.en.keyIdea = []; }), ["en.keyIdea: en.keyIdea is not a field of the config format. Check the spelling (fields are case-sensitive)."]);
+    assert.deepEqual(one((c) => { delete c.es.intro; }), ["es.intro: es.intro is missing."]);
+    assert.deepEqual(one((c) => { c.subject = "biology"; }), [`subject: subject is "biology"; use one of: ${Object.keys(M.SUBJECTS).join(", ")}.`]);
+    assert.deepEqual(one((c) => { c.version = 2; }), ["version: version must be 1 (it's read-only: the config format this admin reads)."]);
+    assert.deepEqual(one((c) => { c.en.slug = "RC Lab"; }), ['en.slug: en.slug is "RC Lab": it must be lowercase letters, numbers and single hyphens.']);
+    assert.deepEqual(one((c) => { c.en.faq[0].a = ""; }), ["en.faq[0].a: en.faq[0].a is empty."]);
+    // lines point at the field
+    const text = JSON.stringify({ ...base, es: { ...base.es, description: "x".repeat(171) } }, null, 2);
+    const e = errs(text)[0];
+    assert.equal(text.split("\n")[e.line - 1].trim().slice(0, 15), '"description": ');
+    // not JSON / too big
+    assert.match(errs('{\n  "version": 1,\n  oops\n}')[0].message, /isn't valid JSON \(line 3/);
+    assert.equal(errs('{\n  "version": 1,\n  oops\n}')[0].line, 3);
+    assert.match(errs(" ".repeat(256 * 1024 + 1))[0].message, /max 256 KB/);
+  });
+  await check("cross-checks: one failing case each", () => {
+    const docs = liveDocs(), doc = docs.find((d) => d.slugEn === "rc-circuit-lab"), base = toolconfig.toConfig(doc);
+    const run = (mut, ctx = {}) => { const c = JSON.parse(JSON.stringify(base)); mut(c); return configcheck.validate(JSON.stringify(c, null, 2), { doc, others: docs, ...ctx }); };
+    const msgs = (r, k = "errors") => r[k].map((e) => `${e.path}: ${e.message}`);
+    // slug unique across resources (current) ...
+    assert.match(msgs(run((c) => { c.en.slug = "motion-graphs-lab"; })).join(), /en\.slug: en\.slug "motion-graphs-lab" is already used by "/);
+    // ... and slug history
+    const renamed = docs.map((d) => (d.slugEn === "motion-graphs-lab" ? { ...d, slugEn: "motion-graphs", slugHistoryEn: ["motion-graphs-lab"] } : d));
+    const r1 = configcheck.validate(JSON.stringify({ ...base, en: { ...base.en, slug: "motion-graphs-lab" } }), { doc, others: renamed });
+    assert.match(msgs(r1).join(), /already used by .*as an old slug that redirects/);
+    // reserved slug
+    assert.match(msgs(run((c) => { c.es.slug = "og"; })).join(), /es\.slug "og" is reserved/);
+    // related: unresolved -> warning (not an error); itself -> error; old slug -> warning
+    let r = run((c) => { c.related = ["no-such-tool"]; });
+    assert.ok(r.ok); assert.match(msgs(r, "warnings").join(), /related\[0\]: no resource has the EN slug "no-such-tool"/);
+    r = run((c) => { c.related = ["rc-circuit-lab"]; });
+    assert.deepEqual(msgs(r), ['related[0]: related[0] is "rc-circuit-lab", this resource itself. Remove it.']);
+    r = configcheck.validate(JSON.stringify({ ...base, related: ["motion-graphs-lab"] }), { doc, others: renamed });
+    assert.ok(r.ok); assert.match(msgs(r, "warnings").join(), /old slug of "motion-graphs"/);
+    // files: listed but not uploaded -> error; uploaded but not listed (editor) -> error; pending in an upload -> fine
+    const cards = docs.find((d) => d.slugEn === "phy-2053-formula-cards"), cb = toolconfig.toConfig(cards);
+    r = configcheck.validate(JSON.stringify({ ...cb, files: [...cb.files, { file: "New.pdf", en: "n", es: "n" }] }), { doc: cards, others: docs });
+    assert.deepEqual(msgs(r), [`files[11].file: files[11].file "New.pdf" isn't uploaded for this resource. Upload it in Files first (this editor changes labels and order only).`]);
+    r = configcheck.validate(JSON.stringify({ ...cb, files: cb.files.slice(1) }), { doc: cards, others: docs });
+    assert.match(msgs(r).join(), /files must list every uploaded PDF; missing: PHY2053_Vectors_Kinematics_Formula_Cards\.pdf/);
+    r = configcheck.validate(JSON.stringify({ ...cb, files: [...cb.files, { file: "New.pdf", en: "n", es: "n" }] }), { doc: cards, others: docs, mode: "upload", htmlName: cb.file, pendingPdfs: ["New.pdf"] });
+    assert.ok(r.ok, JSON.stringify(r.errors));
+    // reordering and relabelling uploaded PDFs is fine
+    r = configcheck.validate(JSON.stringify({ ...cb, files: [...cb.files].reverse().map((f) => ({ ...f, en: f.en + "!" })) }), { doc: cards, others: docs });
+    assert.ok(r.ok, JSON.stringify(r.errors));
+    // KaTeX in keyIdeas (throwOnError, trust false)
+    r = run((c) => { c.es.keyIdeas[1] = "Mal: $\\frac{1}$"; });
+    assert.equal(r.errors.length, 1);
+    assert.match(r.errors[0].message, /^es\.keyIdeas\[1\]: the formula "\\frac\{1\}" doesn't render: Unexpected end of input/);
+    // trust: false: \href / \url never become links, on the page or in the check
+    const hrefOut = math.inline("$\\href{javascript:alert(1)}{x}$");
+    assert.doesNotMatch(hrefOut, /<a\b|\shref="/); assert.match(hrefOut, /color:#cc0000/); // shown as an error, not a link
+    // EN / ES item counts -> warning
+    r = run((c) => { c.es.howTo = c.es.howTo.slice(0, 3); });
+    assert.ok(r.ok); assert.match(msgs(r, "warnings").join(), /en\.howTo has 6 items but es\.howTo has 3/);
+    // file is read-only (and, for an upload, must be the uploaded tool)
+    assert.deepEqual(msgs(run((c) => { c.file = "other.html"; })), ['file: file is read-only: it\'s "rc-circuit-lab.html" for this resource, not "other.html". To replace the HTML, use Replace file.']);
+    assert.match(msgs(run(() => {}, { mode: "upload", htmlName: "other.html" })).join(), /but the tool file uploaded with it is "other\.html"/);
+    assert.ok(run(() => {}, { mode: "upload", htmlName: "rc-circuit-lab.html" }).ok);
+  });
+  await check("apply: config fields replace the doc's; PDFs keep their uploads; a published slug change goes into the history", () => {
+    const docs = liveDocs(), cards = docs.find((d) => d.slugEn === "phy-2053-formula-cards"), c = toolconfig.toConfig(cards);
+    const next = configcheck.apply(cards, { ...c, en: { ...c.en, slug: "phy-2053-cards" }, files: [...c.files].reverse(), related: ["rc-circuit-lab"], relatedExamPage: "/exams/" });
+    assert.equal(next.slugEn, "phy-2053-cards"); assert.deepEqual(next.slugHistoryEn, ["phy-2053-formula-cards"]);
+    assert.deepEqual(next.files.map((f) => f.name), [...cards.files].reverse().map((f) => f.name));
+    assert.ok(next.files.every((f) => f.path)); assert.equal(next.file.version, cards.file.version);
+    assert.deepEqual(next.related, ["rc-circuit-lab"]); assert.equal(next.relatedExamPage, "/exams/");
+    // optional keys left out = cleared
+    assert.deepEqual(configcheck.apply(next, c).related, []); assert.equal(configcheck.apply(next, c).relatedExamPage, "");
+  });
+  await check("related resources: own order, reverse links (current and old slug), tags, subject; published only, never itself, no repeats, up to 3", () => {
+    const mk = (id, over = {}) => M.normalize({ id, status: "published", slugEn: id, slugEs: `${id}-es`, subject: "physics", publishedAt: "2026-01-01T00:00:00Z", ...over });
+    const self = mk("self", { slugHistoryEn: ["self-old"], related: ["own-b", "own-a", "self", "own-a", "gone"], courseTags: ["AP Physics 1"] });
+    const all = [
+      self,
+      mk("own-a", { publishedAt: "2026-01-01T00:00:00Z" }), mk("own-b", { publishedAt: "2026-01-02T00:00:00Z" }),
+      mk("rev-new", { related: ["self"], subject: "algebra", publishedAt: "2026-05-01T00:00:00Z" }),
+      mk("rev-old-slug", { related: ["self-old"], subject: "algebra", publishedAt: "2026-04-01T00:00:00Z" }),
+      mk("rev-draft", { related: ["self"], status: "draft", publishedAt: "2026-06-01T00:00:00Z" }),
+      mk("tagged", { subject: "calculus", courseTags: ["ap physics 1"], publishedAt: "2026-03-01T00:00:00Z" }),
+      mk("same-subject", { publishedAt: "2026-02-01T00:00:00Z" }),
+    ];
+    const ids = (d, n = 3) => M.relatedFor(d, all, n).map((x) => x.id);
+    assert.deepEqual(ids(self), ["own-b", "own-a", "rev-new"], "own order first, then reverse links");
+    assert.deepEqual(ids(self, 9), ["own-b", "own-a", "rev-new", "rev-old-slug", "tagged", "same-subject"]);
+    // no own list: reverse links (current slug and an old one), newest first, then tags, then subject
+    assert.deepEqual(ids({ ...self, related: [] }, 4), ["rev-new", "rev-old-slug", "tagged", "same-subject"]);
+    // a reverse link to an old slug only
+    assert.deepEqual(ids({ ...self, related: [], slugEn: "self-renamed", slugHistoryEn: ["self-old"] }, 1), ["rev-old-slug"]);
+    // a target found by its old slug; an own link that is also a reverse link appears once
+    const renamed = all.map((d) => (d.id === "own-a" ? { ...d, slugEn: "own-a-2", slugHistoryEn: ["own-a"], related: ["self"] } : d));
+    assert.deepEqual(M.relatedFor({ ...self, related: ["own-a"] }, renamed, 3).map((x) => x.id), ["own-a", "rev-new", "rev-old-slug"]);
+    // fills to 3 from the later steps when the own list is short
+    assert.equal(M.relatedFor({ ...self, related: ["own-a"], courseTags: [] }, all, 3).length, 3);
+    // never itself, never a draft, no duplicates, max respected
+    for (const n of [1, 2, 3, 9]) { const r = ids(self, n); assert.ok(!r.includes("self") && !r.includes("rev-draft") && new Set(r).size === r.length && r.length <= n); }
+  });
+  await check("config diff: changed fields only, EN/ES side by side, word segments, slug changes", () => {
+    const a = JSON.parse(liveConfigs[0].text), b = JSON.parse(liveConfigs[0].text);
+    b.es.title = `${a.es.title} (nuevo)`; b.en.slug = "new-slug"; b.related = ["rc-circuit-lab"]; b.en.howTo[0] = "Changed step.";
+    const d = configdiff.diff(a, b);
+    assert.equal(d.changed, 4);
+    assert.deepEqual(d.shared, [{ field: "related", label: "Related resources", before: "", after: "rc-circuit-lab" }]);
+    assert.deepEqual(d.text.map((r) => [r.field, !!r.en, !!r.es]), [["title", false, true], ["slug", true, false], ["howTo", true, false]]);
+    assert.deepEqual(d.text[0].es.segments, [{ op: "=", text: a.es.title }, { op: "+", text: " (nuevo)" }]);
+    assert.deepEqual(d.slugChanges, [{ lang: "en", from: a.en.slug, to: "new-slug" }]);
+    assert.deepEqual(configdiff.segments("The quick fox", "The slow fox"), [{ op: "=", text: "The " }, { op: "-", text: "quick" }, { op: "+", text: "slow" }, { op: "=", text: " fox" }]);
+    assert.equal(configdiff.diff(a, a).changed, 0);
+  });
+  await check('public page: "<script>" in every text field is shown as text (HTML, meta, JSON-LD)', () => {
+    const X = '<script>alert("x")</script>';
+    const t = (L) => ({ title: `${L} ${X}`, description: `${L} d ${X}`, intro: `${L} i ${X}\n\n${X} $x^2$`, howTo: [`${L} h ${X}`, X, X], keyIdeas: [`${L} k ${X}`, `${X} $\\frac{1}{2}$`, X],
+      faq: [{ q: `${L} q ${X}`, a: `${L} a ${X}` }, { q: X, a: X }, { q: X, a: X }], keywords: [`${L} kw ${X}`, "b", "c", "d", "e"] });
+    const doc = sample({ en: t("EN"), es: t("ES"), courseTags: [X], files: [{ name: "A.pdf", path: "p", labelEn: `PDF ${X}`, labelEs: `PDF ${X}`, sizeBytes: 9 }] });
+    const shell = JSON.parse(fs.readFileSync(path.join(ROOT, "www/resources-shell.json"), "utf8"));
+    for (const lang of ["en", "es"]) {
+      const h = render.resourcePage({ doc, lang, shell: shell[lang], all: [doc, sample({ id: "other00000", slugEn: "o", slugEs: "o", en: t("EN"), es: t("ES") })] });
+      assert.ok(!h.includes(X) && !/<script>alert/.test(h), `${lang}: raw <script> in the page`);
+      const L = lang.toUpperCase();
+      for (const s of [`${L} ${X}`, `${L} d ${X}`, `${L} i ${X}`, `${L} h ${X}`, `${L} k ${X}`, `${L} q ${X}`, `${L} a ${X}`, `PDF ${X}`]) {
+        assert.ok(h.includes(math.escapeHtml(s)), `${lang}: "${s.slice(0, 8)}" not shown escaped`);
+      }
+      for (const m of h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) {
+        assert.ok(!m[1].includes("<"), "JSON-LD: < is escaped"); JSON.parse(m[1]);
+      }
+      assert.ok(h.includes(`${L} kw \\u003cscript>alert`), "keywords (JSON-LD only) escaped");
+    }
+    // the library card too
+    assert.ok(!render.card(doc, "en").includes(X));
+  });
   await check("config `files`: labels and order from the JSON; bad, duplicate and unlabeled entries named", () => {
     const fx = JSON.parse(fs.readFileSync(path.join(ROOT, "test/fixtures/trigonometry-playground.json"), "utf8"));
     assert.equal(toolconfig.readConfig(JSON.stringify(fx)).fields.files, undefined, "no files key: list left alone");
@@ -660,11 +832,21 @@ function sample(over = {}) {
     admin._setAuth(async () => user || null);
     const warn = console.warn; console.warn = () => {};
     const abase = await listen(admin.server);
-    const A = (method, p, body, headers = {}) => fetch(abase + p, {
-      method, redirect: "manual",
-      headers: { "X-JDT-Admin": "1", ...(body !== undefined && !Buffer.isBuffer(body) ? { "Content-Type": "application/json" } : {}), ...headers },
-      body: body === undefined ? undefined : Buffer.isBuffer(body) ? body : JSON.stringify(body),
-    });
+    const token = await admin._csrfToken("me@school.test");
+    // form saves carry the rev they were loaded at; the older checks here don't care, so the helper adds
+    // the current one (the stale-save checks below send their own)
+    const A = async (method, p, body, headers = {}) => {
+      const save = body && !Buffer.isBuffer(body) && body.doc && body.rev === undefined && /^\/api\/resources\/[a-z0-9]{10}(\/publish)?$/.test(p);
+      if (save) {
+        const g = await fetch(abase + p.replace(/\/publish$/, ""), { headers: { "X-JDT-Admin": "1" } });
+        if (g.ok) body = { ...body, rev: (await g.json()).doc.rev };
+      }
+      return fetch(abase + p, {
+        method, redirect: "manual",
+        headers: { "X-JDT-Admin": "1", "X-CSRF-Token": token, ...(body !== undefined && !Buffer.isBuffer(body) ? { "Content-Type": "application/json" } : {}), ...headers },
+        body: body === undefined ? undefined : Buffer.isBuffer(body) ? body : JSON.stringify(body),
+      });
+    };
     const logs = console.log; console.log = () => {};
     let id;
     try {
@@ -704,10 +886,13 @@ function sample(over = {}) {
         assert.equal(r.headers.get("cache-control"), "no-store");
         assert.equal((await fetch(`${abase}/frame/${id}/v3`)).status, 404);
       });
+      // complete page text (the config schema's counts: 3-6 steps, 3-5 ideas, 3-5 questions, 5-8 keywords)
       const fields = {
         slugEn: "projectile-motion", slugEs: "tiro-parabolico", subject: "physics", levels: ["high-school"], courseTags: ["AP Physics 1"], relatedExamPage: "",
-        en: { title: "Projectile motion", description: "Range and height.", intro: "$R=\\frac{v^2\\sin2\\theta}{g}$", howTo: ["Set the angle."], keyIdeas: ["45 degrees."], faq: [], keywords: [] },
-        es: { title: "Tiro parabólico", description: "Alcance y altura.", intro: "Intro.", howTo: ["Elige el ángulo."], keyIdeas: ["45 grados."], faq: [], keywords: [] },
+        en: { title: "Projectile motion", description: "Range and height.", intro: "$R=\\frac{v^2\\sin2\\theta}{g}$", howTo: ["Set the angle.", "Set the speed.", "Fire."], keyIdeas: ["45 degrees.", "$g$ pulls down.", "No drag."],
+          faq: [{ q: "Why 45?", a: "Max range." }, { q: "Drag?", a: "None." }, { q: "Units?", a: "SI." }], keywords: ["projectile", "range", "angle", "physics", "kinematics"] },
+        es: { title: "Tiro parabólico", description: "Alcance y altura.", intro: "Intro.", howTo: ["Elige el ángulo.", "Elige la rapidez.", "Dispara."], keyIdeas: ["45 grados.", "$g$ hacia abajo.", "Sin arrastre."],
+          faq: [{ q: "¿Por qué 45?", a: "Alcance máximo." }, { q: "¿Arrastre?", a: "No." }, { q: "¿Unidades?", a: "SI." }], keywords: ["proyectil", "alcance", "ángulo", "física", "cinemática"] },
       };
       await check("publish: refused without the checkbox, with problems, or with a broken formula", async () => {
         let r = await A("POST", `/api/resources/${id}/publish`, { doc: { ...fields, es: { ...fields.es, title: "" } }, checked: true });
@@ -774,27 +959,174 @@ function sample(over = {}) {
         assert.equal(r.headers.get("x-frame-options"), "DENY");
         assert.equal((await fetch(`${abase}/edit/zzzzzzzzzz`)).status, 404);
       });
-      await check("config endpoint: stored as uploaded, mapped, download; bad JSON refused and not stored", async () => {
+      await check("config endpoint (tool pair): schema-checked and mapped, nothing saved; bad JSON refused; old uploads still download", async () => {
         const text = fs.readFileSync(path.join(ROOT, "test/fixtures/trigonometry-playground.json"));
         const cid = (await (await A("POST", "/api/resources", {})).json()).id;
+        const before = await astore.get(cid);
         let r = await A("POST", `/api/resources/${cid}/config`, text, { "X-File-Name": "trigonometry-playground.json", "X-Html-Name": "trigonometry-playground.html" });
         let j = await r.json();
         assert.equal(r.status, 200, j.error);
         assert.equal(j.fields.en.faq.length, 5);
         assert.deepEqual(j.problems, []);
-        assert.equal(j.config.n, 1);
-        const d = await fetch(`${abase}/download/${cid}/config/1`);
-        assert.ok(Buffer.from(await d.arrayBuffer()).equals(text));
+        assert.equal(j.valid, true);
+        assert.deepEqual(await astore.get(cid), before, "nothing saved");
+        assert.ok(![...astore._objects.keys()].some((k) => k.startsWith(`resources/${cid}/config-`)), "no raw copy stored");
+        // schema problems come back with the field, the path and the line
+        const bad = JSON.parse(text); bad.es.description = "x".repeat(171); bad.en.howTo = ["one"];
+        r = await A("POST", `/api/resources/${cid}/config`, Buffer.from(JSON.stringify(bad, null, 2)), { "X-Html-Name": "trigonometry-playground.html" });
+        j = await r.json();
+        assert.equal(j.valid, false);
+        const desc = j.problems.find((p) => p.path === "es.description");
+        assert.equal(desc.message, "es.description is 171 characters; max 155.");
+        assert.equal(desc.field, "es.description"); assert.ok(desc.line > 1);
+        assert.ok(j.problems.some((p) => p.field === "en.howTo" && /has 1 item; it needs 3 to 6/.test(p.message)));
+        // the config is for another tool file than the one uploaded with it
+        r = await A("POST", `/api/resources/${cid}/config`, text, { "X-Html-Name": "unit-circle.html" });
+        assert.match((await r.json()).problems.map((p) => p.message).join(), /file is "trigonometry-playground\.html", but the tool file uploaded with it is "unit-circle\.html"/);
         r = await A("POST", `/api/resources/${cid}/config`, Buffer.from("{oops"), { "X-File-Name": "x.json" });
         j = await r.json();
         assert.equal(r.status, 400); assert.match(j.problems[0].message, /isn't valid JSON/);
-        assert.equal((await astore.get(cid)).configs.length, 1);
+        // a config uploaded before the editor existed still downloads, as it was
+        await astore.writeObject(`resources/${cid}/config-1.json`, text);
+        await astore.put({ ...(await astore.get(cid)), configs: [{ n: 1, path: `resources/${cid}/config-1.json`, name: "t.json" }] });
+        const d = await fetch(`${abase}/download/${cid}/config/1`);
+        assert.ok(Buffer.from(await d.arrayBuffer()).equals(text));
         assert.equal((await fetch(`${abase}/download/${cid}/config/2`)).status, 404);
-        // the .html uploaded after a config for another file name: flagged
-        r = await A("POST", `/api/resources/${cid}/file`, Buffer.from(TOOL), { "X-File-Name": "unit-circle.html" });
+      });
+      // ---- Config (.json) tab: read, check, save, history, restore, stale saves, CSRF --------------------
+      const trig = fs.readFileSync(path.join(ROOT, "test/fixtures/trigonometry-playground.json"), "utf8");
+      const J = { id: "" };
+      const getCfg = async () => (await (await A("GET", `/api/resources/${J.id}/config.json`)).json());
+      // a public page as the site would serve it from the admin's data (the public test server reads `mem`)
+      const pub = async (p) => {
+        const srv2 = createDevServer({ onSend: () => {}, pricingFile: "", resourcesStore: astore });
+        const b2 = await listen(srv2);
+        try { return await (await fetch(b2 + p)).text(); } finally { srv2.close(); }
+      };
+      await check("JSON tab: a draft's config loads in the upload format; a valid edit saves and keeps the previous config as a revision", async () => {
+        J.id = (await (await A("POST", "/api/resources", {})).json()).id;
+        await A("POST", `/api/resources/${J.id}/file`, Buffer.from(TOOL), { "X-File-Name": "trigonometry-playground.html" });
+        let c = await getCfg();
+        assert.equal(c.text, toolconfig.configText(await astore.get(J.id)));
+        assert.equal(JSON.parse(c.text).file, "trigonometry-playground.html");
+        const draftText = c.text;
+        let r = await A("PUT", `/api/resources/${J.id}/config.json`, { text: trig, rev: c.rev, source: "upload" });
+        let j = await r.json();
+        assert.equal(r.status, 200, j.error);
+        assert.equal(j.text, trig, "saved exactly as given");
+        assert.equal(j.doc.en.title, JSON.parse(trig).en.title);
+        assert.equal(j.doc.file.version, 1, "the tool is untouched");
+        const revs = (await (await A("GET", `/api/resources/${J.id}/revisions`)).json()).revisions;
+        assert.equal(revs[0].source, "upload"); assert.equal(revs[0].savedBy, "me@school.test"); assert.equal(revs[0].n, c.rev);
+        assert.equal((await astore.getRevision(J.id, c.rev)).config, draftText);
+        r = await A("POST", `/api/resources/${J.id}/publish`, { checked: true });
+        assert.equal(r.status, 200, (await r.json()).error);
+      });
+      await check("JSON tab: CSRF token and the 256 KB limit on save requests", async () => {
+        const c = await getCfg();
+        const put = (headers) => fetch(`${abase}/api/resources/${J.id}/config.json`, { method: "PUT", headers: { "X-JDT-Admin": "1", "Content-Type": "application/json", ...headers }, body: JSON.stringify({ text: trig, rev: c.rev }) });
+        assert.equal((await put({})).status, 403);
+        assert.equal((await put({ "X-CSRF-Token": "x".repeat(43) })).status, 403);
+        assert.equal((await A("POST", `/api/resources/${J.id}/config/check`, {}, { "X-CSRF-Token": "" })).status, 403);
+        const r = await A("PUT", `/api/resources/${J.id}/config.json`, { text: " ".repeat(256 * 1024), rev: c.rev });
+        assert.equal(r.status, 413);
+        // a GET needs no token
+        assert.equal((await fetch(`${abase}/api/resources/${J.id}/config.json`, { headers: { "X-JDT-Admin": "1" } })).status, 200);
+      });
+      await check("JSON tab: Validate lists errors with paths and lines; Save refuses errors, needs the checkbox when live, updates EN and ES pages", async () => {
+        const c = await getCfg(), cfg = JSON.parse(c.text);
+        const bad = JSON.stringify({ ...cfg, es: { ...cfg.es, description: "x".repeat(171) } }, null, 2);
+        let j = await (await A("POST", `/api/resources/${J.id}/config/check`, { text: bad })).json();
+        assert.equal(j.valid, false); assert.equal(j.errors[0].message, "es.description is 171 characters; max 155."); assert.ok(j.errors[0].line > 1);
+        let r = await A("PUT", `/api/resources/${J.id}/config.json`, { text: bad, rev: c.rev, checked: true });
+        assert.equal(r.status, 400); assert.equal((await r.json()).errors[0].path, "es.description");
+        const good = JSON.stringify({ ...cfg, en: { ...cfg.en, title: "Trig playground v2" }, es: { ...cfg.es, title: "Laboratorio de trigonometría v2" } }, null, 2) + "\n";
+        j = await (await A("POST", `/api/resources/${J.id}/config/check`, { text: good })).json();
+        assert.equal(j.valid, true); assert.equal(j.diff.changed, 2); assert.equal(j.diff.text[0].field, "title");
+        r = await A("PUT", `/api/resources/${J.id}/config.json`, { text: good, rev: c.rev });
+        assert.equal(r.status, 400); assert.match((await r.json()).error, /Tick/);
+        const marker = await astore.rev();
+        r = await A("PUT", `/api/resources/${J.id}/config.json`, { text: good, rev: c.rev, checked: true });
         j = await r.json();
-        assert.equal(j.doc.file.name, "unit-circle.html");
-        assert.match(j.configProblems[0].message, /is for "trigonometry-playground\.html", but the tool file is "unit-circle\.html"/);
+        assert.equal(r.status, 200, j.error);
+        assert.notEqual(await astore.rev(), marker, "the public marker is bumped (live within the cache time)");
+        // the public pages, EN and ES
+        const en = await pub(`/resources/${cfg.en.slug}/`);
+        const es = await pub(`/es/recursos/${cfg.es.slug}/`);
+        assert.match(en, /<h1>Trig playground v2<\/h1>/); assert.match(es, /<h1>Laboratorio de trigonometría v2<\/h1>/);
+        // the download is the current config
+        assert.equal(await (await fetch(`${abase}/download/${J.id}/config.json`)).text(), good);
+      });
+      await check("stale saves are refused (409) with the diff against the current version: JSON tab and form", async () => {
+        const c = await getCfg(), cfg = JSON.parse(c.text);
+        // another tab saves first
+        let r = await A("PUT", `/api/resources/${J.id}/config.json`, { text: JSON.stringify({ ...cfg, courseTags: [...cfg.courseTags, "Trig"] }, null, 2), rev: c.rev, checked: true });
+        assert.equal(r.status, 200);
+        const mine = JSON.stringify({ ...cfg, en: { ...cfg.en, title: "Mine" } }, null, 2);
+        r = await A("PUT", `/api/resources/${J.id}/config.json`, { text: mine, rev: c.rev, checked: true });
+        let j = await r.json();
+        assert.equal(r.status, 409); assert.equal(j.stale, true); assert.equal(j.rev, c.rev + 1);
+        assert.match(j.current, /"Trig"/);
+        assert.deepEqual(j.diff.shared.map((x) => x.field), ["courseTags"], "mine lacks the other tab's tag");
+        assert.deepEqual(j.diff.text.map((x) => x.field), ["title"]);
+        assert.notEqual((await astore.get(J.id)).en.title, "Mine");
+        // the form, too
+        const d = await astore.get(J.id);
+        r = await A("PUT", `/api/resources/${J.id}`, { doc: { ...d, en: { ...d.en, title: "Form" } }, checked: true, rev: d.rev - 1 });
+        j = await r.json();
+        assert.equal(r.status, 409); assert.equal(j.stale, true);
+        r = await A("PUT", `/api/resources/${J.id}`, { doc: { ...d, en: { ...d.en, title: "From the form" } }, checked: true, rev: d.rev });
+        assert.equal(r.status, 200);
+        assert.equal((await (await A("GET", `/api/resources/${J.id}/revisions`)).json()).revisions[0].source, "form");
+        // the store's own check (a save that raced past the rev check)
+        await assert.rejects(astore.putIf({ ...(await astore.get(J.id)) }, 0), (e) => e.code === "stale");
+      });
+      await check("history: the last saves, View diff, Restore through the same validate -> save path", async () => {
+        const list = (await (await A("GET", `/api/resources/${J.id}/revisions`)).json()).revisions;
+        assert.ok(list.length >= 4 && list.length <= 20);
+        assert.deepEqual(list.map((x) => x.n), [...list.map((x) => x.n)].sort((a, b) => b - a), "newest first");
+        assert.deepEqual(list.map((x) => x.source).slice(0, 3), ["form", "json", "json"]);
+        // newest first: the form save, the tag save, then the "v2" save (whose previous config is the fixture)
+        const target = list[2];
+        let j = await (await A("GET", `/api/resources/${J.id}/revisions/${target.n}`)).json();
+        const old = JSON.parse(j.revision.config);
+        assert.equal(old.en.title, JSON.parse(trig).en.title);
+        assert.ok(j.diff.changed >= 2);
+        const c = await getCfg();
+        let r = await A("PUT", `/api/resources/${J.id}/config.json`, { text: j.revision.config, rev: c.rev, checked: true, source: "json", restoredFrom: target.n });
+        j = await r.json();
+        assert.equal(r.status, 200, j.error);
+        assert.equal(j.doc.en.title, JSON.parse(trig).en.title);
+        const top = (await (await A("GET", `/api/resources/${J.id}/revisions`)).json()).revisions[0];
+        assert.equal(top.restoredFrom, target.n);
+        assert.equal((await A("GET", `/api/resources/${J.id}/revisions/99999`)).status, 404);
+      });
+      await check(".json upload on a live resource: only config fields change (tool and PDFs kept); `related` gives a reverse link on the other page", async () => {
+        // a PDF on the resource; the upload must list it (labels and order are the config's)
+        let r = await A("POST", `/api/resources/${J.id}/files/Trig_Sheet.pdf`, PDF(2000), { "X-Label-En": "Sheet", "X-Label-Es": "Hoja" });
+        assert.equal(r.status, 200, (await r.json()).error);
+        const other = sample({ id: "circuit000", slugEn: "rc-lab-test", slugEs: "lab-rc-prueba", slugHistoryEn: [], subject: "circuits", courseTags: [], related: [], publishedAt: "2026-01-05T00:00:00Z" });
+        await astore.put(other); await astore.bump();
+        const before = await astore.get(J.id), c = await getCfg(), cfg = JSON.parse(c.text);
+        assert.deepEqual(cfg.files, [{ file: "Trig_Sheet.pdf", en: "Sheet", es: "Hoja" }]);
+        const upload = JSON.stringify({ ...cfg, related: ["rc-lab-test"], files: [{ file: "Trig_Sheet.pdf", en: "Worksheet", es: "Hoja de trabajo" }] }, null, 2);
+        r = await A("PUT", `/api/resources/${J.id}/config.json`, { text: upload, rev: c.rev, checked: true, source: "upload" });
+        const j = await r.json();
+        assert.equal(r.status, 200, j.error);
+        assert.deepEqual(j.doc.file, before.file);
+        assert.equal(j.doc.files[0].path, before.files[0].path); assert.equal(j.doc.files[0].sha256, before.files[0].sha256);
+        assert.equal(j.doc.files[0].labelEn, "Worksheet");
+        assert.deepEqual(j.doc.related, ["rc-lab-test"]);
+        // a .json that would add or drop a PDF is refused (PDFs are uploaded and deleted in Files)
+        r = await A("PUT", `/api/resources/${J.id}/config.json`, { text: JSON.stringify({ ...JSON.parse(upload), files: [] }), rev: j.doc.rev, checked: true });
+        assert.equal(r.status, 400); assert.match((await r.json()).errors[0].message, /must list every uploaded PDF/);
+        // the reverse link: the circuits page (no tags, nothing of its own) now shows the trig tool, EN and ES
+        const en = await pub("/resources/rc-lab-test/");
+        const es = await pub("/es/recursos/lab-rc-prueba/");
+        const rel = (h) => (h.match(/<section id="related"[\s\S]*?<\/section>/) || [""])[0];
+        assert.match(rel(en), new RegExp(`href="/resources/${cfg.en.slug}/"`));
+        assert.match(rel(es), new RegExp(`href="/es/recursos/${cfg.es.slug}/"`));
+        assert.match(rel(es), /Laboratorio|Trigonometr/i);
       });
       await check("PDFs: list from a config, upload one request each, name / %PDF- / size / case checks, max 20", async () => {
         const pid = (await (await A("POST", "/api/resources", {})).json()).id;

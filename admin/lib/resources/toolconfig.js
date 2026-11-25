@@ -13,7 +13,9 @@
  *     files: [{ file: "<Name>.pdf", en: "label", es: "label" }],   optional: PDFs, in display order
  *     related: ["<slug-en>", ...] }                                 optional: shown first under "Related"
  * intro: a blank line between paragraphs. keyIdeas (and the other text) may contain $...$ LaTeX.
- * A config without `files` or `related` leaves those as they are (fields.files / fields.related undefined).
+ * A config without `files` leaves the PDF list as it is (fields.files undefined). Without `related` or
+ * `relatedExamPage`, those become empty (the config is the whole page).
+ * Its problems are informational: the admin's checks come from configcheck.js (the schema).
  */
 "use strict";
 
@@ -61,7 +63,7 @@ function freeSlug(base, lang, others) {
  *              field: "json" | "version" | "file" | "subject" | "levels" | "courseTags" | "<lang>.<key>" | "<lang>"
  *                     | "files" | "related"
  *   fields.files   = [{ name, labelEn, labelEs }] (only when the config has "files")
- *   fields.related = ["<slug-en>"] (only when the config has "related")
+ *   fields.related = ["<slug-en>"] ([] when the config has no "related")
  */
 function readConfig(text, { htmlName = "", others = [], selfId = "" } = {}) {
   const problems = [];
@@ -84,7 +86,7 @@ function readConfig(text, { htmlName = "", others = [], selfId = "" } = {}) {
   else if (htmlName && baseName(file) !== baseName(htmlName)) add("file", `The config is for "${baseName(file)}", but the tool file is "${baseName(htmlName)}". Check that they belong together.`);
 
   const others_ = others.filter((o) => o.id !== selfId);
-  const fields = { slugEn: "", slugEs: "", subject: "", levels: [], courseTags: [], en: {}, es: {} };
+  const fields = { slugEn: "", slugEs: "", subject: "", levels: [], courseTags: [], relatedExamPage: "", related: [], en: {}, es: {} };
 
   // subject
   if (c.subject === undefined || c.subject === "") add("subject", 'Missing "subject".');

@@ -131,6 +131,8 @@ function normalize(doc) {
     // EN slugs of resources to show first under "Related resources", in order
     related: list(d.related, RELATED_MAX, SLUG_MAX).map((x) => x.toLowerCase()).filter((x) => SLUG_RE.test(x)),
     og: { en: str(d.og && d.og.en, 200), es: str(d.og && d.og.es, 200) },
+    // +1 on every save; a save from the editor carries the number it was loaded at (stale -> refused)
+    rev: Math.max(0, Math.floor(Number(d.rev) || 0)),
     createdAt: String(d.createdAt || ""),
     publishedAt: String(d.publishedAt || ""),
     updatedAt: String(d.updatedAt || ""),
@@ -225,23 +227,33 @@ function applySlugChange(before, after) {
 const newest = (docs) => [...docs].sort((a, b) => String(b.publishedAt || b.updatedAt).localeCompare(String(a.publishedAt || a.updatedAt)));
 
 /**
- * "Related resources" for a page, up to `max`: (1) the resource's own `related` EN slugs, in order,
- * live ones only; (2) live resources sharing at least one course tag (case-insensitive), most shared
- * first, then newest; (3) the same subject, newest first. Never the resource itself, no repeats.
+ * "Related resources" for a page, up to `max` (default 3), from the cached list only:
+ *   1. the resource's own `related` EN slugs, in order (current or old slug of the target);
+ *   2. reverse links: resources whose `related` names this one (by its current or an old EN slug),
+ *      newest first;
+ *   3. resources sharing at least one course tag (case-insensitive), most shared first, then newest;
+ *   4. the same subject, newest first.
+ * Published resources only; never the resource itself; no repeats.
  */
 function relatedFor(doc, all, max = 3) {
-  const live = all.filter((d) => isLive(d) && d.id !== doc.id);
+  const live = newest(all.filter((d) => isLive(d) && d.id !== doc.id));
   const out = [], seen = new Set();
   const take = (d) => { if (d && !seen.has(d.id) && out.length < max) { seen.add(d.id); out.push(d); } };
+  // 1. own list
   for (const s of doc.related || []) take(live.find((d) => d.slugEn === s) || live.find((d) => historyOf(d, "en").includes(s)));
+  // 2. reverse links
+  const names = new Set([doc.slugEn, ...historyOf(doc, "en")].filter(Boolean));
+  live.filter((d) => (d.related || []).some((s) => names.has(s))).forEach(take);
+  // 3. shared course tags
   const tags = new Set((doc.courseTags || []).map((t) => t.toLowerCase()));
   const shared = (d) => (d.courseTags || []).filter((t) => tags.has(t.toLowerCase())).length;
   if (tags.size) {
-    newest(live).map((d) => [d, shared(d)]).filter(([, n]) => n > 0)
+    live.map((d) => [d, shared(d)]).filter(([, n]) => n > 0)
       .sort((a, b) => b[1] - a[1]) // stable: newest first within the same count
       .forEach(([d]) => take(d));
   }
-  newest(live.filter((d) => d.subject === doc.subject)).forEach(take);
+  // 4. same subject
+  live.filter((d) => d.subject === doc.subject).forEach(take);
   return out;
 }
 

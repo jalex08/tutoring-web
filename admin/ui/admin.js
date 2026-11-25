@@ -5,7 +5,8 @@
   function say(text, kind) { if (!msg) return; msg.textContent = text || ""; msg.className = "msg" + (kind ? " " + kind : ""); }
 
   function api(method, url, body, raw, extraHeaders) {
-    var opts = { method: method, headers: { "X-JDT-Admin": "1" }, credentials: "same-origin" };
+    var tokenEl = document.querySelector('meta[name="csrf-token"]');
+    var opts = { method: method, headers: { "X-JDT-Admin": "1", "X-CSRF-Token": tokenEl ? tokenEl.content : "" }, credentials: "same-origin" };
     for (var h in (extraHeaders || {})) opts.headers[h] = extraHeaders[h];
     if (raw) { opts.body = raw; opts.headers["Content-Type"] = "application/octet-stream"; }
     else if (body !== undefined) { opts.body = JSON.stringify(body); opts.headers["Content-Type"] = "application/json"; }
@@ -144,6 +145,16 @@
   form.addEventListener("change", function () { dirty = true; refresh(); });
   checked.addEventListener("change", refresh);
   window.addEventListener("beforeunload", function (e) { if (dirty || filesDirty) { e.preventDefault(); e.returnValue = ""; } });
+  // for the Config (.json) tab (config-editor.js): the form and the JSON edit the same data
+  window.JDTAdmin = {
+    isDirty: function () { return dirty || filesDirty; },
+    // back to the last saved data (the form and the files list)
+    discard: function () {
+      fillForm(doc); clearConfigProblems(); $("cfg-banner").hidden = true;
+      files = clone(doc.files || []); renderFiles(); setFilesDirty(false);
+      dirty = false; refresh();
+    },
+  };
 
   function apply(j, text) {
     doc = j.doc;
@@ -170,6 +181,14 @@
     refresh();
   }
   function fail(e) {
+    if (e.data && e.data.stale) {
+      // someone saved in between: list what this save would have changed, then offer a reload
+      var d = e.data.diff, fields = [];
+      if (d) { d.shared.forEach(function (r) { fields.push(r.label); }); d.text.forEach(function (r) { fields.push(r.label + " (" + (r.en && r.es ? "EN, ES" : r.en ? "EN" : "ES") + ")"); }); }
+      showProblems(fields.length ? ["Your version differs from the current one in: " + fields.join(", ") + ". Copy what you need, then reload the page."] : ["Reload the page to get the current version."]);
+      say(e.message, "err");
+      return;
+    }
     say(e.message, "err");
     if (e.data && e.data.problems) { serverProblems = e.data.problems; showProblems(e.data.problems); }
   }
@@ -177,13 +196,13 @@
 
   $("save").addEventListener("click", function () {
     var b = this; busy(b, true); say("Saving…");
-    saveFilesIfDirty().then(function () { return api("PUT", "/api/resources/" + doc.id, { doc: collect(), checked: checked.checked }); })
+    saveFilesIfDirty().then(function () { return api("PUT", "/api/resources/" + doc.id, { doc: collect(), checked: checked.checked, rev: doc.rev }); })
       .then(function (j) { apply(j, doc.status === "published" ? "Saved. The live page updates within about 30 seconds." : "Draft saved."); }, fail)
       .then(function () { busy(b, false); refresh(); });
   });
   $("publish").addEventListener("click", function () {
     var b = this; busy(b, true); say("Publishing (making the preview cards)…");
-    saveFilesIfDirty().then(function () { return api("POST", "/api/resources/" + doc.id + "/publish", { doc: collect(), checked: checked.checked }); })
+    saveFilesIfDirty().then(function () { return api("POST", "/api/resources/" + doc.id + "/publish", { doc: collect(), checked: checked.checked, rev: doc.rev }); })
       .then(function (j) { checked.checked = false; apply(j, "Published. Live within about 30 seconds."); }, fail)
       .then(function () { busy(b, false); refresh(); });
   });
@@ -223,14 +242,14 @@
     });
   }
 
-  function uploadConfig(file, htmlName, fill) {
+  function uploadConfig(file, htmlName, fill, pdfNames) {
     say("Reading " + file.name + "…");
     return file.arrayBuffer().then(function (buf) {
       var h = { "X-File-Name": encodeURIComponent(file.name) };
       if (htmlName) h["X-Html-Name"] = encodeURIComponent(htmlName);
+      if (pdfNames && pdfNames.length) h["X-Pdf-Names"] = pdfNames.map(encodeURIComponent).join("/");
       return api("POST", "/api/resources/" + doc.id + "/config", undefined, buf, h);
     }).then(function (j) {
-      doc.configs = j.doc.configs;
       showConfigs();
       if (fill && j.fields) fillForm(j.fields);
       showConfigProblems(j.problems);
@@ -262,6 +281,8 @@
       }
       html = groups[keys[0]].html || null; cfg = groups[keys[0]].json || null;
     }
+    // a .json alone on a resource that has its tool: into the Config (.json) tab (validate -> diff -> save)
+    if (cfg && !html && !pdfList.length && doc.file && window.JDTConfigEditor) { window.JDTConfigEditor.loadFile(cfg); return; }
     var hasText = !!(doc.file || $("en-title").value.trim() || $("es-title").value.trim());
     if (html && doc.status === "published" && !confirm("This resource is live. The new tool file goes live right away. Continue?")) return;
     clearConfigProblems();
@@ -270,7 +291,7 @@
     var listedByConfig = false;
     var chain = Promise.resolve();
     if (html) chain = chain.then(function () { return uploadHtml(html); }).then(function (j) { if (!cfg && j.configProblems && j.configProblems.length) showConfigProblems(j.configProblems); });
-    if (cfg) chain = chain.then(function () { return uploadConfig(cfg, html ? html.name : doc.file && doc.file.name, fill); }).then(function (j) {
+    if (cfg) chain = chain.then(function () { return uploadConfig(cfg, html ? html.name : doc.file && doc.file.name, fill, pdfList.map(function (f) { return f.name; })); }).then(function (j) {
       // the config's "files": its order and labels become the list (uploaded files it doesn't name stay, at the end)
       if (fill && j && j.fields && j.fields.files) { listedByConfig = true; return putFiles(j.fields.files); }
     });
@@ -495,6 +516,7 @@
     if (f.subject) $("subject").value = f.subject;
     [].forEach.call(form.querySelectorAll('input[name="levels"]'), function (c) { c.checked = (f.levels || []).indexOf(c.value) >= 0; });
     $("courseTags").value = (f.courseTags || []).join(", ");
+    $("relatedExamPage").value = f.relatedExamPage || "";
     if (f.related) { related = f.related.slice(); renderRelated(); }
     [].forEach.call(document.querySelectorAll("textarea[data-math]"), mathPreview);
     checked.checked = false; // the check is about this text: tick it again after reviewing
@@ -508,7 +530,8 @@
     if (m) return m[2] === "faq" ? document.querySelector('.faq-list[data-lang="' + m[1] + '"]') : $(m[1] + "-" + m[2]);
     if (field === "en" || field === "es") return document.querySelector('fieldset[data-lang="' + field + '"] legend');
     if (field === "levels") return form.querySelector(".checks");
-    if (field === "subject" || field === "courseTags") return $(field);
+    if (field === "subject" || field === "courseTags" || field === "relatedExamPage") return $(field);
+    if (field === "related") return $("related-list");
     return null; // json, version, file: next to the drop zone
   };
   function clearConfigProblems() {
@@ -550,7 +573,7 @@
     var p = document.createElement("p");
     if (j.failed) p.textContent = "Couldn't use " + name + ": " + j.failed;
     else if (!j.fields) p.textContent = "Didn't fill the form from " + name + ". See the problem next to the file box.";
-    else if (!filled) p.textContent = "Kept " + name + " (download it below the file box). The page text wasn't changed.";
+    else if (!filled) p.textContent = "Didn't use " + name + ". The page text wasn't changed.";
     else {
       p.textContent = "Filled from " + name + ". Review it, tick the check, then publish.";
       if (!doc.file) p.textContent += " Then drop the tool's .html too.";

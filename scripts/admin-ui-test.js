@@ -111,16 +111,12 @@ async function check(name, fn) {
       assert.equal(await page.isDisabled("#publish"), false);
       assert.match(await page.textContent("#file-info"), /Version 1 · trigonometry-playground\.html/);
     });
-    await check("the original JSON is stored with the resource and downloads byte for byte", async () => {
+    await check("the .json only fills the form: nothing is stored until Save (the server is the source of truth)", async () => {
       const doc = M.normalize(await store.get(id));
-      assert.equal(doc.configs.length, 1);
-      assert.equal(doc.configs[0].name, "trigonometry-playground.json");
-      assert.equal(doc.configs[0].fileVersion, 1);
-      const r = await page.request.get(`${base}/download/${id}/config/1`);
-      assert.equal(r.status(), 200);
-      assert.match(r.headers()["content-disposition"], /attachment; filename="trigonometry-playground\.json"/);
-      assert.ok(Buffer.from(await r.body()).equals(fs.readFileSync(JSONF)), "same bytes");
-      assert.match(await page.textContent("#config-list"), /trigonometry-playground\.json/);
+      assert.equal(doc.configs.length, 0);
+      assert.equal(doc.en.title, "", "the text is saved by Save / Publish, not by reading the file");
+      assert.ok(![...store._objects.keys()].some((k) => /config-\d+\.json$/.test(k)));
+      assert.equal(await page.isHidden("#configs"), true);
     });
     await check("publish with the filled text: what's saved equals the config (keywords included)", async () => {
       await page.click("#publish");
@@ -169,7 +165,7 @@ async function check(name, fn) {
       await dropFiles([html, json({ ...CFG, file: "unit-circle.html", en: { ...CFG.en, slug: "trig-mismatch" }, es: { ...CFG.es, slug: "trig-distinto" } })]);
       const e = await errsFor("file");
       assert.equal(e.length, 1);
-      assert.match(e[0], /is for "unit-circle\.html", but the tool file is "trigonometry-playground\.html"/);
+      assert.match(e[0], /file is "unit-circle\.html", but the tool file uploaded with it is "trigonometry-playground\.html"/);
       assert.equal(await page.inputValue("#en-title"), CFG.en.title);
       assert.match(await bannerText(), /1 problem marked in red below/);
     });
@@ -191,7 +187,7 @@ async function check(name, fn) {
       await dropFiles([json({ ...CFG, en: { ...CFG.en, description: long, slug: "trig-long" }, es: { ...CFG.es, slug: "trig-largo" } })]);
       assert.equal(await page.inputValue("#en-description"), long);
       const e = await errsFor("en.description");
-      assert.match(e[0], /EN description is 170 characters; the limit is 155/);
+      assert.match(e[0], /^en\.description is 170 characters; max 155\.$/);
       assert.equal(await page.$eval("#en-description", (el) => el.classList.contains("cfg-invalid")), true);
       assert.equal(await page.$eval(".count[data-for='en-description']", (el) => el.classList.contains("over")), true);
     });
@@ -201,8 +197,8 @@ async function check(name, fn) {
       await newResource();
       await dropFiles([html, json()]);
       const en = await errsFor("en.slug"), es = await errsFor("es.slug");
-      assert.match(en[0], /EN slug "trigonometry-playground" is already used by "Trigonometry playground/);
-      assert.match(es[0], /ES slug "laboratorio-de-trigonometria" is already used/);
+      assert.match(en[0], /en\.slug "trigonometry-playground" is already used by "Trigonometry playground/);
+      assert.match(es[0], /es\.slug "laboratorio-de-trigonometria" is already used/);
       assert.equal(await page.$eval("#en-slug", (el) => el.classList.contains("cfg-invalid")), true);
       assert.equal(await page.inputValue("#en-slug"), "trigonometry-playground"); // the config's value stays visible
       await page.click('[data-cfg-err="en.slug"] .use-suggestion');
@@ -213,8 +209,8 @@ async function check(name, fn) {
     await check("invalid subject and level: named in place, valid levels kept, nothing invented", async () => {
       await newResource();
       await dropFiles([json({ ...CFG, subject: "trig", levels: ["college", "middle-school"], en: { ...CFG.en, slug: "trig-bad" }, es: { ...CFG.es, slug: "trig-malo" } })]);
-      assert.match((await errsFor("subject"))[0], /Subject "trig" isn't one of/);
-      assert.match((await errsFor("levels"))[0], /Not a valid level: "middle-school"/);
+      assert.match((await errsFor("subject"))[0], /^subject is "trig"; use one of: algebra,/);
+      assert.match((await errsFor("levels"))[0], /^levels\[1\] is "middle-school"; use one of: high-school, college, engineering\.$/);
       assert.deepEqual((await form()).levels, ["college"]);
     });
 
@@ -222,11 +218,11 @@ async function check(name, fn) {
       await newResource();
       const { intro, ...enNoIntro } = CFG.en;
       await dropFiles([json({ ...CFG, en: { ...enNoIntro, slug: "trig-missing" }, es: { ...CFG.es, slug: "trig-falta", howTo: [] } })]);
-      assert.match((await errsFor("en.intro"))[0], /EN intro is missing/);
-      assert.match((await errsFor("es.howTo"))[0], /ES how-to steps is missing/);
+      assert.match((await errsFor("en.intro"))[0], /^en\.intro is missing\.$/);
+      assert.match((await errsFor("es.howTo"))[0], /^es\.howTo has 0 items; it needs 3 to 6 items\.$/);
       await newResource();
       await dropFiles([json({ ...CFG, version: 2 })]);
-      assert.match((await errsFor("version"))[0], /Unknown config version 2/);
+      assert.match((await errsFor("version"))[0], /^version must be 1/);
       assert.equal(await page.inputValue("#en-title"), "");
       assert.match(await bannerText(), /Didn't fill the form/);
     });
@@ -240,21 +236,86 @@ async function check(name, fn) {
       assert.equal(await page.inputValue("#en-title"), "Kept title");
       assert.match(await page.textContent("#file-info"), /Version 2/);
       assert.match(await bannerText(), /The page text wasn't changed/);
-      assert.equal(M.normalize(await store.get(id)).configs.length, 2, "the JSON is kept anyway");
       dialogs = []; dialogAnswer = true;
       await dropFiles([html, json()]);
       assert.ok(dialogs.some((d) => /Update the page text from the config\?/.test(d)));
       assert.equal(await page.inputValue("#en-title"), CFG.en.title);
       assert.match(await page.textContent("#file-info"), /Version 3/);
-      // a JSON alone on an existing resource: text only, no question, tool unchanged
+      // a JSON alone on an existing resource: into the Config (.json) tab, not saved; the unsaved form
+      // edit is discarded only after asking
+      await page.check("#checked"); await page.click("#save");
+      await page.waitForFunction(() => /Saved/.test(document.getElementById("msg").textContent));
       dialogs = [];
       await page.fill("#en-title", "Again by hand");
-      await dropFiles([json()]);
-      assert.equal(await page.inputValue("#en-title"), CFG.en.title);
-      assert.equal(dialogs.length, 0);
+      const other = { ...CFG, en: { ...CFG.en, title: "From a .json alone" } };
+      await dropFiles([json(other)]);
+      await page.waitForFunction(() => /Loaded trigonometry-playground\.json/.test(document.getElementById("json-status").textContent));
+      assert.ok(dialogs.some((d) => /The form has unsaved changes/.test(d)), dialogs.join(" | "));
+      assert.equal(await page.isVisible("#json-panel"), true);
+      assert.equal(await page.isHidden("#edit"), true);
+      assert.match(await page.textContent("#json-editor"), /From a \.json alone/);
+      assert.equal(M.normalize(await store.get(id)).en.title, CFG.en.title, "not saved");
       assert.match(await page.textContent("#file-info"), /Version 3/);
+      // back to the form: asks (the JSON has changes), and the form shows the saved text
+      dialogs = [];
+      await page.click("#tab-form");
+      assert.ok(dialogs.some((d) => /The JSON has unsaved changes/.test(d)));
+      assert.equal(await page.inputValue("#en-title"), CFG.en.title);
     });
 
+    await check("Config (.json) tab: edit, live validation with jump-to-line, Save shows the EN/ES diff and asks for the check, History restores", async () => {
+      const SHOTS = process.env.SHOTS_DIR;
+      await page.goto(`${base}/`);
+      await page.goto(`${base}/edit/${id}`);
+      await page.click("#tab-json");
+      await page.waitForFunction(() => /^Valid\. No changes yet\.$/.test(document.getElementById("json-status").textContent));
+      const text = await page.evaluate(() => fetch(location.pathname.replace("/edit/", "/api/resources/") + "/config.json", { headers: { "X-JDT-Admin": "1" } }).then((r) => r.json()).then((j) => j.text));
+      assert.equal(JSON.parse(text).en.title, CFG.en.title);
+      assert.equal(await page.isDisabled("#json-save"), true, "nothing to save yet");
+      const typeAll = async (t) => { await page.click("#json-editor .cm-content"); await page.keyboard.press("Control+A"); await page.keyboard.insertText(t); };
+      // an error: listed with its line; a click puts the cursor there; Save stays off
+      const cfg = JSON.parse(text);
+      await typeAll(JSON.stringify({ ...cfg, es: { ...cfg.es, description: "y".repeat(171) } }, null, 2));
+      await page.waitForFunction(() => /error/.test(document.getElementById("json-status").textContent));
+      assert.match(await page.textContent("#json-problems"), /es\.description is 171 characters; max 155\./);
+      assert.equal(await page.isDisabled("#json-save"), true);
+      await page.click("#json-problems .jp-err .jp-btn");
+      assert.match(await page.textContent("#json-editor .cm-activeLine"), /"description": "yyyy/);
+      // a valid change: Save -> the diff (ES title, highlighted) -> the check is required on a live page
+      const v2 = JSON.stringify({ ...cfg, es: { ...cfg.es, title: cfg.es.title + " v2" } }, null, 2) + "\n";
+      await typeAll(v2);
+      await page.waitForFunction(() => /^Valid\.$/.test(document.getElementById("json-status").textContent));
+      await page.click("#json-save");
+      await page.waitForSelector("#json-dialog[open]");
+      assert.match(await page.textContent("#json-diff ins"), /v2/);
+      assert.match(await page.textContent("#json-diff .jd-grid"), /Title/);
+      assert.equal(await page.isDisabled("#json-dialog-ok"), true);
+      if (SHOTS) await page.screenshot({ path: path.join(SHOTS, "json-diff.png") });
+      await page.check("#json-dialog-check");
+      await page.click("#json-dialog-ok");
+      await page.waitForFunction(() => /^Saved\./.test(document.getElementById("json-status").textContent));
+      assert.equal(M.normalize(await store.get(id)).es.title, cfg.es.title + " v2");
+      assert.equal(await page.isVisible("#json-panel"), true, "back in the JSON tab after the reload");
+      const pv = await (await page.request.get(`${base}/preview/${id}/es`)).text();
+      assert.match(pv, new RegExp(`<h1>${(cfg.es.title + " v2").replace(/[()]/g, "\\$&")}</h1>`));
+      // History: the newest entry is the config before this save; Restore -> validate -> diff -> save
+      await page.waitForSelector("#json-history .jh");
+      assert.match(await page.textContent("#json-history .jh"), /Before the JSON tab save of .* by me@school\.test/);
+      if (SHOTS) await page.screenshot({ path: path.join(SHOTS, "json-tab.png"), fullPage: true });
+      await page.click("#json-history .jh button:text('Restore')");
+      await page.waitForFunction(() => /Loaded #\d+ into the editor/.test(document.getElementById("json-status").textContent));
+      await page.click("#json-save");
+      await page.waitForSelector("#json-dialog[open]");
+      assert.match(await page.textContent("#json-diff del"), /v2/);
+      await page.check("#json-dialog-check");
+      await page.click("#json-dialog-ok");
+      await page.waitForFunction(() => /^Saved\./.test(document.getElementById("json-status").textContent));
+      assert.equal(M.normalize(await store.get(id)).es.title, cfg.es.title);
+      assert.match(await page.textContent("#json-history .jh"), /a restore of #/);
+      // Download .json = the current config
+      const d = await page.request.get(`${base}/download/${id}/config.json`);
+      assert.equal(JSON.parse(await d.text()).es.title, cfg.es.title);
+    });
     await check("files of two different tools are refused", async () => {
       await newResource();
       await dropFiles([html, json(CFG, "other-tool.json")]);

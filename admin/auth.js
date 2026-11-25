@@ -90,6 +90,22 @@ async function sessionEmail(req, env = process.env) {
   return iap.allowedEmails(env).includes(email) ? email : null;
 }
 
+/**
+ * CSRF token for the signed-in admin (sent back in the X-CSRF-Token header on every state-changing
+ * /api/ call; the pages carry it in <meta name="csrf-token">). Bound to the session cookie, keyed with
+ * the client secret, so it's the same on every instance and changes at every sign-in. Without a session
+ * cookie (DEV_NO_IAP, IAP, tests) it's bound to the email with a per-process key.
+ */
+const PROCESS_KEY = crypto.randomBytes(32);
+async function csrfToken(req, email, env = process.env) {
+  const raw = cookies(req)[SESSION_COOKIE];
+  if (raw && env.DEV_NO_IAP !== "1" && !req.headers["x-goog-iap-jwt-assertion"]) {
+    const key = crypto.createHash("sha256").update(`jdt-admin-csrf:${await clientSecret(env)}`).digest();
+    return hmac(key, `session|${raw}`);
+  }
+  return hmac(PROCESS_KEY, `email|${String(email || "").toLowerCase()}`);
+}
+
 /** Handles /auth/*. Returns true if it answered. `send(res, status, headers, body)`. */
 async function route(req, res, url, send, env = process.env) {
   const p = url.pathname;
@@ -157,4 +173,4 @@ async function route(req, res, url, send, env = process.env) {
   return true;
 }
 
-module.exports = { sessionEmail, route, safeNext, SESSION_COOKIE, STATE_COOKIE, _setFetch: (f) => { fetchImpl = f; secretCache = null; } };
+module.exports = { sessionEmail, csrfToken, equal, route, safeNext, SESSION_COOKIE, STATE_COOKIE, _setFetch: (f) => { fetchImpl = f; secretCache = null; } };

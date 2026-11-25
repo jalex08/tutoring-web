@@ -324,7 +324,7 @@ form; schema in `docs/resources-tool-guide.md`) in the admin
 sitemap. **No deploy.** Setup: `docs/resources-setup.md`. What to ask the AI for:
 `docs/resources-tool-guide.md`.
 
-- Data: Firestore (`resources` collection, `meta/resources` change marker) + the private bucket
+- Data: Firestore (`resources` collection with a `revisions` subcollection per resource, `meta/resources` change marker) + the private bucket
   `josediaz-tutoring-res` (`resources/<id>/v<N>.html`, `og/<id>-<lang>-<hash>.png`). `resources.js` re-checks
   the marker at most every 15 s and keeps the last good data if Firestore is down.
 - Isolation: the tool is served at `/frame/<id>/v<N>` with `Content-Security-Policy: sandbox …` (never
@@ -338,6 +338,11 @@ sitemap. **No deploy.** Setup: `docs/resources-setup.md`. What to ask the AI for
   fonts in `admin/fonts/`, SIL OFL).
 - Local: `npm install --prefix admin`, then `npm run dev` and `npm run admin:dev` (shared folder
   `.dev-data/resources`, no sign-in).
+- Config: one JSON Schema, `schemas/resource-config.schema.json`, checks a tool pair's .json, a .json
+  alone and the admin's **Config (.json)** tab (view, validate, diff, save, History with restore). Every
+  save keeps the previous config in `resources/<id>/revisions`. `npm run export-configs` downloads every
+  live config (read-only) into `test/fixtures/live-configs/`. The editor is CodeMirror 6, bundled into
+  `admin/ui/codemirror.js` by `npm run build:codemirror` (run it after changing `scripts/codemirror/`).
 - Deploy the admin with `gcloud app deploy admin/admin.yaml --project=jalex-hub` after `npm run build`.
 
 ## Analytics (Google Tag Manager)

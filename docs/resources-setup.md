@@ -50,6 +50,9 @@ gcloud firestore databases list --project=jalex-hub
   uses the collections `resources` and `meta`.
 
 No indexes are needed (the site reads the whole `resources` collection, which is small).
+Each resource also has a `revisions` subcollection (`resources/<id>/revisions/<n>`: the config before
+each save, with `savedAt`, `savedBy`, `source`), read only by the admin's History, newest first by `n`
+(Firestore's automatic single-field index covers that). The public site never reads it.
 
 ## 3. The private bucket
 
@@ -69,7 +72,7 @@ gcloud storage buckets update gs://josediaz-tutoring-res --uniform-bucket-level-
 
 Objects are never public: the site streams them (`/frame/...`, `/resources/og/...`,
 `/resources/<slug>/files/<name>.pdf`). Layout: `resources/<id>/v<N>.html` (tool versions),
-`resources/<id>/config-<n>.json` (configs as uploaded), `resources/<id>/files/<name>.pdf` (printable PDFs,
+`resources/<id>/config-<n>.json` (configs as uploaded before the Config (.json) tab; no longer written), `resources/<id>/files/<name>.pdf` (printable PDFs,
 replaced in place so the URL never changes), `og/<id>-<lang>-<hash>.png` (preview cards).
 
 ## 4. Permissions
