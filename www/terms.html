@@ -113,7 +113,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   /* text links in the page: darker ink on hover (buttons, chips and the WhatsApp float keep their own colors) */
   main a:not(.btn):not(.ibtn):not(.chip):not(.wa-float):hover{color:var(--ink-dark)}
 
-  /* header */
+  /* header. Two layouts, one breakpoint (960px: the narrowest width where the full nav fits on one line in
+     both languages, measured; ES needs ~935px with the tight spacing below, +25px of margin for font metrics).
+     960px +   wordmark · nav · EN/ES · CTA (the desktop header)
+     < 960px   compact bar: "Jose Diaz" · CTA · Menu button; the nav and EN/ES drop down in a panel (#site-menu)
+     The panel's wrapper (.head-menu) is display:contents on desktop, so the nav and EN/ES lay out as before. */
   .site-head{position:sticky;top:0;z-index:20;background:rgba(251,252,250,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--rule)}
   .head-in{display:flex;align-items:center;gap:24px;height:68px}
   .mark{font:800 1.25rem/1 var(--display);color:var(--graphite);text-decoration:none;letter-spacing:-.02em;margin-right:auto}
@@ -126,26 +130,64 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .lang a:hover{background:var(--pad)}
   .lang a[aria-current="page"]{background:var(--graphite);color:#fff}
   .head-cta{padding:11px 16px;font-size:.95rem}
-  @media (max-width:920px){.nav{display:none}}
-  @media (max-width:560px){.head-cta{display:none}.mark small{display:none}}
-  @media (max-width:380px){.mark{font-size:1.08rem}.head-in{gap:14px}}
-  /* Six nav links (Resources added): the labels never wrap. Spanish, whenever the nav shows: the short CTA
-     label, a tighter nav and no subtitle (the longer labels don't fit the 1120px column otherwise).
-     English: the same below ~1100px. */
-  .nav a,.head-cta,.mark{white-space:nowrap}
+  /* Six nav links: the labels never wrap. Spanish, whenever the nav shows: the short CTA label, a tighter nav
+     and no subtitle (the longer labels don't fit the 1120px column otherwise). English: the same below ~1100px. */
+  .nav a,.head-cta,.mark,.menu-btn{white-space:nowrap}
   .site-head .lang,.head-cta{flex:none}
-  @media (min-width:921px) and (max-width:1040px){.head-in{gap:16px}.nav{gap:12px !important}.nav a{font-size:.92rem}}
   .cta-mini{display:none}
-  @media (min-width:921px){
+  .head-menu{display:contents}
+  .bar-cta,.menu-btn{display:none}
+  @media (min-width:960px) and (max-width:1040px){.head-in{gap:16px}.nav{gap:12px !important}.nav a{font-size:.92rem}}
+  @media (min-width:960px){
     html[lang="es"] .head-cta .cta-full,html[lang="es"] .mark small{display:none}
     html[lang="es"] .head-cta .cta-mini{display:inline}
     html[lang="es"] .nav{gap:16px}
   }
-  @media (min-width:921px) and (max-width:1099px){
+  @media (min-width:960px) and (max-width:1099px){
     html[lang="en"] .head-cta .cta-full,html[lang="en"] .mark small{display:none}
     html[lang="en"] .head-cta .cta-mini{display:inline}
     html[lang="en"] .nav{gap:16px}
   }
+  /* compact bar (< 960px): the Resources bar's look (pad green, grid-green rule), 56px, 44px+ targets, never
+     the highlighter. CTA: "Book a free intro" (EN, "Free intro" under 360px) / "Llamada gratis" (ES). */
+  @media (max-width:959px){
+    html{scroll-padding-top:56px} /* + section[id] scroll-margin 12px = bar (57px) + ~11px */
+    .site-head{background:var(--pad);backdrop-filter:none;border-bottom-color:var(--grid)}
+    .head-in{height:56px;gap:8px;padding:0 12px}
+    .mark{display:inline-flex;align-items:center;min-height:44px;font-size:1.05rem;border-radius:8px}
+    .mark small,.mark-x,.head-cta:not(.bar-cta){display:none}
+    /* fixed widths (measured text + 12px a side), so the web-font swap can't move the right-aligned controls (CLS 0) */
+    .bar-cta{display:inline-flex;width:140px;min-height:44px;padding:0;font-size:.9rem}
+    html[lang="es"] .bar-cta{width:128px}
+    html[lang="es"] .bar-cta .cta-full{display:none}
+    html[lang="es"] .bar-cta .cta-mini{display:inline}
+    .menu-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:none;width:80px;min-height:44px;padding:0;
+      font:700 .9rem/1 var(--body);color:var(--ink);background:transparent;border:0;border-radius:8px;cursor:pointer}
+    .menu-btn svg{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+    .menu-btn .mi-x,.menu-btn[aria-expanded="true"] .mi-bars{display:none}
+    .menu-btn[aria-expanded="true"] .mi-x{display:inline}
+    .menu-btn[aria-expanded="true"]{background:#fff}
+    @media (hover:hover){.menu-btn:hover{background:#fff;color:var(--ink-dark)}}
+    .mark:focus-visible,.menu-btn:focus-visible{outline-offset:-3px}
+    /* the panel: a white section sheet under the bar, full width, scrolls inside when taller than the screen */
+    .head-menu{display:none;position:absolute;top:calc(100% + 1px);left:0;right:0;padding:4px 16px 18px;background:#fff;
+      border:1px solid #D3DCD8;border-top:0;box-shadow:0 1px 2px rgba(35,42,42,.04),0 10px 24px -8px rgba(35,42,42,.22);
+      max-height:calc(100vh - 57px);max-height:calc(100dvh - 57px);overflow-y:auto;overscroll-behavior:contain}
+    .has-lang-bar .head-menu{max-height:calc(100vh - 57px - var(--lang-bar-h,64px));max-height:calc(100dvh - 57px - var(--lang-bar-h,64px))}
+    .site-head.is-open .head-menu{display:block}
+    .head-menu .nav{flex-direction:column;gap:0}
+    .head-menu .nav a{display:flex;align-items:center;min-height:48px;padding:0 4px;font:400 1.0625rem/1.3 var(--body);color:var(--graphite);border-bottom:1px solid #E3EDDD}
+    .head-menu .nav a:hover{color:var(--ink-dark)}
+    .head-menu .nav a:focus-visible{outline-offset:-3px}
+    .head-menu .lang{margin-top:16px}
+    .head-menu .lang a{display:inline-flex;align-items:center;justify-content:center;min-width:56px;min-height:44px;font-size:.95rem}
+    .head-menu .lang a:focus-visible{outline-offset:-4px;border-radius:0}
+    .menu-open .wa-float{opacity:0;pointer-events:none;visibility:hidden} /* never on top of the open panel */
+  }
+  @media (max-width:959px) and (prefers-reduced-motion:no-preference){.site-head.is-open .head-menu{animation:menu-in .15s ease-out}}
+  @keyframes menu-in{from{opacity:0}}
+  @media (max-width:379px){.head-in{gap:6px;padding:0 8px}.menu-btn{gap:4px;width:74px}}
+  @media (max-width:359px){html[lang="en"] .bar-cta{width:88px}html[lang="en"] .bar-cta .cta-full{display:none}html[lang="en"] .bar-cta .cta-mini{display:inline}}
 
   /* floating WhatsApp */
   .wa-float{position:fixed;right:18px;bottom:18px;z-index:30;display:inline-flex;align-items:center;gap:9px;
@@ -271,7 +313,7 @@ html{scroll-padding-top:84px}
 }
 @media print{
   .site-head{position:static;border:0}
-  .site-head .nav,.site-head .lang,.head-cta,.toc,.wa-float,.skip{display:none !important}
+  .site-head .nav,.site-head .lang,.head-cta,.menu-btn,.head-menu,.toc,.wa-float,.skip{display:none !important}
   .legal{display:block;padding:0}
   .sheet{border:0;box-shadow:none;padding:0;max-width:none}
   .sheet::before{display:none}
@@ -292,7 +334,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <header class="site-head">
   <div class="wrap head-in">
-    <a class="mark" href="/">Jose Diaz Tutoring<small data-i18n="markSub">Math, physics &amp; engineering tutoring</small></a>
+    <a class="mark" href="/">Jose Diaz<span class="mark-x"> Tutoring</span><small data-i18n="markSub">Math, physics &amp; engineering tutoring</small></a>
+    <a class="btn btn-primary head-cta bar-cta" href="/#contact"><span class="cta-full" data-i18n="ctaShort">Book a free intro</span><span class="cta-mini" data-i18n="ctaMini">Free intro</span></a>
+    <button class="menu-btn" type="button" id="menu-btn" aria-expanded="false" aria-controls="site-menu" aria-label="Open menu" data-open="Open menu" data-close="Close menu" data-i18n-attr="aria-label:menuOpen;data-open:menuOpen;data-close:menuClose"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="mi-bars" d="M4 7h16M4 12h16M4 17h16"/><path class="mi-x" d="M6 6l12 12M18 6L6 18"/></svg><span data-i18n="menuLabel">Menu</span></button>
+    <div class="head-menu" id="site-menu">
     <nav class="nav" aria-label="Main" data-i18n-attr="aria-label:navLabel">
       <a href="/#subjects" data-i18n="navSubjects">Subjects</a>
       <a href="/#how" data-i18n="navHow">How it works</a>
@@ -305,8 +350,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <a href="/terms/" hreflang="en" lang="en" data-lang="en" aria-current="page">EN</a>
       <a href="/es/terminos/" hreflang="es" lang="es" data-lang="es">ES</a>
     </nav>
+    </div>
     <a class="btn btn-primary head-cta" href="/#contact"><span class="cta-full" data-i18n="ctaShort">Book a free intro</span><span class="cta-mini" data-i18n="ctaMini">Free intro</span></a>
   </div>
+  <noscript><style>@media (max-width:959px){html{scroll-padding-top:108px}.menu-btn{display:none !important}.head-in{flex-wrap:wrap;height:auto;min-height:56px}
+    .head-menu{display:flex;position:static;order:9;flex:0 0 100%;align-items:center;gap:16px;overflow-x:auto;max-height:none;margin:0;padding:2px 0 8px;border:0;box-shadow:none;background:none}
+    .head-menu .nav{flex-direction:row;gap:16px;margin:0}.head-menu .nav a{min-height:44px;border:0;padding:0;font-size:.97rem}.head-menu .lang{margin:0;flex:none}}</style></noscript>
 </header>
 
 <main id="main">
@@ -644,6 +693,38 @@ document.addEventListener("click", e => {
     };
     // after the web fonts: the bar sits on the bottom edge, so a font swap changing its height would move it (CLS)
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(show, show); else show();
+  } catch (err) {}
+})();
+
+/* Compact header menu (< 960px; every page with the site header): a disclosure button + the panel #site-menu
+   (the desktop nav and EN/ES). Focus stays on the button when it opens; Tab moves into the links. A link, a tap
+   outside, Esc (focus back to the button), focus leaving it or widening past 960px closes it. No scroll lock.
+   Without this script the panel shows as a plain row under the bar (the <noscript> style in the header). */
+(function () {
+  try {
+    var head = document.querySelector(".site-head"), btn = document.getElementById("menu-btn"), menu = document.getElementById("site-menu");
+    if (!head || !btn || !menu) return;
+    var root = document.documentElement;
+    var isOpen = function () { return head.classList.contains("is-open"); };
+    var set = function (open, refocus) {
+      if (isOpen() !== open) {
+        head.classList.toggle("is-open", open);
+        root.classList.toggle("menu-open", open);
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+        btn.setAttribute("aria-label", btn.getAttribute(open ? "data-close" : "data-open"));
+      }
+      if (refocus) btn.focus();
+    };
+    btn.addEventListener("click", function () { set(!isOpen()); });
+    menu.addEventListener("click", function (e) { if (e.target.closest("a")) set(false); });
+    // capture: runs before the language bar's own Esc handler, which then sees defaultPrevented and stays
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && isOpen()) { e.preventDefault(); set(false, true); } }, true);
+    document.addEventListener("pointerdown", function (e) { if (isOpen() && !menu.contains(e.target) && !btn.contains(e.target)) set(false); });
+    menu.addEventListener("focusout", function (e) { if (isOpen() && e.relatedTarget && !menu.contains(e.relatedTarget) && e.relatedTarget !== btn) set(false); });
+    if (window.matchMedia) {
+      var mq = matchMedia("(min-width: 960px)"), onMq = function () { if (mq.matches) set(false); };
+      if (mq.addEventListener) mq.addEventListener("change", onMq); else mq.addListener(onMq);
+    }
   } catch (err) {}
 })();
 /* lang-switch:end */

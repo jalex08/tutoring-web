@@ -50,7 +50,7 @@ html{scroll-padding-top:84px}
 }
 @media print{
   .site-head{position:static;border:0}
-  .site-head .nav,.site-head .lang,.head-cta,.toc,.wa-float,.skip{display:none !important}
+  .site-head .nav,.site-head .lang,.head-cta,.menu-btn,.head-menu,.toc,.wa-float,.skip{display:none !important}
   .legal{display:block;padding:0}
   .sheet{border:0;box-shadow:none;padding:0;max-width:none}
   .sheet::before{display:none}

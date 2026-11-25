@@ -273,8 +273,19 @@ srv.listen(0, async () => {
       assert.equal(ogTitle, title);
       assert.ok(desc.length <= 155, `description is ${desc.length} chars`);
     });
+    await check(`${lang}: compact header menu (button, panel, labels by state, no-JS row)`, () => {
+      const t = lang === "es" ? { open: "Abrir menú", close: "Cerrar menú", label: "Menú" } : { open: "Open menu", close: "Close menu", label: "Menu" };
+      const btn = (html.match(/<button class="menu-btn"[^>]*>[\s\S]*?<\/button>/) || [""])[0];
+      assert.ok(btn.includes('aria-expanded="false"') && btn.includes('aria-controls="site-menu"'), "menu button: aria-expanded / aria-controls");
+      assert.ok(btn.includes(`aria-label="${t.open}"`) && btn.includes(`data-open="${t.open}"`) && btn.includes(`data-close="${t.close}"`), "menu button: names by state");
+      assert.ok(btn.includes(`>${t.label}</span>`), "menu button: visible label");
+      const panel = (html.match(/<div class="head-menu" id="site-menu">[\s\S]*?<\/div>/) || [""])[0];
+      assert.equal((panel.match(/<a /g) || []).length, 8, "panel: six nav links + EN/ES");
+      assert.ok(/<noscript><style>@media \(max-width:959px\)/.test(html), "no-JS fallback style");
+    });
     await check(`${lang}: brand, footer, testimonials hidden`, () => {
-      assert.match(html, /<a class="mark" href="#top">Jose Diaz Tutoring<small/);
+      // " Tutoring" is its own span: the compact header (< 960px) shows "Jose Diaz" only
+      assert.match(html, /<a class="mark" href="#top">Jose Diaz<span class="mark-x"> Tutoring<\/span><small/);
       assert.match(html, /© <span id="yr">\d+<\/span> Jose Diaz Tutoring\./);
       assert.match(html, /<a class="contact-row" href="tel:\+17868329107">[\s\S]*?<span class="contact-detail">\(786\) 832-9107<\/span>/);
       for (const id of ["foot-wa", "foot-tel", "foot-mail", "foot-li"]) assert.ok(html.includes(`<li id="${id}">`), `footer row ${id}`);
