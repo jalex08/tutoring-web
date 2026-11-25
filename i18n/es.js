@@ -167,6 +167,7 @@ module.exports = {
   toolsTitle: "Herramientas interactivas gratis",
   toolsLede: "Herramientas que hice para mis estudiantes. Mueve los controles y mira cómo funcionan las matemáticas.",
   toolsAll: "Todos los recursos",
+  toolsDots: "Elige una herramienta", toolsDot: "Tarjeta {n} de {total}: {title}",
   footGbp: "Perfil en Google",
   footReview: "Déjame una reseña en Google",
   footContact: "Contacto",

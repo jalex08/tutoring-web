@@ -337,6 +337,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
   /* sections */
   section{padding:88px 0}
+  @media (max-width:639px){section{padding:56px 0}} /* phones: two white sections in a row leave 112px, not 176px */
   .sec-head{max-width:40em;margin-bottom:44px}
   .sec-head p{margin-top:14px;color:var(--muted);font-size:1.1rem}
 
@@ -464,6 +465,23 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   /* faq */
   #faq{border-bottom:1.5px solid var(--graphite)} /* divider into #contact */
   .tools-all{margin-top:28px}
+  /* home tools on phones: the cards are one swipe row (scroll-snap) bleeding to the screen edges, so the next card
+     peeks in; dots below (built by JS) show where you are. Not in the shared block: the /resources/ grid stays as is. */
+  @media (max-width:639px){
+    .tools-home .tool-cards{grid-auto-flow:column;grid-template-columns:none;grid-auto-columns:84%;gap:14px;
+      overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scroll-padding-inline:24px;
+      margin-inline:-24px;padding:6px 24px 18px;scrollbar-width:none} /* 6px top: room for the 3px focus outline (offset 2px); 18px bottom: the card shadow */
+    .tools-home .tool-cards::-webkit-scrollbar{display:none}
+    .tools-home .tool-card{scroll-snap-align:start}
+    .tools-home .tool-cards:has(> li:only-child){grid-auto-flow:row;grid-template-columns:1fr;overflow:visible;margin-inline:0;padding:0} /* 1 card: no carousel */
+    .tools-home .tools-all{margin-top:16px}
+  }
+  .tool-dots{display:flex;justify-content:center}
+  .tool-dots[hidden]{display:none}
+  .tool-dot{display:grid;place-items:center;width:44px;height:44px;padding:0;margin:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .tool-dot::before{content:"";width:10px;height:10px;border-radius:50%;background:#fff;border:1.5px solid #A9B5B1;box-sizing:border-box}
+  .tool-dot[aria-current="true"]::before{background:var(--ink);border-color:var(--ink)}
+  .tool-dot:focus-visible{outline:3px solid var(--ink);outline-offset:-8px;border-radius:50%}
   .faq{max-width:46em}
   .faq details{border-bottom:1px solid var(--rule)}
   .faq details:first-child{border-top:1px solid var(--rule)}
@@ -1373,7 +1391,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <!-- FREE TOOLS: hidden until a resource is published. server.js (resources.js) shows the section and puts
        the 3 newest cards in place of the marker at request time. Text: toolsTitle, toolsLede, toolsAll. -->
   <section id="tools" class="tools-home" hidden>
-    <div class="wrap">
+    <div class="wrap" data-dots-label="Elige una herramienta" data-dot-label="Tarjeta {n} de {total}: {title}" data-i18n-attr="data-dots-label:toolsDots;data-dot-label:toolsDot">
       <div class="sec-head"><h2 data-i18n="toolsTitle">Herramientas interactivas gratis</h2><p data-i18n="toolsLede">Herramientas que hice para mis estudiantes. Mueve los controles y mira cómo funcionan las matemáticas.</p></div>
       <!--resources:cards-->
       <p class="tools-all"><a class="btn btn-ghost" href="/es/recursos/" data-i18n="toolsAll">Todos los recursos</a></p>
@@ -1699,6 +1717,55 @@ document.getElementById("syllabus-wa").href = "https://wa.me/" + CONFIG.whatsapp
 if (isSet(CONFIG.email)) document.getElementById("syllabus-mail").href = "mailto:" + CONFIG.email + "?subject=" + encodeURIComponent(SYLLABUS[LANG].subject);
 else document.getElementById("syllabus-mail").remove();
 document.querySelectorAll(".li-link").forEach(a => a.href = CONFIG.linkedin);
+
+/* free tools on phones: one dot per card under the swipe row. Shown only while the row overflows (re-checked on
+   resize); it moves only when the visitor swipes, taps a dot or tabs to a card. Without JS the row still swipes. */
+(function () {
+  const wrap = document.querySelector("#tools .wrap"), row = wrap && wrap.querySelector(".tool-cards");
+  const cards = row ? Array.from(row.children) : [];
+  if (cards.length < 2) return;
+  const nav = document.createElement("div");
+  nav.className = "tool-dots"; nav.setAttribute("role", "group"); nav.setAttribute("aria-label", wrap.dataset.dotsLabel); nav.hidden = true;
+  const go = (i) => {
+    const pad = parseFloat(getComputedStyle(row).scrollPaddingInlineStart) || 0;
+    const left = row.scrollLeft + cards[i].getBoundingClientRect().left - row.getBoundingClientRect().left - pad;
+    row.scrollTo({ left, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  };
+  // Tab onto the half-shown next card: Chromium leaves a partly visible element where it is, so bring it to the start
+  row.addEventListener("focusin", (e) => {
+    const i = cards.indexOf(e.target.closest(".tool-card"));
+    if (!on || i < 0) return;
+    const c = cards[i].getBoundingClientRect(), r = row.getBoundingClientRect();
+    if (c.left < r.left || c.right > r.right) go(i);
+  });
+  const dots = cards.map((li, i) => {
+    const b = document.createElement("button"), title = (li.querySelector(".tool-card-title") || li).textContent.trim();
+    b.type = "button"; b.className = "tool-dot";
+    b.setAttribute("aria-label", wrap.dataset.dotLabel.replace("{n}", i + 1).replace("{total}", cards.length).replace("{title}", title));
+    b.addEventListener("click", () => go(i));
+    nav.append(b);
+    return b;
+  });
+  row.after(nav);
+  let on = false;
+  const setActive = (i) => dots.forEach((d, j) => j === i ? d.setAttribute("aria-current", "true") : d.removeAttribute("aria-current"));
+  setActive(0);
+  const seen = new Map();
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => seen.set(e.target, e.intersectionRatio));
+    let best = -1, ratio = 0;
+    cards.forEach((c, i) => { const r = seen.get(c) || 0; if (r > ratio) { ratio = r; best = i; } });
+    if (best >= 0 && ratio >= 0.6) setActive(best);
+  }, { root: row, threshold: [0.6, 1] });
+  const check = () => {
+    const over = row.scrollWidth > row.clientWidth + 1;
+    if (over === on) return;
+    on = over; nav.hidden = !over;
+    if (over) cards.forEach((c) => io.observe(c)); else { io.disconnect(); seen.clear(); setActive(0); }
+  };
+  check();
+  if ("ResizeObserver" in window) new ResizeObserver(check).observe(row); else addEventListener("resize", check);
+})();
 
 /* analytics: events for Google Tag Manager (no personal data, only what was clicked) */
 /* analytics:start (the legal pages reuse this block) */
