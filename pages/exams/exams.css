@@ -54,7 +54,7 @@ section{padding:46px 0}
 .aud-links{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:10px;font-size:.92rem;font-weight:700}
 .aud-foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px 18px;padding:16px 0 12px;border-top:1px solid var(--row);font-size:.95rem}
 .aud-foot a{font-weight:700}
-.allgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:0 28px;padding-top:6px}
+.allgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(230px,100%),1fr));gap:0 28px;padding-top:6px}
 .allgrid .aud-item{grid-template-columns:1fr;gap:6px;border-bottom:1px dashed var(--line)}
 .allgrid .aud-item:last-child{border-bottom:1px dashed var(--line)}
 .allgrid h3{font-size:1.22rem}
@@ -292,7 +292,7 @@ section{padding:46px 0}
 .sources{margin-top:26px}
 
 /* v2 (2026-11-19): all-exams grid alignment + roomier resource links */
-.allgrid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.allgrid{grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr))} /* min(): one column on phones under ~350px, no sideways scroll */
 .allgrid .aud-item{align-content:start}
 .res a{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:start}
 .res .badge{grid-column:1;justify-self:start;transform:none}

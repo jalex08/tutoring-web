@@ -162,6 +162,8 @@ module.exports = {
   footExams: "Calendario de exámenes",
   footResources: "Recursos",
   navResources: "Recursos",
+  // compact header (< 960px): the menu button's accessible names by state (the button is icon only)
+  menuOpen: "Abrir menú", menuClose: "Cerrar menú",
   toolsTitle: "Herramientas interactivas gratis",
   toolsLede: "Herramientas que hice para mis estudiantes. Mueve los controles y mira cómo funcionan las matemáticas.",
   toolsAll: "Todos los recursos",
