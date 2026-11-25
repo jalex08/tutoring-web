@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "file": "kinematics-graphs-lab.html",
+  "subject": "physics",
+  "levels": [
+    "high-school",
+    "college"
+  ],
+  "courseTags": [
+    "Physics",
+    "AP Physics 1",
+    "Physics I",
+    "AP Calculus AB",
+    "Calc I"
+  ],
+  "en": {
+    "title": "Motion graphs lab: position, velocity and acceleration",
+    "slug": "motion-graphs-lab",
+    "description": "Shape a velocity graph and watch position and acceleration follow. See slope and area at work, match target motions, and practice with worked solutions.",
+    "intro": "Position, velocity and acceleration graphs are three views of one motion on one clock. Going down the stack you take slopes; going up you add area. This lab makes that visible: drag the velocity graph and the other two update instantly, with the numbers worked out at every step.\n\nIt also connects the courses. The vertical motion from the projectile lab is one of the shapes here, and the Slope and Area views are the derivative and the integral from AP Calculus and Calc I, shown on real motion.",
+    "howTo": [
+      "In Explore, pick a shape under Start from, or drag the white points on the velocity graph (each point also has a slider).",
+      "Drag the Time t slider, or drag across any graph, to move through the motion. Every graph and the moving object update together.",
+      "Under See it as, choose Motion to compare the signs of v and a, Slope to see velocity and acceleration as slopes, or Area to watch displacement build up as area.",
+      "Open Match and shape your velocity until your position graph lands on the dashed target. Use Hint if you get stuck.",
+      "In Practice, choose Read the graphs, Constant acceleration or Calculus view, type your answer (expressions and units work), and use Hint or Show solution when you need them."
+    ],
+    "keyIdeas": [
+      "Velocity is the slope of the position graph, $v = \\frac{dx}{dt}$, and acceleration is the slope of the velocity graph, $a = \\frac{dv}{dt}$.",
+      "Displacement is the area under the velocity graph, $\\Delta x = \\int v\\,dt$, with area below the axis counting negative. Distance counts every piece as positive.",
+      "The object turns around where $v = 0$ and changes sign. The acceleration there doesn't have to be zero: a ball thrown up has $a = -9.8\\ \\mathrm{m/s^2}$ at the top.",
+      "An object speeds up when $v$ and $a$ have the same sign and slows down when they have opposite signs, so negative acceleration doesn't always mean slowing down.",
+      "With constant acceleration: $v = v_0 + at$, $\\Delta x = v_0t + \\tfrac12at^2$ and $v^2 = v_0^2 + 2a\\,\\Delta x$."
+    ],
+    "faq": [
+      {
+        "q": "Is the position graph a picture of the path?",
+        "a": "No. The object moves along a straight line. A hill on the $x$–$t$ graph means it went forward, stopped and came back, not that it went up a hill."
+      },
+      {
+        "q": "Can velocity be zero while acceleration isn't?",
+        "a": "Yes. At a turnaround $v = 0$ for an instant, but the velocity is still changing. A ball thrown straight up has $v = 0$ at the top and $a = -9.8\\ \\mathrm{m/s^2}$ the whole time."
+      },
+      {
+        "q": "Does negative acceleration mean slowing down?",
+        "a": "Only if the velocity is positive. If $v$ and $a$ are both negative, the object speeds up in the negative direction."
+      },
+      {
+        "q": "What is the difference between distance and displacement?",
+        "a": "Displacement is the net change in position, so backward motion subtracts. Distance adds up every part of the trip as a positive amount."
+      },
+      {
+        "q": "How does this connect to calculus?",
+        "a": "Slopes are derivatives and areas are integrals. Watching the shaded area grow while the position graph rises is the Fundamental Theorem of Calculus: the rate at which the area grows equals the height of the velocity graph."
+      }
+    ],
+    "keywords": [
+      "motion graphs",
+      "position velocity acceleration graphs",
+      "velocity time graph",
+      "area under velocity graph",
+      "slope of position time graph",
+      "AP Physics 1 kinematics graphs",
+      "displacement vs distance",
+      "kinematics equations"
+    ]
+  },
+  "es": {
+    "title": "Laboratorio de gráficas de movimiento: posición, velocidad y aceleración",
+    "slug": "laboratorio-de-graficas-de-movimiento",
+    "description": "Dale forma a la gráfica de velocidad y mira cómo la siguen la posición y la aceleración. Pendiente, área, metas por emparejar y práctica paso a paso.",
+    "intro": "Las gráficas de posición, velocidad y aceleración son tres vistas de un mismo movimiento con un mismo reloj. Bajando por ellas sacas pendientes; subiendo, sumas áreas. Este laboratorio lo hace visible: arrastra la gráfica de velocidad y las otras dos se actualizan al instante, con los números resueltos en cada paso.\n\nTambién conecta los cursos. El movimiento vertical del laboratorio de tiro parabólico es una de las formas de aquí, y las vistas Pendiente y Área son la derivada y la integral de AP Calculus y Calc I, aplicadas a un movimiento real.",
+    "howTo": [
+      "En Explora, elige una forma en Empieza con, o arrastra los puntos blancos de la gráfica de velocidad (cada punto también tiene su control).",
+      "Mueve el control Tiempo t, o arrastra sobre cualquier gráfica, para recorrer el movimiento. Todas las gráficas y el objeto se actualizan juntos.",
+      "En Míralo como, elige Movimiento para comparar los signos de v y a, Pendiente para ver la velocidad y la aceleración como pendientes, o Área para ver cómo se acumula el desplazamiento.",
+      "Abre Empareja y dale forma a tu velocidad hasta que tu gráfica de posición caiga sobre la meta punteada. Usa Pista si te atascas.",
+      "En Practica, elige Leer gráficas, Aceleración constante o Con cálculo, escribe tu respuesta (acepta expresiones y unidades) y usa Pista o Ver solución cuando lo necesites."
+    ],
+    "keyIdeas": [
+      "La velocidad es la pendiente de la gráfica de posición, $v = \\frac{dx}{dt}$, y la aceleración es la pendiente de la gráfica de velocidad, $a = \\frac{dv}{dt}$.",
+      "El desplazamiento es el área bajo la gráfica de velocidad, $\\Delta x = \\int v\\,dt$, y el área bajo el eje cuenta negativa. La distancia cuenta cada pedazo como positivo.",
+      "El objeto da la vuelta donde $v = 0$ y cambia de signo. Ahí la aceleración no tiene que ser cero: una pelota lanzada hacia arriba tiene $a = -9.8\\ \\mathrm{m/s^2}$ en el punto más alto.",
+      "Un objeto acelera cuando $v$ y $a$ tienen el mismo signo y frena cuando tienen signos opuestos; por eso aceleración negativa no siempre significa frenar.",
+      "Con aceleración constante: $v = v_0 + at$, $\\Delta x = v_0t + \\tfrac12at^2$ y $v^2 = v_0^2 + 2a\\,\\Delta x$."
+    ],
+    "faq": [
+      {
+        "q": "¿La gráfica de posición es un dibujo del camino?",
+        "a": "No. El objeto se mueve sobre una recta. Una loma en la gráfica $x$–$t$ significa que avanzó, se detuvo y regresó, no que subió una loma."
+      },
+      {
+        "q": "¿La velocidad puede ser cero sin que la aceleración lo sea?",
+        "a": "Sí. Al dar la vuelta, $v = 0$ por un instante, pero la velocidad sigue cambiando. Una pelota lanzada hacia arriba tiene $v = 0$ en el punto más alto y $a = -9.8\\ \\mathrm{m/s^2}$ todo el tiempo."
+      },
+      {
+        "q": "¿Aceleración negativa significa frenar?",
+        "a": "Solo si la velocidad es positiva. Si $v$ y $a$ son negativas, el objeto acelera hacia el lado negativo."
+      },
+      {
+        "q": "¿Cuál es la diferencia entre distancia y desplazamiento?",
+        "a": "El desplazamiento es el cambio neto de posición, así que el movimiento hacia atrás resta. La distancia suma cada parte del recorrido como cantidad positiva."
+      },
+      {
+        "q": "¿Cómo se conecta esto con el cálculo?",
+        "a": "Las pendientes son derivadas y las áreas son integrales. Ver crecer el área sombreada mientras sube la gráfica de posición es el teorema fundamental del cálculo: la rapidez con que crece el área es igual a la altura de la gráfica de velocidad."
+      }
+    ],
+    "keywords": [
+      "gráficas de movimiento",
+      "gráficas de posición velocidad y aceleración",
+      "gráfica velocidad tiempo",
+      "área bajo la gráfica de velocidad",
+      "pendiente de la gráfica posición tiempo",
+      "gráficas de cinemática AP Physics 1",
+      "distancia y desplazamiento",
+      "ecuaciones de cinemática"
+    ]
+  }
+}

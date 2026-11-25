@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "file": "rc-circuit-lab.html",
+  "subject": "circuits",
+  "levels": [
+    "high-school",
+    "college",
+    "engineering"
+  ],
+  "courseTags": [
+    "AP Physics C",
+    "Physics II",
+    "Differential Equations",
+    "Electric Circuits I"
+  ],
+  "en": {
+    "title": "RC circuit lab: charging, time constant and the differential equation",
+    "slug": "rc-circuit-lab",
+    "description": "One RC circuit seen three ways: physics, a differential equation and an engineering design. Find τ = RC, then practice with worked solutions.",
+    "intro": "Most students meet the RC circuit three times: in Physics II, in Differential Equations and in Electric Circuits I. Each course shows a different face of it, and it rarely gets connected. This lab puts all three on one screen, so you can see why the voltage curve looks the way it does and where τ = RC comes from.\n\nMove the time cursor, flip the switch, and watch the formula update with the real numbers. Then design a timing circuit and practice with problems that tell you what went wrong.",
+    "howTo": [
+      "In Explore, set the source, R, C and the starting voltage with the sliders or by typing values like 4.7k or 100u.",
+      "Drag the Time t slider (or the graph) to move the cursor. The capacitor voltage, current and charge update at that instant.",
+      "Switch See it as between Physics, Differential equation and Engineering to see the same curve explained three ways.",
+      "Press Charge or Discharge, or click the switch in the circuit. The clock restarts and v(0) keeps the voltage the capacitor had.",
+      "Open Design a delay to pick a threshold and a target delay, and find the standard resistor that gets you closest.",
+      "In Practice, choose a level, type your answer (expressions and units work), and use Hint or Show solution when you need them."
+    ],
+    "keyIdeas": [
+      "The time constant is $\\tau = RC$. At $t = \\tau$ the capacitor has covered $1 - e^{-1} \\approx 63.2\\%$ of the change; after $5\\tau$ it has covered $99.3\\%$.",
+      "Kirchhoff's loop rule plus $i = C\\,\\frac{dv}{dt}$ gives $RC\\,\\frac{dv}{dt} + v = V_f$, with solution $v(t) = V_f + (v_0 - V_f)\\,e^{-t/\\tau}$.",
+      "The slope is $\\frac{dv}{dt} = \\frac{V_f - v}{\\tau}$. It depends only on how far $v$ is from $V_f$, so the tangent at any point reaches $V_f$ exactly one $\\tau$ later.",
+      "To reach a threshold while charging from 0: $t = RC\\,\\ln\\frac{V_s}{V_s - V_{th}}$. Using $R = t/C$ only works when $V_{th} \\approx 0.632\\,V_s$.",
+      "The same R and C make a low-pass filter with cutoff frequency $f_c = \\frac{1}{2\\pi RC}$."
+    ],
+    "faq": [
+      {
+        "q": "Why is the time constant tied to 63%?",
+        "a": "Because $1 - e^{-1} \\approx 0.632$. After one time constant the exponential term has dropped to $e^{-1} \\approx 0.368$ of its starting value, so 63.2% of the change is done."
+      },
+      {
+        "q": "How long does a capacitor take to charge fully?",
+        "a": "In the ideal model it never gets exactly to $V_s$; it keeps approaching it. In practice engineers use $5\\tau$: by then it is at 99.3% of the way."
+      },
+      {
+        "q": "Why is the current largest at the start?",
+        "a": "An empty capacitor has no voltage across it, so all of $V_s$ is across the resistor and $i = V_s/R$. As the capacitor charges, the voltage left for the resistor shrinks, and so does the current."
+      },
+      {
+        "q": "How is this a differential equation?",
+        "a": "The capacitor current is $i = C\\,\\frac{dv}{dt}$. Put that into the loop rule and you get the first-order linear equation $RC\\,\\frac{dv}{dt} + v = V_f$, the same type as Newton's law of cooling."
+      },
+      {
+        "q": "Does an RL circuit behave the same way?",
+        "a": "Yes. The current in an RL circuit follows the same exponential, with time constant $\\tau = L/R$ instead of $RC$."
+      }
+    ],
+    "keywords": [
+      "RC circuit simulator",
+      "RC time constant",
+      "capacitor charging curve",
+      "capacitor discharging",
+      "first-order differential equation",
+      "AP Physics C E&M RC circuit",
+      "Physics II RC circuit",
+      "RC delay calculator"
+    ]
+  },
+  "es": {
+    "title": "Laboratorio de circuito RC: carga, constante de tiempo y ecuación diferencial",
+    "slug": "laboratorio-de-circuito-rc",
+    "description": "Un circuito RC visto de tres maneras: física, ecuación diferencial y diseño de ingeniería. Calcula τ = RC y practica con soluciones paso a paso.",
+    "intro": "La mayoría de los estudiantes se encuentra el circuito RC tres veces: en Physics II, en Differential Equations y en Electric Circuits I. Cada curso muestra una cara distinta y casi nunca se conectan. Este laboratorio pone las tres en una sola pantalla, para que veas por qué la curva de voltaje tiene esa forma y de dónde sale τ = RC.\n\nMueve el cursor de tiempo, cambia el interruptor y mira cómo la fórmula se actualiza con los números reales. Después diseña un circuito de retardo y practica con problemas que te dicen en qué te equivocaste.",
+    "howTo": [
+      "En Explora, ajusta la fuente, R, C y el voltaje inicial con los controles deslizantes o escribiendo valores como 4.7k o 100u.",
+      "Mueve el control Tiempo t (o arrastra sobre la gráfica). El voltaje, la corriente y la carga del capacitor se actualizan en ese instante.",
+      "En Míralo como, cambia entre Física, Ecuación diferencial e Ingeniería para ver la misma curva explicada de tres maneras.",
+      "Pulsa Cargar o Descargar, o toca el interruptor del circuito. El reloj vuelve a cero y v(0) conserva el voltaje que tenía el capacitor.",
+      "Abre Diseña un retardo, elige un umbral y un retardo deseado, y encuentra la resistencia estándar que más se acerca.",
+      "En Practica, elige un nivel, escribe tu respuesta (acepta expresiones y unidades) y usa Pista o Ver solución cuando lo necesites."
+    ],
+    "keyIdeas": [
+      "La constante de tiempo es $\\tau = RC$. En $t = \\tau$ el capacitor ya recorrió $1 - e^{-1} \\approx 63.2\\%$ del cambio; después de $5\\tau$ lleva el $99.3\\%$.",
+      "La regla de las mallas de Kirchhoff junto con $i = C\\,\\frac{dv}{dt}$ da $RC\\,\\frac{dv}{dt} + v = V_f$, cuya solución es $v(t) = V_f + (v_0 - V_f)\\,e^{-t/\\tau}$.",
+      "La pendiente es $\\frac{dv}{dt} = \\frac{V_f - v}{\\tau}$. Solo depende de cuánto le falta a $v$ para llegar a $V_f$, así que la tangente en cualquier punto llega a $V_f$ justo un $\\tau$ después.",
+      "Para llegar a un umbral cargando desde 0: $t = RC\\,\\ln\\frac{V_s}{V_s - V_{th}}$. Usar $R = t/C$ solo funciona cuando $V_{th} \\approx 0.632\\,V_s$.",
+      "La misma R y C forman un filtro pasabajos con frecuencia de corte $f_c = \\frac{1}{2\\pi RC}$."
+    ],
+    "faq": [
+      {
+        "q": "¿Por qué la constante de tiempo va ligada al 63%?",
+        "a": "Porque $1 - e^{-1} \\approx 0.632$. Después de una constante de tiempo, el término exponencial bajó a $e^{-1} \\approx 0.368$ de su valor inicial, así que ya se completó el 63.2% del cambio."
+      },
+      {
+        "q": "¿Cuánto tarda un capacitor en cargarse por completo?",
+        "a": "En el modelo ideal nunca llega exactamente a $V_s$; se le acerca cada vez más. En la práctica, los ingenieros usan $5\\tau$: para entonces lleva el 99.3% del camino."
+      },
+      {
+        "q": "¿Por qué la corriente es máxima al principio?",
+        "a": "Un capacitor vacío no tiene voltaje, así que todo $V_s$ cae en la resistencia e $i = V_s/R$. A medida que el capacitor se carga, le queda menos voltaje a la resistencia y la corriente baja."
+      },
+      {
+        "q": "¿Por qué esto es una ecuación diferencial?",
+        "a": "La corriente del capacitor es $i = C\\,\\frac{dv}{dt}$. Si la sustituyes en la regla de las mallas obtienes la ecuación lineal de primer orden $RC\\,\\frac{dv}{dt} + v = V_f$, del mismo tipo que la ley de enfriamiento de Newton."
+      },
+      {
+        "q": "¿Un circuito RL se comporta igual?",
+        "a": "Sí. La corriente en un circuito RL sigue la misma exponencial, con constante de tiempo $\\tau = L/R$ en lugar de $RC$."
+      }
+    ],
+    "keywords": [
+      "simulador de circuito RC",
+      "constante de tiempo RC",
+      "carga de un capacitor",
+      "descarga de un capacitor",
+      "ecuación diferencial de primer orden",
+      "circuito RC AP Physics C",
+      "circuito RC Physics II",
+      "calculadora de retardo RC"
+    ]
+  }
+}

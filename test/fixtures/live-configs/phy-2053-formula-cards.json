@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "file": "phy-2053-formula-cards.html",
+  "subject": "physics",
+  "levels": [
+    "college"
+  ],
+  "courseTags": [
+    "Physics I"
+  ],
+  "files": [
+    {
+      "file": "PHY2053_Vectors_Kinematics_Formula_Cards.pdf",
+      "en": "Vectors & kinematics",
+      "es": "Vectores y cinemática"
+    },
+    {
+      "file": "PHY2053_Newtons_Laws_Formula_Cards.pdf",
+      "en": "Newton's laws",
+      "es": "Leyes de Newton"
+    },
+    {
+      "file": "PHY2053_Circular_Motion_Gravitation_Formula_Cards.pdf",
+      "en": "Circular motion & gravitation",
+      "es": "Movimiento circular y gravitación"
+    },
+    {
+      "file": "PHY2053_Work_Energy_Power_Formula_Cards.pdf",
+      "en": "Work, energy & power",
+      "es": "Trabajo, energía y potencia"
+    },
+    {
+      "file": "PHY2053_Momentum_Collisions_Formula_Cards.pdf",
+      "en": "Momentum & collisions",
+      "es": "Momento lineal y choques"
+    },
+    {
+      "file": "PHY2053_Rotation_Formula_Cards.pdf",
+      "en": "Rotation",
+      "es": "Rotación"
+    },
+    {
+      "file": "PHY2053_Elasticity_Oscillations_Formula_Cards.pdf",
+      "en": "Elasticity & oscillations",
+      "es": "Elasticidad y oscilaciones"
+    },
+    {
+      "file": "PHY2053_Fluids_Formula_Cards.pdf",
+      "en": "Fluids",
+      "es": "Fluidos"
+    },
+    {
+      "file": "PHY2053_Waves_Sound_Formula_Cards.pdf",
+      "en": "Waves & sound",
+      "es": "Ondas y sonido"
+    },
+    {
+      "file": "PHY2053_Thermodynamics_Formula_Cards.pdf",
+      "en": "Temperature, heat & thermodynamics",
+      "es": "Temperatura, calor y termodinámica"
+    },
+    {
+      "file": "PHY2053_All_Units_Formula_Cards.pdf",
+      "en": "All 10 units in one file",
+      "es": "Las 10 unidades en un solo archivo"
+    }
+  ],
+  "en": {
+    "title": "PHY 2053 formula cards: what each formula means and when to use it",
+    "slug": "phy-2053-formula-cards",
+    "description": "191 flashcards for PHY 2053 College Physics 1: what each formula is for, its variables and units, when it applies, and the mistakes students make.",
+    "intro": "These cards cover every unit of PHY 2053, from kinematics to thermodynamics. Each card shows a formula, what it's for, what every symbol means with its units, when it applies, the clues in a problem that point to it, and the mistakes that cost points.\n\nThe goal isn't to memorize formulas. It's to recognize which one a problem needs and use it correctly. Related formulas are linked, including the same idea in other units, so you see how the course fits together.",
+    "howTo": [
+      "Pick a unit at the top, or keep All units.",
+      "Read the formula, answer the four questions under it, then press Flip to check yourself.",
+      "Switch the Mode to situation → formula to practice the way exams ask: read the situation and the clues, then write the formula.",
+      "Press I know it or Review again; turn on Hide known to study only what's left.",
+      "Choose Your textbook to see the matching chapters, and open Printable cards (PDF) to print a unit, two cards per page."
+    ],
+    "keyIdeas": [
+      "The same structure shows up in different units: $\\Sigma F = ma$ for translation and $\\Sigma \\tau = I\\alpha$ for rotation.",
+      "Energy and momentum answer different questions: use $K_1 + U_1 + W_{other} = K_2 + U_2$ for speeds after a height change, and conservation of momentum for collisions.",
+      "Every formula has conditions. $v^2 = v_0^2 + 2a\\Delta x$ needs constant acceleration; $R = \\frac{v_0^2 \\sin 2\\theta}{g}$ needs equal launch and landing heights.",
+      "Textbooks use different signs for the first law: $\\Delta U = Q - W$ with work done by the gas, or $\\Delta U = Q + W$ with work done on it. Check which one your book uses."
+    ],
+    "faq": [
+      {
+        "q": "Which textbook do these cards follow?",
+        "a": "None in particular. They follow the PHY 2053 course, which every Florida school teaches with similar topics. Choose your textbook in the tool to see the matching chapters for Young, Knight, OpenStax, Cutnell, Walker or Giancoli."
+      },
+      {
+        "q": "Does my class cover every card?",
+        "a": "Most of them. A few cards say “check your syllabus” because some sections skip those topics, such as entropy, adiabatic processes or Poiseuille's law."
+      },
+      {
+        "q": "Can I print the cards?",
+        "a": "Yes. Open Printable cards (PDF) to download one unit or the whole course. Each letter page holds two half-page cards with a cut line."
+      },
+      {
+        "q": "Why do some cards say “Also written as”?",
+        "a": "Textbooks use different symbols for the same thing, like n, N or F_N for the normal force. The note tells you the other forms you may see in your book or on your exam."
+      }
+    ],
+    "keywords": [
+      "PHY 2053 formulas",
+      "college physics formula sheet",
+      "physics formula flashcards",
+      "PHY 2053 study guide",
+      "algebra-based physics formulas",
+      "physics 1 formulas explained",
+      "FIU UF UCF physics"
+    ]
+  },
+  "es": {
+    "title": "Tarjetas de fórmulas de PHY 2053: qué significa cada fórmula y cuándo usarla",
+    "slug": "tarjetas-de-formulas-phy-2053",
+    "description": "191 tarjetas para PHY 2053 (College Physics 1): para qué sirve cada fórmula, sus variables y unidades, cuándo aplica y los errores más comunes.",
+    "intro": "Estas tarjetas cubren todas las unidades de PHY 2053, desde cinemática hasta termodinámica. Cada una muestra la fórmula, para qué sirve, qué significa cada símbolo con sus unidades, cuándo aplica, las pistas de un problema que te llevan a ella y los errores que cuestan puntos.\n\nLas tarjetas están en inglés, porque así son tus clases y tus exámenes; los botones y esta página están en español. La meta no es memorizar fórmulas, sino reconocer cuál necesita cada problema y usarla bien.",
+    "howTo": [
+      "Elige una unidad arriba, o deja Todas las unidades.",
+      "Lee la fórmula, responde las cuatro preguntas y presiona Voltear para revisar.",
+      "Cambia el Modo a situación → fórmula para practicar como en el examen: lees la situación y las pistas, y escribes la fórmula.",
+      "Presiona Me la sé o Repasar otra vez; activa Ocultar las que sé para estudiar solo lo que falta.",
+      "Elige Tu libro de texto para ver los capítulos que corresponden, y abre Tarjetas para imprimir (PDF) para imprimir una unidad."
+    ],
+    "keyIdeas": [
+      "La misma estructura aparece en distintas unidades: $\\Sigma F = ma$ para traslación y $\\Sigma \\tau = I\\alpha$ para rotación.",
+      "Energía y momento responden preguntas distintas: usa $K_1 + U_1 + W_{other} = K_2 + U_2$ para la rapidez después de un cambio de altura, y la conservación del momento para choques.",
+      "Cada fórmula tiene condiciones. $v^2 = v_0^2 + 2a\\Delta x$ necesita aceleración constante; $R = \\frac{v_0^2 \\sin 2\\theta}{g}$ necesita la misma altura de lanzamiento y de llegada.",
+      "Los libros usan signos distintos en la primera ley: $\\Delta U = Q - W$ con el trabajo hecho por el gas, o $\\Delta U = Q + W$ con el trabajo hecho sobre el gas. Revisa cuál usa tu libro."
+    ],
+    "faq": [
+      {
+        "q": "¿Qué libro de texto siguen estas tarjetas?",
+        "a": "Ninguno en particular. Siguen el curso PHY 2053, que las universidades y los colleges de Florida enseñan con temas parecidos. Elige tu libro en la herramienta para ver los capítulos de Young, Knight, OpenStax, Cutnell, Walker o Giancoli."
+      },
+      {
+        "q": "¿Por qué las tarjetas están en inglés?",
+        "a": "Porque tu clase, tu libro y tu examen están en inglés. Así aprendes las fórmulas con las mismas palabras que vas a ver en el examen."
+      },
+      {
+        "q": "¿Mi clase cubre todas las tarjetas?",
+        "a": "Casi todas. Algunas dicen “check your syllabus” porque ciertas secciones no ven esos temas, como entropía, procesos adiabáticos o la ley de Poiseuille."
+      },
+      {
+        "q": "¿Puedo imprimir las tarjetas?",
+        "a": "Sí. Abre Tarjetas para imprimir (PDF) y descarga una unidad o el curso completo. Cada hoja carta trae dos tarjetas de media página con una línea de corte."
+      }
+    ],
+    "keywords": [
+      "fórmulas PHY 2053",
+      "fórmulas de física universitaria",
+      "tarjetas de física",
+      "guía de estudio PHY 2053",
+      "física sin cálculo fórmulas",
+      "física 1 fórmulas explicadas"
+    ]
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "note": "Snapshot of the live configs for the tests. The server is the source of truth; re-run scripts/export-configs.js to refresh.",
+  "exportedAt": "2026-11-25T02:10:36.027Z",
+  "project": "jalex-hub",
+  "resources": [
+    {
+      "file": "phy-2053-formula-cards.json",
+      "id": "wsm5nzrxrk",
+      "status": "published",
+      "slugEn": "phy-2053-formula-cards",
+      "slugEs": "tarjetas-de-formulas-phy-2053",
+      "updatedAt": "2026-11-24T19:51:45.367Z",
+      "publishedAt": "2026-11-24T19:51:45.367Z"
+    },
+    {
+      "file": "motion-graphs-lab.json",
+      "id": "af8g8s7k6n",
+      "status": "published",
+      "slugEn": "motion-graphs-lab",
+      "slugEs": "laboratorio-de-graficas-de-movimiento",
+      "updatedAt": "2026-11-24T00:16:07.346Z",
+      "publishedAt": "2026-11-24T00:16:07.346Z"
+    },
+    {
+      "file": "projectile-motion-lab.json",
+      "id": "m31v8yfgw4",
+      "status": "published",
+      "slugEn": "projectile-motion-lab",
+      "slugEs": "laboratorio-de-tiro-parabolico",
+      "updatedAt": "2026-11-23T20:51:32.228Z",
+      "publishedAt": "2026-11-23T20:51:32.228Z"
+    },
+    {
+      "file": "rc-circuit-lab.json",
+      "id": "6sk9wsnb8s",
+      "status": "published",
+      "slugEn": "rc-circuit-lab",
+      "slugEs": "laboratorio-de-circuito-rc",
+      "updatedAt": "2026-11-23T20:17:22.249Z",
+      "publishedAt": "2026-11-23T20:17:22.249Z"
+    },
+    {
+      "file": "trigonometry-playground.json",
+      "id": "6egdo17ucb",
+      "status": "published",
+      "slugEn": "trigonometry-playground",
+      "slugEs": "laboratorio-de-trigonometria",
+      "updatedAt": "2026-11-23T13:19:55.350Z",
+      "publishedAt": "2026-11-23T13:19:55.350Z"
+    }
+  ]
+}
