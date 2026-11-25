@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "file": "projectile-motion-lab.html",
+  "subject": "physics",
+  "levels": [
+    "high-school",
+    "college"
+  ],
+  "courseTags": [
+    "Physics",
+    "AP Physics 1",
+    "AP Physics C",
+    "Physics I",
+    "Calc I"
+  ],
+  "en": {
+    "title": "Projectile motion lab: vectors, components and the path",
+    "slug": "projectile-motion-lab",
+    "description": "Launch a projectile and see the physics: split velocity into components, find range and max height, hit a target, and practice with worked solutions.",
+    "intro": "Projectile motion is really two simple motions sharing one clock: constant speed sideways, constant acceleration up and down. This lab shows that split on the path itself, so you can see why the dots bunch up near the top and why the speed there isn't zero.\n\nIt starts from the same sine and cosine as the trigonometry playground, and it ends where calculus picks up: velocity as the derivative of position. You can also flip the problem around and solve for the angle that hits a target.",
+    "howTo": [
+      "In Projectile, set the launch speed, angle and height. Switch gravity between 9.8 and 10 m/s² to match your class.",
+      "Drag the Time t slider (or the path) to move the ball. The velocity arrow and its components update at that instant.",
+      "Under See it as, pick Components to see the two motions separately, or Calculus to see position, velocity and acceleration as vectors.",
+      "Pick Aim, set a target distance, and press Use low angle, Use high angle or Use best angle.",
+      "Open Vectors and drag the arrow tips (or type magnitude and angle) to add or subtract two vectors. Watch the direction step when R_x is negative.",
+      "In Practice, choose Vectors, Projectiles or Calculus view, type your answer (expressions and units work), and use Hint or Show solution when you need them."
+    ],
+    "keyIdeas": [
+      "Split the launch velocity: $v_{0x} = v_0\\cos\\theta$ and $v_{0y} = v_0\\sin\\theta$. Horizontally nothing pushes, so $v_x$ stays constant; vertically the acceleration is $-g$.",
+      "On level ground the time of flight is $T = \\frac{2v_0\\sin\\theta}{g}$ and the range is $R = \\frac{v_0^2\\sin 2\\theta}{g}$.",
+      "At the top $v_y = 0$, but the speed is $v_0\\cos\\theta$, not zero. The maximum height is $H = h + \\frac{v_{0y}^2}{2g}$.",
+      "Vectors add by components. For the direction, $\\tan^{-1}\\frac{R_y}{R_x}$ only returns angles between $-90^\\circ$ and $90^\\circ$, so add $180^\\circ$ when $R_x < 0$.",
+      "From the ground, $45^\\circ$ gives the longest range and complementary angles land in the same spot. From a height $h$, the best angle satisfies $\\tan\\theta^* = \\frac{v_0}{\\sqrt{v_0^2 + 2gh}}$, which is less than $45^\\circ$."
+    ],
+    "faq": [
+      {
+        "q": "Is the speed zero at the top of the path?",
+        "a": "No. Only the vertical part of the velocity is zero there. The horizontal part, $v_0\\cos\\theta$, never changes, so that is the speed at the top."
+      },
+      {
+        "q": "Why is 45° the best launch angle?",
+        "a": "On level ground the range is $\\frac{v_0^2\\sin 2\\theta}{g}$, and $\\sin 2\\theta$ is largest when $2\\theta = 90^\\circ$. If you launch from a height, the best angle is lower than $45^\\circ$."
+      },
+      {
+        "q": "Why does my calculator give the wrong angle for a vector?",
+        "a": "$\\tan^{-1}$ only returns angles between $-90^\\circ$ and $90^\\circ$. If the x-component is negative, the vector points left, so add $180^\\circ$ to the calculator's answer."
+      },
+      {
+        "q": "Does a heavier ball land sooner?",
+        "a": "Not in this model. Mass doesn't appear anywhere in the equations: every object falls with the same acceleration $g$ when air resistance is ignored."
+      },
+      {
+        "q": "Should I use g = 9.8 or 10 m/s²?",
+        "a": "Use the value your teacher or exam specifies. The lab lets you switch between them, and the practice problems use 9.8 m/s²."
+      }
+    ],
+    "keywords": [
+      "projectile motion simulator",
+      "projectile motion lab",
+      "vector components",
+      "adding vectors",
+      "range and maximum height",
+      "AP Physics 1 projectile motion",
+      "launch angle calculator",
+      "vector direction quadrant"
+    ]
+  },
+  "es": {
+    "title": "Laboratorio de tiro parabólico: vectores, componentes y trayectoria",
+    "slug": "laboratorio-de-tiro-parabolico",
+    "description": "Lanza un proyectil y mira la física: separa la velocidad en componentes, calcula alcance y altura máxima, apunta a un blanco y practica paso a paso.",
+    "intro": "El tiro parabólico en realidad son dos movimientos sencillos que comparten un mismo reloj: rapidez constante hacia los lados y aceleración constante hacia arriba y hacia abajo. Este laboratorio muestra esa separación sobre la trayectoria, para que veas por qué los puntos se amontonan arriba y por qué la rapidez ahí no es cero.\n\nParte del mismo seno y coseno del laboratorio de trigonometría y termina donde empieza el cálculo: la velocidad como derivada de la posición. También puedes darle la vuelta al problema y despejar el ángulo que da en un blanco.",
+    "howTo": [
+      "En Proyectil, ajusta la rapidez, el ángulo y la altura de lanzamiento. Cambia la gravedad entre 9.8 y 10 m/s² según lo que use tu clase.",
+      "Mueve el control Tiempo t (o arrastra sobre la trayectoria) para mover la pelota. La flecha de velocidad y sus componentes se actualizan en ese instante.",
+      "En Míralo como, elige Componentes para ver los dos movimientos por separado, o Cálculo para ver la posición, la velocidad y la aceleración como vectores.",
+      "Elige Apuntar, fija la distancia al blanco y pulsa Ángulo bajo, Ángulo alto o Mejor ángulo.",
+      "Abre Vectores y arrastra las puntas de las flechas (o escribe magnitud y ángulo) para sumar o restar dos vectores. Fíjate en el paso de la dirección cuando R_x es negativa.",
+      "En Practica, elige Vectores, Proyectiles o Con cálculo, escribe tu respuesta (acepta expresiones y unidades) y usa Pista o Ver solución cuando lo necesites."
+    ],
+    "keyIdeas": [
+      "Descompón la velocidad inicial: $v_{0x} = v_0\\cos\\theta$ y $v_{0y} = v_0\\sin\\theta$. En horizontal nada empuja, así que $v_x$ no cambia; en vertical la aceleración es $-g$.",
+      "Sobre suelo plano, el tiempo de vuelo es $T = \\frac{2v_0\\sin\\theta}{g}$ y el alcance es $R = \\frac{v_0^2\\sin 2\\theta}{g}$.",
+      "En el punto más alto $v_y = 0$, pero la rapidez es $v_0\\cos\\theta$, no cero. La altura máxima es $H = h + \\frac{v_{0y}^2}{2g}$.",
+      "Los vectores se suman por componentes. Para la dirección, $\\tan^{-1}\\frac{R_y}{R_x}$ solo da ángulos entre $-90^\\circ$ y $90^\\circ$, así que suma $180^\\circ$ cuando $R_x < 0$.",
+      "Desde el suelo, $45^\\circ$ da el mayor alcance y los ángulos complementarios caen en el mismo punto. Desde una altura $h$, el mejor ángulo cumple $\\tan\\theta^* = \\frac{v_0}{\\sqrt{v_0^2 + 2gh}}$, que es menor que $45^\\circ$."
+    ],
+    "faq": [
+      {
+        "q": "¿La rapidez es cero en el punto más alto?",
+        "a": "No. Ahí solo vale cero la parte vertical de la velocidad. La parte horizontal, $v_0\\cos\\theta$, nunca cambia, así que esa es la rapidez en el punto más alto."
+      },
+      {
+        "q": "¿Por qué 45° es el mejor ángulo de lanzamiento?",
+        "a": "Sobre suelo plano el alcance es $\\frac{v_0^2\\sin 2\\theta}{g}$, y $\\sin 2\\theta$ es máximo cuando $2\\theta = 90^\\circ$. Si lanzas desde una altura, el mejor ángulo es menor que $45^\\circ$."
+      },
+      {
+        "q": "¿Por qué la calculadora me da mal el ángulo de un vector?",
+        "a": "$\\tan^{-1}$ solo da ángulos entre $-90^\\circ$ y $90^\\circ$. Si la componente x es negativa, el vector apunta a la izquierda, así que súmale $180^\\circ$ a lo que da la calculadora."
+      },
+      {
+        "q": "¿Una pelota más pesada cae antes?",
+        "a": "En este modelo, no. La masa no aparece en ninguna ecuación: sin resistencia del aire, todos los objetos caen con la misma aceleración $g$."
+      },
+      {
+        "q": "¿Uso g = 9.8 o 10 m/s²?",
+        "a": "Usa el valor que indique tu profesor o el examen. El laboratorio te deja cambiar entre los dos, y los problemas de práctica usan 9.8 m/s²."
+      }
+    ],
+    "keywords": [
+      "simulador de tiro parabólico",
+      "movimiento de proyectiles",
+      "componentes de un vector",
+      "suma de vectores",
+      "alcance y altura máxima",
+      "tiro parabólico AP Physics 1",
+      "ángulo de lanzamiento",
+      "dirección de un vector cuadrante"
+    ]
+  }
+}

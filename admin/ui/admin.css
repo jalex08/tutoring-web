@@ -120,3 +120,48 @@ legend.cfg-invalid{color:var(--red)}
 .related-list li{margin:4px 0}
 .related-list .hint{margin-left:6px}
 @media (max-width:640px){.file-row{grid-template-columns:1fr}}
+
+/* Form | Config (.json) tabs */
+.tabs{display:flex;gap:4px;margin:0 0 -1px;position:relative;z-index:1}
+.tab{min-height:44px;padding:0 18px;border:1px solid var(--line);border-bottom:none;border-radius:10px 10px 0 0;background:var(--pad);color:var(--muted);font:700 .95rem/1 var(--body);cursor:pointer}
+.tab[aria-selected="true"]{background:#fff;color:var(--graphite)}
+.tab:focus-visible{outline:3px solid var(--ink);outline-offset:-3px}
+[role="tabpanel"][hidden]{display:none}
+
+/* Config (.json) editor */
+.json-bar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.json-status{min-height:1.5em;margin:0 0 8px;font-weight:700}
+.json-status.err{color:var(--red)}.json-status.warn{color:#8a5a00}.json-status.ok{color:var(--ok)}
+.json-editor{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.json-editor .cm-editor{height:min(70vh,720px);font-size:14px}
+.json-editor .cm-editor.cm-focused{outline:3px solid var(--ink);outline-offset:-1px}
+.json-editor .cm-scroller{font-family:ui-monospace,Menlo,Consolas,monospace}
+.json-problems{list-style:none;padding:0;margin:10px 0 0;display:grid;gap:4px}
+.jp-btn{display:flex;gap:10px;align-items:baseline;width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-left-width:4px;border-radius:6px;padding:8px 10px;font:400 .92rem/1.4 var(--body);color:var(--graphite);cursor:pointer}
+.jp-err .jp-btn{border-left-color:var(--red)}.jp-warn .jp-btn{border-left-color:#c58a00}
+.jp-kind{font-weight:700;flex:none}.jp-err .jp-kind{color:var(--red)}.jp-warn .jp-kind{color:#8a5a00}
+.jp-line{flex:none;color:var(--muted);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem}
+.jp-msg{min-width:0;overflow-wrap:anywhere}
+.json-h3{font:800 1.05rem/1.2 var(--display);margin:22px 0 4px}
+.json-history{padding-left:0;list-style:none;display:grid;gap:6px;margin:10px 0 0}
+.jh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-bottom:1px solid var(--line);padding:6px 0}
+.jh-what{flex:1 1 280px;font-size:.92rem}
+
+/* review dialog: the diff, EN and ES side by side */
+.json-dialog{width:min(1100px,calc(100vw - 32px));max-height:calc(100vh - 32px);border:1px solid var(--line);border-radius:12px;padding:0}
+.json-dialog::backdrop{background:rgba(20,30,30,.45)}
+.json-dialog-in{padding:18px}
+.json-dialog-note{display:grid;gap:6px;margin:0 0 12px}
+.jd-note{background:#fff6dd;border:1px solid #e8cf8a;border-radius:6px;padding:8px 10px;font-size:.92rem}
+.json-diff{max-height:60vh;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:12px}
+.jd-table{border-collapse:collapse;width:100%;margin-bottom:12px;font-size:.92rem}
+.jd-table th,.jd-table td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top;white-space:pre-wrap;overflow-wrap:anywhere}
+.jd-before{background:#fdecec}.jd-after{background:#e8f5ec}
+.jd-grid{display:grid;grid-template-columns:minmax(90px,max-content) 1fr 1fr;gap:6px 10px;font-size:.92rem}
+.jd-head{font-weight:700;color:var(--muted)}
+.jd-label{font-weight:700}
+.jd-side{white-space:pre-wrap;overflow-wrap:anywhere;min-width:0}
+.jd-side ins{background:#c9ecd4;text-decoration:none}
+.jd-side del{background:#f6cfd1;color:#6b1d21}
+.jd-same,.jd-none{color:var(--muted)}
+@media (max-width:640px){.jd-grid{grid-template-columns:1fr}.jd-head:first-child{display:none}}

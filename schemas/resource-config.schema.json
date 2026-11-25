@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://josediaztutoring.com/schemas/resource-config.schema.json",
+  "title": "Resource config",
+  "description": "Everything a resource's page shows except the HTML tool and the PDF bytes. Used by the admin for the upload of a tool pair, a .json-only upload, and the Config (.json) editor. Docs: docs/resources-tool-guide.md. scripts/build.js copies this file to admin/lib/.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "file", "subject", "levels", "courseTags", "en", "es"],
+  "properties": {
+    "version": { "description": "the config format version (read-only)", "const": 1 },
+    "file": {
+      "description": "the tool's HTML file name (read-only; \"\" until one is uploaded)",
+      "type": "string", "maxLength": 200, "pattern": "^(|[^\\\\/]+\\.html?)$"
+    },
+    "subject": {
+      "type": "string",
+      "enum": ["algebra", "geometry-trig", "precalc", "calculus", "physics", "circuits", "digital-logic", "programming", "embedded", "other"]
+    },
+    "levels": {
+      "type": "array", "minItems": 1, "maxItems": 3, "uniqueItems": true,
+      "items": { "type": "string", "enum": ["high-school", "college", "engineering"] }
+    },
+    "courseTags": {
+      "type": "array", "maxItems": 20, "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 60, "pattern": "^[^,\\n]+$", "description": "one line of text without commas" }
+    },
+    "relatedExamPage": {
+      "description": "the exam page linked under \"See also\"",
+      "type": "string", "enum": ["/exams/", "/exams/algebra-1-eoc/"]
+    },
+    "related": {
+      "description": "EN slugs of resources shown first under \"Related resources\", in this order",
+      "type": "array", "maxItems": 10, "uniqueItems": true,
+      "items": { "$ref": "#/$defs/slug" }
+    },
+    "files": {
+      "description": "the resource's uploaded PDFs, in display order, with their labels",
+      "type": "array", "maxItems": 20,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["file", "en", "es"],
+        "properties": {
+          "file": { "type": "string", "maxLength": 120, "pattern": "^(?!\\.)[A-Za-z0-9._-]+\\.pdf$", "description": "a PDF name: letters, numbers, dots, hyphens and underscores, ending in .pdf" },
+          "en": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "es": { "type": "string", "minLength": 1, "maxLength": 200 }
+        }
+      }
+    },
+    "en": { "$ref": "#/$defs/text" },
+    "es": { "$ref": "#/$defs/text" }
+  },
+  "$defs": {
+    "slug": {
+      "type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "lowercase letters, numbers and single hyphens"
+    },
+    "line": { "type": "string", "minLength": 1, "maxLength": 2000, "pattern": "^[^\\n]+$", "description": "one line of text" },
+    "text": {
+      "type": "object", "additionalProperties": false,
+      "required": ["title", "slug", "description", "intro", "howTo", "keyIdeas", "faq", "keywords"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "slug": { "$ref": "#/$defs/slug" },
+        "description": { "type": "string", "minLength": 1, "maxLength": 155 },
+        "intro": { "type": "string", "minLength": 1, "maxLength": 20000, "description": "a blank line between paragraphs; $...$ for math" },
+        "howTo": { "type": "array", "minItems": 3, "maxItems": 6, "items": { "$ref": "#/$defs/line" } },
+        "keyIdeas": { "type": "array", "minItems": 3, "maxItems": 5, "items": { "$ref": "#/$defs/line" } },
+        "faq": {
+          "type": "array", "minItems": 3, "maxItems": 5,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["q", "a"],
+            "properties": {
+              "q": { "type": "string", "minLength": 1, "maxLength": 400 },
+              "a": { "type": "string", "minLength": 1, "maxLength": 4000 }
+            }
+          }
+        },
+        "keywords": {
+          "type": "array", "minItems": 5, "maxItems": 8, "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[^,\\n]+$", "description": "one line of text without commas" }
+        }
+      }
+    }
+  }
+}

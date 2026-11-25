@@ -7,15 +7,25 @@
  * Every request: signed in with Google (auth.js: the app's own "Sign in with Google", session cookie) and
  * the email must be in ADMIN_EMAILS. (App Engine can't put IAP in front of one service only.)
  * Every /api/ call also needs the header X-JDT-Admin: 1 and a same-origin Origin, so neither another site
- * nor an uploaded tool (sandboxed, opaque origin) can make one.
+ * nor an uploaded tool (sandboxed, opaque origin) can make one; every state-changing call also needs the
+ * CSRF token (X-CSRF-Token, from <meta name="csrf-token">; auth.js). The session cookie is SameSite=Lax.
+ *
+ * Saves: every write to a resource bumps its `rev`. Saves from the editor carry the rev they were loaded
+ * at; a stale one is refused (409) with the diff against the current version. Every save that changes the
+ * config (form, Config (.json) tab, .json upload, tool upload, PDFs) first stores the previous config in
+ * resources/<id>/revisions (savedAt, savedBy, source, config).
  *
  * Local: from the repo root, `npm run admin:dev` (folder store .dev-data/resources, no IAP).
  *
  * Pages:  GET /  (list) · GET /edit/<id> · GET /preview/<id>/<en|es> · GET /frame/<id>/v<N> (any version)
  * API:    POST /api/resources · PUT /api/resources/<id> · POST /api/resources/<id>/file (raw HTML body)
  *         POST /api/resources/<id>/publish · POST /api/resources/<id>/unpublish · DELETE /api/resources/<id>
- *         POST /api/resources/<id>/config (a tool's .json: stored as is, read, mapped to the form; see toolconfig.js)
- *         POST /api/math (KaTeX preview) · GET /download/<id>/config/<n> (an uploaded config, as it was)
+ *         POST /api/resources/<id>/config (a tool pair's .json: checked against the schema, mapped to the form;
+ *         nothing saved) · POST /api/math (KaTeX preview) · GET /download/<id>/config/<n> (an old uploaded config)
+ *         Config (.json) tab: GET /api/resources/<id>/config.json (current config + rev)
+ *         POST /api/resources/<id>/config/check {text} (errors, warnings, diff) · PUT /api/resources/<id>/config.json
+ *         {text, rev, checked, source, restoredFrom?} · GET /api/resources/<id>/revisions (last 20)
+ *         GET /api/resources/<id>/revisions/<n> (its config + diff to now) · GET /download/<id>/config.json
  *         PDFs (../lib/resources/files.js), one request per file so no request nears App Engine's 32 MB limit:
  *         POST /api/resources/<id>/files/<name> (raw PDF body; X-Label-En / X-Label-Es for a new one)
  *         DELETE /api/resources/<id>/files/<name> · PUT /api/resources/<id>/files {files:[{name,labelEn,labelEs}]}
@@ -35,6 +45,8 @@ const frame = require("./lib/resources/frame.js");
 const math = require("./lib/resources/math.js");
 const storeLib = require("./lib/resources/store.js");
 const toolconfig = require("./lib/resources/toolconfig.js");
+const configcheck = require("./lib/resources/configcheck.js");
+const configdiff = require("./lib/resources/configdiff.js");
 const pdfs = require("./lib/resources/files.js");
 const iap = require("./iap.js");
 const authLib = require("./auth.js");
@@ -50,6 +62,8 @@ let store = null;
 const getStore = () => (store ??= storeLib.fromEnv());
 let cards = () => require("./cards.js"); // tests can stub it
 let auth = (req) => authLib.sessionEmail(req); // email, or null = not signed in
+const csrf = (req, email) => authLib.csrfToken(req, email);
+const CONFIG_MAX = toolconfig.MAX_BYTES; // 256 KB: a config save request, whole
 
 const esc = math.escapeHtml;
 const now = () => new Date().toISOString();
@@ -86,8 +100,8 @@ async function readJson(req) {
 }
 const fail = (status, message, extra = {}) => Object.assign(new Error(message), { status, extra });
 
-/** /api/ calls: custom header + same-origin (blocks other sites and the sandboxed tools). */
-function checkApi(req) {
+/** /api/ calls: custom header + same-origin (blocks other sites and the sandboxed tools) + CSRF token. */
+async function checkApi(req, email) {
   if (req.headers["x-jdt-admin"] !== "1") throw fail(403, "Missing X-JDT-Admin header.");
   const origin = req.headers.origin;
   if (origin) {
@@ -96,6 +110,9 @@ function checkApi(req) {
   }
   const site = req.headers["sec-fetch-site"];
   if (site && site !== "same-origin") throw fail(403, "Cross-site request refused.");
+  if (req.method !== "GET" && req.method !== "HEAD" && !authLib.equal(req.headers["x-csrf-token"] || "", await csrf(req, email))) {
+    throw fail(403, "Missing or expired security token. Reload the page (your edits stay in the form until you do).");
+  }
 }
 
 // --- data helpers ---------------------------------------------------------------------------------------
@@ -136,7 +153,15 @@ function mathProblems(doc) {
   }
   return out;
 }
-const publishProblems = (doc, others) => [...M.problems(doc, others), ...mathProblems(doc)];
+/**
+ * Everything that blocks Publish (or saving a live page): the basics first; once those pass, the config
+ * schema and its cross-checks, so a live page's config always validates.
+ */
+function publishProblems(doc, others) {
+  const basic = [...M.problems(doc, others), ...mathProblems(doc)];
+  if (basic.length) return basic;
+  return configcheck.validate(toolconfig.toConfig(doc), { doc, others, mode: "json" }).errors.map((e) => `${e.message}`);
+}
 
 async function makeCards(doc) {
   const og = {};
@@ -150,9 +175,60 @@ async function makeCards(doc) {
 }
 const cardInputs = (d) => JSON.stringify(M.LANGS.map((l) => [math.plain(d[l].title), subline(d, l)]));
 
+// --- saving --------------------------------------------------------------------------------------------
+const configOf = (doc) => toolconfig.toConfig(doc);
+/**
+ * Saves `next` over `prev`: rev + 1, atomically (refused if someone saved in between), and, when the
+ * config changes and a `source` is given, the previous config goes into the revisions first.
+ */
+async function commit(prev, next, { email, source = "", restoredFrom } = {}) {
+  const s = getStore();
+  next.rev = prev.rev + 1;
+  const before = toolconfig.configText(prev);
+  if (source && before !== toolconfig.configText(next)) {
+    const r = { n: prev.rev, savedAt: now(), savedBy: email, source, config: before };
+    if (restoredFrom) r.restoredFrom = restoredFrom;
+    await s.addRevision(prev.id, r); // the config as it was at rev n (the same n again = the same data)
+  }
+  try { await s.putIf(next, prev.rev); }
+  catch (e) { if (e.code === "stale") throw await staleError(prev.id, configOf(next)); throw e; }
+  return next;
+}
+/** 409: the resource changed since the editor loaded it. Carries the current config and what this save would change. */
+async function staleError(id, wanted) {
+  const cur = await getDoc(id);
+  const current = configOf(cur);
+  return fail(409, "This resource changed since you loaded it (another tab or device saved). Nothing was saved. Below: what your version would change compared with the current one.", {
+    stale: true, rev: cur.rev, current: toolconfig.configText(cur), diff: wanted ? configdiff.diff(current, wanted) : null,
+  });
+}
+function needRev(body, doc, wanted) {
+  if (typeof body.rev !== "number") throw fail(400, "The save didn't say which version it started from. Reload the page.");
+  if (body.rev !== doc.rev) return staleError(doc.id, wanted).then((e) => { throw e; });
+  return Promise.resolve();
+}
+/** validate() problems -> the form's { field, message, level, line, suggestion? } */
+function formProblems(r) {
+  const field = (p) => (p === "config" ? "json" : p.replace(/\[\d+\].*$/, "").replace(/^(en|es)\.(\w+).*$/, "$1.$2"));
+  const one = (level) => (e) => {
+    const out = { field: field(e.path), path: e.path, message: e.message, level, line: e.line };
+    const m = e.message.match(/Try "([a-z0-9-]+)"/);
+    if (m) out.suggestion = m[1];
+    return out;
+  };
+  return [...r.errors.map(one("error")), ...r.warnings.map(one("warning"))];
+}
+async function readText(req) {
+  const body = await readBody(req, CONFIG_MAX).catch((e) => { throw fail(413, `The request is over ${CONFIG_MAX / 1024} KB.`); });
+  let j;
+  try { j = JSON.parse(body.toString("utf8") || "{}"); } catch { throw fail(400, "Invalid JSON request."); }
+  if (typeof j.text !== "string") throw fail(400, 'Send {"text": "<the config>"}.');
+  return j;
+}
+
 // --- API --------------------------------------------------------------------------------------------
 async function api(req, res, pathname, email) {
-  checkApi(req);
+  await checkApi(req, email);
   const s = getStore();
   if (pathname === "/api/math" && req.method === "POST") {
     const { text } = await readJson(req);
@@ -167,6 +243,8 @@ async function api(req, res, pathname, email) {
   }
   const fm = pathname.match(/^\/api\/resources\/([a-z0-9]{10})\/files(?:\/([^/]+))?$/);
   if (fm) return filesApi(req, res, fm[1], fm[2], email);
+  const cm = pathname.match(/^\/api\/resources\/([a-z0-9]{10})\/(config\.json|config\/check|revisions(?:\/([0-9]{1,8}))?)$/);
+  if (cm) return configApi(req, res, cm[1], cm[2], cm[3] === undefined ? null : Number(cm[3]), email);
   const m = pathname.match(/^\/api\/resources\/([a-z0-9]{10})(?:\/(file|config|publish|unpublish))?$/);
   if (!m) throw fail(404, "Not found.");
   const [, id, action] = m;
@@ -177,7 +255,8 @@ async function api(req, res, pathname, email) {
 
   if (!action && req.method === "PUT") {
     const body = await readJson(req);
-    const next = edited(doc, body.doc);
+    let next = edited(doc, body.doc);
+    await needRev(body, doc, configOf(next));
     const slugErr = M.slugProblems(next, others).filter((p) => !/slug is required/.test(p) || doc.status !== "draft");
     if (slugErr.length) throw fail(400, slugErr.join(" "), { problems: slugErr });
     if (doc.status === "published") {
@@ -189,9 +268,9 @@ async function api(req, res, pathname, email) {
       if (cardInputs(next) !== cardInputs(doc) || !next.og.en || !next.og.es) next.og = await makeCards(next);
     }
     next.updatedAt = now();
-    await s.put(next);
+    next = await commit(doc, next, { email, source: "form" });
     if (doc.status !== "draft") await s.bump();
-    log("resource_saved", email, id, { status: next.status });
+    log("resource_saved", email, id, { status: next.status, source: "form" });
     return json(res, 200, { ok: true, doc: next, problems: publishProblems(next, others) });
   }
 
@@ -204,45 +283,38 @@ async function api(req, res, pathname, email) {
     const warnings = frame.analyze(text, { size: buf.length });
     const name = fileName(req);
     await s.writeObject(M.filePath(id, version), buf, "text/html; charset=utf-8");
-    const next = M.normalize({
+    let next = M.normalize({
       ...doc,
       file: { path: M.filePath(id, version), version, sizeBytes: buf.length, sha256: crypto.createHash("sha256").update(buf).digest("hex"), uploadedAt: now(), warnings, name },
       updatedAt: now(),
     });
-    await s.put(next);
+    next = await commit(doc, next, { email, source: "upload" });
     if (doc.status === "published") await s.bump();
     log("resource_file", email, id, { version, bytes: buf.length, name });
-    // the last config said which tool file it was for: say so if this one has another name
-    const lastCfg = doc.configs[doc.configs.length - 1];
-    const configProblems = lastCfg && lastCfg.file && name && toolconfig.baseName(lastCfg.file) !== name
-      ? [{ field: "file", level: "error", message: `The config ${lastCfg.name || ""} is for "${toolconfig.baseName(lastCfg.file)}", but the tool file is "${name}". Check that they belong together.` }] : [];
-    return json(res, 200, { ok: true, doc: next, warnings, scriptHosts: frame.scriptHostsOf(text), problems: publishProblems(next, others), configProblems });
+    return json(res, 200, { ok: true, doc: next, warnings, scriptHosts: frame.scriptHostsOf(text), problems: publishProblems(next, others), configProblems: [] });
   }
 
   if (action === "config" && req.method === "POST") {
-    // a tool's config JSON: kept as uploaded (download later), read, and mapped onto the form's fields.
-    // The page text is NOT saved here: the editor fills the form; Save / Publish save it.
-    const raw = await readBody(req, toolconfig.MAX_BYTES + 1);
+    // a tool pair's config JSON: checked against the schema (+ cross-checks) and mapped onto the form's
+    // fields. Nothing is saved here: the form is filled, and Save / Publish save it (with a revision).
+    const raw = await readBody(req, CONFIG_MAX + 1);
     let text;
     try { text = new TextDecoder("utf-8", { fatal: true }).decode(raw); }
     catch { throw fail(400, "The config isn't UTF-8 text.", { problems: [{ field: "json", level: "error", message: "The config isn't UTF-8 text." }] }); }
-    const name = fileName(req) || "config.json";
-    const htmlName = String(req.headers["x-html-name"] ? decodeURIComponent(req.headers["x-html-name"]) : (doc.file && doc.file.name) || "").slice(0, 200);
+    const header = (h) => { try { return decodeURIComponent(String(req.headers[h] || "")); } catch { return ""; } };
+    const htmlName = header("x-html-name").slice(0, 200) || (doc.file && doc.file.name) || "";
+    const pendingPdfs = header("x-pdf-names").split("/").map((x) => x.trim()).filter(Boolean).slice(0, M.MAX_FILES);
     const r = toolconfig.readConfig(text, { htmlName, others, selfId: id });
-    if (!r.ok && r.problems.some((p) => p.field === "json")) throw fail(400, r.problems[0].message, { problems: r.problems }); // not stored: it isn't JSON
-    const n = Math.max(0, ...doc.configs.map((c) => c.n)) + 1;
-    const cpath = `resources/${id}/config-${n}.json`;
-    await s.writeObject(cpath, raw, "application/json; charset=utf-8");
-    const entry = { n, path: cpath, name, file: r.file || "", fileVersion: (doc.file && doc.file.version) || 0, sizeBytes: raw.length, uploadedAt: now() };
-    const next = M.normalize({ ...doc, configs: [...doc.configs, entry] });
-    await s.put(next);
-    log("resource_config", email, id, { n, name, problems: r.problems.length });
-    return json(res, 200, { ok: true, doc: next, fields: r.fields, problems: r.problems, config: entry });
+    if (!r.ok && r.problems.some((p) => p.field === "json")) throw fail(400, r.problems[0].message, { problems: r.problems });
+    const v = configcheck.validate(text, { doc, others, mode: "upload", htmlName, pendingPdfs });
+    log("resource_config_read", email, id, { name: fileName(req), errors: v.errors.length, warnings: v.warnings.length });
+    return json(res, 200, { ok: true, doc, fields: r.fields, problems: formProblems(v), valid: v.ok });
   }
 
   if (action === "publish" && req.method === "POST") {
     const body = await readJson(req);
-    const next = body.doc ? edited(doc, body.doc) : doc;
+    let next = body.doc ? edited(doc, body.doc) : M.normalize({ ...doc });
+    if (body.doc) await needRev(body, doc, configOf(next));
     const probs = publishProblems(next, others);
     if (probs.length) throw fail(400, "Not ready to publish.", { problems: probs });
     if (body.checked !== true) throw fail(400, 'Tick "I checked the formulas and the Spanish" first.');
@@ -251,7 +323,7 @@ async function api(req, res, pathname, email) {
     next.publishedAt = doc.publishedAt || now();
     next.updatedAt = now();
     next.checkedAt = now();
-    await s.put(next);
+    next = await commit(doc, next, { email, source: "form" });
     await s.bump();
     log("resource_published", email, id, { slugEn: next.slugEn, slugEs: next.slugEs });
     return json(res, 200, { ok: true, doc: next, problems: [] });
@@ -259,8 +331,7 @@ async function api(req, res, pathname, email) {
 
   if (action === "unpublish" && req.method === "POST") {
     if (doc.status !== "published") throw fail(400, "It isn't published.");
-    const next = { ...doc, status: "unpublished", updatedAt: now() };
-    await s.put(next);
+    const next = await commit(doc, M.normalize({ ...doc, status: "unpublished", updatedAt: now() }), { email });
     await s.bump();
     log("resource_unpublished", email, id);
     return json(res, 200, { ok: true, doc: next, problems: publishProblems(next, others) });
@@ -278,14 +349,67 @@ async function api(req, res, pathname, email) {
   throw fail(405, "Method not allowed.");
 }
 
+/** The Config (.json) tab: read, check, save, history. */
+async function configApi(req, res, id, what, n, email) {
+  const s = getStore();
+  const doc = await getDoc(id);
+  const others = (await all()).filter((d) => d.id !== id);
+  const ctx = { doc, others, mode: "json" };
+
+  if (what === "config.json" && req.method === "GET") {
+    return json(res, 200, { ok: true, text: toolconfig.configText(doc), rev: doc.rev, status: doc.status });
+  }
+  if (what === "config/check" && req.method === "POST") {
+    const { text } = await readText(req);
+    const v = configcheck.validate(text, ctx);
+    const parsed = v.config && typeof v.config === "object" && !Array.isArray(v.config) ? v.config : null;
+    return json(res, 200, { ok: true, valid: v.ok, errors: v.errors, warnings: v.warnings, diff: parsed ? configdiff.diff(configOf(doc), parsed) : null, rev: doc.rev });
+  }
+  if (what === "config.json" && req.method === "PUT") {
+    const body = await readText(req);
+    const source = ["json", "upload"].includes(body.source) ? body.source : "json";
+    const restoredFrom = Number.isInteger(body.restoredFrom) ? body.restoredFrom : undefined;
+    let parsed = null;
+    try { parsed = JSON.parse(body.text); } catch {}
+    await needRev(body, doc, parsed);
+    const v = configcheck.validate(body.text, ctx);
+    if (!v.ok) throw fail(400, `The config has ${v.errors.length} error${v.errors.length === 1 ? "" : "s"}. Nothing was saved.`, { errors: v.errors, warnings: v.warnings });
+    let next = configcheck.apply(doc, v.config);
+    if (toolconfig.configText(next) === toolconfig.configText(doc)) return json(res, 200, { ok: true, unchanged: true, doc, text: toolconfig.configText(doc), rev: doc.rev });
+    if (doc.status === "published") {
+      const probs = publishProblems(next, others);
+      if (probs.length) throw fail(400, "This resource is live, so the changes must be complete before saving.", { problems: probs });
+      if (body.checked !== true) throw fail(400, 'Tick "I checked the formulas and the Spanish" to update the live page.');
+      next.checkedAt = now();
+      if (cardInputs(next) !== cardInputs(doc) || !next.og.en || !next.og.es) next.og = await makeCards(next);
+    }
+    next.updatedAt = now();
+    next = await commit(doc, next, { email, source, restoredFrom });
+    if (doc.status !== "draft") await s.bump();
+    log("resource_saved", email, id, { status: next.status, source, restoredFrom });
+    return json(res, 200, { ok: true, doc: next, text: toolconfig.configText(next), rev: next.rev, warnings: v.warnings });
+  }
+  if (what === "revisions" && req.method === "GET") {
+    const list = await s.listRevisions(id, 20);
+    return json(res, 200, { ok: true, revisions: list.map((r) => ({ n: r.n, savedAt: r.savedAt, savedBy: r.savedBy, source: r.source, restoredFrom: r.restoredFrom })) });
+  }
+  if (what.startsWith("revisions/") && req.method === "GET") {
+    const r = await s.getRevision(id, n);
+    if (!r) throw fail(404, "No such revision.");
+    let cfg = null;
+    try { cfg = JSON.parse(r.config); } catch {}
+    return json(res, 200, { ok: true, revision: r, diff: cfg ? configdiff.diff(cfg, configOf(doc)) : null });
+  }
+  throw fail(405, "Method not allowed.");
+}
+
 /** PDFs: upload / replace one, delete one, or set the list (order, labels, files still to upload). */
 async function filesApi(req, res, id, name, email) {
   const s = getStore();
   const doc = await getDoc(id);
   const others = (await all()).filter((d) => d.id !== id);
   const save = async (files, event, extra) => {
-    const next = M.normalize({ ...doc, files, updatedAt: now() });
-    await s.put(next);
+    const next = await commit(doc, M.normalize({ ...doc, files, updatedAt: now() }), { email, source: "form" });
     if (doc.status === "published") await s.bump();
     log(event, email, id, extra);
     return json(res, 200, { ok: true, doc: next, problems: publishProblems(next, others) });
@@ -364,13 +488,14 @@ function fileName(req) {
 const log = (event, email, id, extra = {}) => console.log(JSON.stringify({ event, admin: email, id, ...extra }));
 
 // --- pages ----------------------------------------------------------------------------------------
-const layout = (title, body, { script = true } = {}) => `<!DOCTYPE html>
+const layout = (title, body, { script = true, token = "", scripts = [] } = {}) => `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>${esc(title)} · Resources admin</title>
+${token ? `<meta name="csrf-token" content="${esc(token)}">\n` : ""}
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <link rel="stylesheet" href="/ui/katex/katex.min.css">
@@ -381,7 +506,7 @@ const layout = (title, body, { script = true } = {}) => `<!DOCTYPE html>
 <main>
 ${body}
 </main>
-${script ? '<script src="/ui/admin.js"></script>' : ""}
+${scripts.map((src) => `<script src="${src}"></script>`).join("\n")}${scripts.length ? "\n" : ""}${script ? '<script src="/ui/admin.js"></script>' : ""}
 </body>
 </html>
 `;
@@ -389,7 +514,7 @@ ${script ? '<script src="/ui/admin.js"></script>' : ""}
 const STATUS_LABEL = { draft: "Draft", published: "Published", unpublished: "Unpublished" };
 const live = (p) => `https://josediaztutoring.com${p}`;
 
-async function listPage(res) {
+async function listPage(res, token) {
   const docs = render.newest(await all()).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const rows = docs.map((d) => `<li class="row">
     <div class="row-main">
@@ -408,7 +533,7 @@ async function listPage(res) {
   </li>`).join("\n");
   page(res, layout("Resources", `<div class="head-row"><h1>Resources</h1><button type="button" class="btn btn-primary" id="new-resource">New resource</button></div>
 <p class="msg" id="msg" role="status" aria-live="polite"></p>
-${docs.length ? `<ul class="rows">\n${rows}\n</ul>` : '<p class="empty">No resources yet. Click <b>New resource</b> and drop an HTML file.</p>'}`));
+${docs.length ? `<ul class="rows">\n${rows}\n</ul>` : '<p class="empty">No resources yet. Click <b>New resource</b> and drop an HTML file.</p>'}`, { token }));
 }
 
 function field(lang, key, label, value, { textarea = false, rows = 3, hint = "", counter = 0, math: hasMath = false } = {}) {
@@ -450,7 +575,7 @@ const faqItem = (lang, f) => `<div class="faq-item">
         <button type="button" class="btn btn-small btn-quiet remove-faq">Remove</button>
       </div>`;
 
-async function editPage(res, id) {
+async function editPage(res, id, token) {
   const doc = await getDoc(id);
   const others = (await all()).filter((d) => d.id !== id);
   const probs = publishProblems(doc, others);
@@ -478,7 +603,7 @@ async function editPage(res, id) {
   <ul class="warnings" id="warnings">${f ? f.warnings.map((w) => `<li>${esc(w)}</li>`).join("") : ""}</ul>
   <ul class="cfg-problems" id="cfg-file-problems"></ul>
   <div class="configs" id="configs"${doc.configs.length ? "" : " hidden"}>
-    <span class="label">Config files</span>
+    <span class="label">Config files uploaded before the editor (read-only)</span>
     <ul id="config-list">${[...doc.configs].reverse().map((c) => configItem(doc.id, c)).join("")}</ul>
   </div>
   <div class="tool-preview" id="tool-preview"${f ? "" : " hidden"}>
@@ -488,7 +613,44 @@ async function editPage(res, id) {
   </div>
 </section>
 
-<section class="card" aria-labelledby="files-h" id="files-card">
+<div class="tabs" role="tablist" aria-label="Edit as">
+  <button type="button" role="tab" class="tab" id="tab-form" aria-selected="true" aria-controls="files-card edit">Form</button>
+  <button type="button" role="tab" class="tab" id="tab-json" aria-selected="false" aria-controls="json-panel">Config (.json)</button>
+</div>
+
+<section class="card" id="json-panel" role="tabpanel" aria-labelledby="tab-json" hidden>
+  <h2>Config (.json)</h2>
+  <p class="hint">Everything on this resource's page except the tool and the PDF files, in the upload format (<code>docs/resources-tool-guide.md</code>). Generated from the live data each time you open this tab. <code>file</code> and <code>version</code> are read-only; PDFs are added and removed in the Form tab (here: labels and order).</p>
+  <div class="json-bar">
+    <button type="button" class="btn" id="json-validate">Validate</button>
+    <button type="button" class="btn btn-primary" id="json-save" disabled>Save…</button>
+    <a class="btn" id="json-download" href="/download/${doc.id}/config.json" download>Download .json</a>
+    <button type="button" class="btn" id="json-load">Upload .json</button>
+    <button type="button" class="btn btn-quiet" id="json-reload">Discard changes</button>
+    <input type="file" id="json-file" accept=".json,application/json" hidden>
+  </div>
+  <p class="json-status" id="json-status" role="status" aria-live="polite"></p>
+  <div class="json-editor" id="json-editor"></div>
+  <ul class="json-problems" id="json-problems"></ul>
+  <h3 class="json-h3">History</h3>
+  <p class="hint">Each save keeps the config as it was before it (last 20). Restore loads one into the editor; you then validate, check the diff and save.</p>
+  <ol class="json-history" id="json-history"></ol>
+</section>
+
+<dialog class="json-dialog" id="json-dialog" aria-labelledby="json-dialog-h">
+  <form method="dialog" class="json-dialog-in">
+    <h2 id="json-dialog-h">Review the changes</h2>
+    <p class="json-dialog-note" id="json-dialog-note"></p>
+    <div class="json-diff" id="json-diff"></div>
+    <label class="check big" id="json-dialog-check-row"><input type="checkbox" id="json-dialog-check"> I checked the formulas and the Spanish</label>
+    <div class="buttons">
+      <button type="button" class="btn btn-primary" id="json-dialog-ok">Save</button>
+      <button type="submit" class="btn" value="cancel">Cancel</button>
+    </div>
+  </form>
+</dialog>
+
+<section class="card" aria-labelledby="files-h" id="files-card" role="tabpanel">
   <h2 id="files-h">Files (printable PDFs)</h2>
   <p class="hint">Shown on the page under “How to use it”, in this order, and linked at <code>/resources/&lt;EN slug&gt;/files/&lt;name&gt;</code> (the Spanish page links there too). Replacing a file keeps its URL. Drop PDFs in the box above, or use Replace on a row.</p>
   <div class="files-check" id="files-check" role="status" aria-live="polite" hidden></div>
@@ -500,7 +662,7 @@ async function editPage(res, id) {
 
 <div class="banner" id="cfg-banner" role="status" aria-live="polite" hidden></div>
 
-<form id="edit" class="card" novalidate>
+<form id="edit" class="card" novalidate role="tabpanel" aria-labelledby="tab-form">
   <h2>Page text</h2>
   <!-- phase2:draft-with-claude (button + "Notes for Claude" go here) -->
   <div class="cols">
@@ -536,10 +698,17 @@ async function editPage(res, id) {
   <p class="msg" id="msg" role="status" aria-live="polite"></p>
   <p class="live-links" id="live-links">${doc.status === "published" ? `Live: <a href="${live(M.pathOf(doc, "en"))}" target="_blank" rel="noopener">${esc(M.pathOf(doc, "en"))}</a> · <a href="${live(M.pathOf(doc, "es"))}" target="_blank" rel="noopener">${esc(M.pathOf(doc, "es"))}</a>` : ""}</p>
 </section>`;
-  page(res, layout(doc.en.title || "New resource", body));
+  page(res, layout(doc.en.title || "New resource", body, { token, scripts: ["/ui/codemirror.js", "/ui/config-editor.js"] }));
 }
 
 const configItem = (id, c) => `<li><a href="/download/${id}/config/${c.n}" download>${esc(c.name || `config-${c.n}.json`)}</a> <span class="hint">· for ${esc(c.file || "?")} · tool v${c.fileVersion || "–"} · ${esc(c.uploadedAt.slice(0, 16).replace("T", " "))} UTC</span></li>`;
+
+/** The current config, as a .json file (so a local copy can match the live one). */
+async function downloadCurrentConfig(res, id) {
+  const doc = await getDoc(id);
+  const name = `${doc.slugEn || doc.id}.json`.replace(/[^\w.-]/g, "_");
+  send(res, 200, { "Content-Type": "application/json; charset=utf-8", "Content-Disposition": `attachment; filename="${name}"` }, toolconfig.configText(doc));
+}
 
 async function downloadConfig(res, id, n) {
   const doc = await getDoc(id);
@@ -570,7 +739,10 @@ async function adminFrame(res, id, version) {
   send(res, 200, { ...frame.FRAME_HEADERS, "Cache-Control": "no-store" }, frame.inject(buf.toString("utf8")));
 }
 
-const STATIC = { "/ui/admin.css": "text/css; charset=utf-8", "/ui/admin.js": "text/javascript; charset=utf-8" };
+const STATIC = {
+  "/ui/admin.css": "text/css; charset=utf-8", "/ui/admin.js": "text/javascript; charset=utf-8",
+  "/ui/config-editor.js": "text/javascript; charset=utf-8", "/ui/codemirror.js": "text/javascript; charset=utf-8",
+};
 
 async function handle(req, res) {
   const url = new URL(req.url || "/", "http://x");
@@ -601,9 +773,10 @@ async function handle(req, res) {
       return send(res, 200, { "Content-Type": type, "Cache-Control": "public, max-age=86400" }, fs.readFileSync(path.join(KATEX_DIST, m0[1])));
     }
     if (STATIC[p]) return send(res, 200, { "Content-Type": STATIC[p], "Cache-Control": "no-cache" }, fs.readFileSync(path.join(UI, path.basename(p))));
-    if (p === "/") return await listPage(res);
+    if (p === "/") return await listPage(res, await csrf(req, email));
     let m;
-    if ((m = p.match(/^\/edit\/([a-z0-9]{10})$/))) return await editPage(res, m[1]);
+    if ((m = p.match(/^\/edit\/([a-z0-9]{10})$/))) return await editPage(res, m[1], await csrf(req, email));
+    if ((m = p.match(/^\/download\/([a-z0-9]{10})\/config\.json$/))) return await downloadCurrentConfig(res, m[1]);
     if ((m = p.match(/^\/preview\/([a-z0-9]{10})\/(en|es)$/))) return await previewPage(req, res, m[1], m[2]);
     if ((m = p.match(/^\/frame\/([a-z0-9]{10})\/v([0-9]{1,6})$/))) return await adminFrame(res, m[1], Number(m[2]));
     if ((m = p.match(/^\/download\/([a-z0-9]{10})\/config\/([0-9]{1,4})$/))) return await downloadConfig(res, m[1], Number(m[2]));
@@ -633,4 +806,5 @@ module.exports = {
   _setStore: (s) => { store = s; },
   _setCards: (c) => { cards = () => c; },
   _setAuth: (fn) => { auth = fn; },
+  _csrfToken: (email) => csrf({ headers: {} }, email), // tests: the token for a stubbed sign-in
 };

@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "file": "trigonometry-playground.html",
+  "subject": "geometry-trig",
+  "levels": [
+    "high-school",
+    "college"
+  ],
+  "courseTags": [
+    "Geometry",
+    "Algebra 2",
+    "Precalculus",
+    "College Algebra"
+  ],
+  "en": {
+    "title": "Trigonometry playground: unit circle and right triangles",
+    "slug": "trigonometry-playground",
+    "description": "Drag the angle on the unit circle, solve right triangles with SOH-CAH-TOA, then practice with hints and step-by-step solutions. Free, no sign-up.",
+    "intro": "Trigonometry makes sense once you can see it. Move the angle and watch sine, cosine and tangent change on the unit circle, with the formula and the numbers shown at every step.\n\nThen switch to practice. Three levels take you from SOH-CAH-TOA to inverse trig and equations, and a wrong answer gets you a hint, not just a red X.",
+    "howTo": [
+      "Start on Unit circle: drag the dot P, or type an angle in degrees or radians (like 150 or 5π/6).",
+      "Watch the blue segment (sin), the orange segment (cos) and the grey segment (tan) change, along with the formulas on the right.",
+      "Open Right triangle: drag point B, pick sin, cos or tan, and choose a side to find.",
+      "Go to Practice and pick a level. A wrong answer opens a hint, then a second hint, then the worked solution.",
+      "Tap Copy link in the top bar to share the exact angle or problem you're looking at."
+    ],
+    "keyIdeas": [
+      "On the unit circle, $P = (\\cos\\theta, \\sin\\theta)$ and $\\tan\\theta = \\frac{y}{x}$.",
+      "SOH-CAH-TOA: $\\sin\\theta = \\frac{\\text{opp}}{\\text{hyp}}$, $\\cos\\theta = \\frac{\\text{adj}}{\\text{hyp}}$, $\\tan\\theta = \\frac{\\text{opp}}{\\text{adj}}$.",
+      "The quadrant sets the sign: in Quadrant II only sine is positive, in III only tangent, in IV only cosine.",
+      "The reference angle is the acute angle to the x-axis. It gives the value; the quadrant gives the sign.",
+      "$180^\\circ = \\pi$ radians. Set your calculator to the same units as the problem."
+    ],
+    "faq": [
+      {
+        "q": "Why is tan 90° undefined?",
+        "a": "At 90°, the point on the unit circle is (0, 1), so x = cos θ = 0. Since tan θ = y/x, you'd be dividing by zero."
+      },
+      {
+        "q": "Should I use degrees or radians?",
+        "a": "Use whatever the problem uses, and set your calculator to match. In radian mode, a calculator reads sin(30) as 30 radians and gives −0.988, not 0.5."
+      },
+      {
+        "q": "What is a reference angle?",
+        "a": "The acute angle between the angle's terminal side and the x-axis. For 150° it's 30°, so sin 150° has the same size as sin 30°. Quadrant II makes it positive."
+      },
+      {
+        "q": "Which classes does this cover?",
+        "a": "Right-triangle trigonometry from Geometry, and the unit circle, radians, inverse trig and trig equations from Algebra 2, Precalculus and College Algebra."
+      },
+      {
+        "q": "Does it work on my phone?",
+        "a": "Yes. You can drag the point with your finger, and the practice problems have buttons for √, π and fractions."
+      }
+    ],
+    "keywords": [
+      "unit circle",
+      "SOH-CAH-TOA",
+      "trigonometry practice",
+      "reference angle",
+      "radians to degrees",
+      "inverse trig",
+      "exact trig values"
+    ]
+  },
+  "es": {
+    "title": "Laboratorio de trigonometría: círculo unitario y triángulos rectángulos",
+    "slug": "laboratorio-de-trigonometria",
+    "description": "Mueve el ángulo en el círculo unitario, resuelve triángulos rectángulos con SOH-CAH-TOA y practica con pistas y soluciones paso a paso. Gratis.",
+    "intro": "La trigonometría tiene sentido cuando la ves. Mueve el ángulo y mira cómo cambian el seno, el coseno y la tangente en el círculo unitario, con la fórmula y los números en cada paso.\n\nDespués pasa a la práctica. Tres niveles te llevan de SOH-CAH-TOA a la trigonometría inversa y las ecuaciones, y si te equivocas recibes una pista, no solo una X roja.",
+    "howTo": [
+      "Empieza en Círculo unitario: arrastra el punto P o escribe un ángulo en grados o radianes (como 150 o 5π/6).",
+      "Mira cómo cambian el segmento azul (sin), el naranja (cos) y el gris (tan), junto con las fórmulas de la derecha.",
+      "Abre Triángulo rectángulo: arrastra el punto B, elige sin, cos o tan, y escoge el lado que quieres hallar.",
+      "Ve a Práctica y elige un nivel. Si fallas, se abre una pista, luego otra y después la solución paso a paso.",
+      "Toca Copiar enlace en la barra de arriba para compartir el ángulo o el problema exacto que estás viendo."
+    ],
+    "keyIdeas": [
+      "En el círculo unitario, $P = (\\cos\\theta, \\sin\\theta)$ y $\\tan\\theta = \\frac{y}{x}$.",
+      "SOH-CAH-TOA: $\\sin\\theta = \\frac{\\text{op}}{\\text{hip}}$, $\\cos\\theta = \\frac{\\text{ady}}{\\text{hip}}$, $\\tan\\theta = \\frac{\\text{op}}{\\text{ady}}$.",
+      "El cuadrante decide el signo: en el cuadrante II solo el seno es positivo, en el III solo la tangente y en el IV solo el coseno.",
+      "El ángulo de referencia es el ángulo agudo con el eje x. Él te da el valor; el cuadrante te da el signo.",
+      "$180^\\circ = \\pi$ radianes. Pon la calculadora en las mismas unidades que el problema."
+    ],
+    "faq": [
+      {
+        "q": "¿Por qué tan 90° no está definida?",
+        "a": "En 90°, el punto del círculo unitario es (0, 1), así que x = cos θ = 0. Como tan θ = y/x, estarías dividiendo entre cero."
+      },
+      {
+        "q": "¿Uso grados o radianes?",
+        "a": "Los que use el problema, y pon la calculadora en el mismo modo. En modo radianes, la calculadora lee sin(30) como 30 radianes y da −0.988, no 0.5."
+      },
+      {
+        "q": "¿Qué es el ángulo de referencia?",
+        "a": "El ángulo agudo entre el lado terminal y el eje x. Para 150° es 30°, así que sin 150° tiene el mismo tamaño que sin 30°. El cuadrante II lo hace positivo."
+      },
+      {
+        "q": "¿Para qué clases sirve?",
+        "a": "Para la trigonometría de triángulos rectángulos de Geometry, y para el círculo unitario, los radianes, la trigonometría inversa y las ecuaciones de Algebra 2, Precalculus y College Algebra."
+      },
+      {
+        "q": "¿Funciona en el celular?",
+        "a": "Sí. Puedes arrastrar el punto con el dedo, y los problemas de práctica tienen botones para √, π y fracciones."
+      }
+    ],
+    "keywords": [
+      "círculo unitario",
+      "SOH-CAH-TOA",
+      "práctica de trigonometría",
+      "ángulo de referencia",
+      "radianes a grados",
+      "trigonometría inversa",
+      "valores exactos"
+    ]
+  }
+}

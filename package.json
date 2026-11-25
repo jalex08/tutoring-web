@@ -11,7 +11,9 @@
     "admin:dev": "cd admin && DEV_NO_IAP=1 RESOURCES_DIR=../.dev-data/resources node server.js",
     "test": "node scripts/build.js --check && node scripts/smoke-test.js && node scripts/resources-test.js && node scripts/admin-ui-test.js && node scripts/resource-bar-test.js",
     "indexnow": "node scripts/indexnow.js",
-    "check-exams": "node scripts/check-exams.js data/exams/2026-27.json"
+    "check-exams": "node scripts/check-exams.js data/exams/2026-27.json",
+    "export-configs": "node scripts/export-configs.js",
+    "build:codemirror": "node scripts/codemirror/build.js"
   },
   "engines": {
     "node": "22.x"
@@ -19,5 +21,15 @@
   "dependencies": {
     "katex": "0.19.1",
     "nodemailer": "10.3.1"
+  },
+  "devDependencies": {
+    "@codemirror/commands": "6.9.0",
+    "@codemirror/lang-json": "6.0.2",
+    "@codemirror/language": "6.11.3",
+    "@codemirror/search": "6.5.11",
+    "@codemirror/state": "6.5.2",
+    "@codemirror/view": "6.38.6",
+    "ajv": "8.20.0",
+    "esbuild": "0.25.10"
   }
 }
