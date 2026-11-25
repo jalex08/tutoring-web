@@ -101,6 +101,30 @@ function sample(over = {}) {
     assert.equal(M.fileUrl(sample(), "PHY_A.pdf"), "/resources/unit-circle/files/PHY_A.pdf");
     assert.equal(pdfs.sizeLabel(239616), "234 KB"); assert.equal(pdfs.sizeLabel(2737890), "2.6 MB"); assert.equal(pdfs.sizeLabel(2737890, "es"), "2,6 MB"); assert.equal(pdfs.sizeLabel(10), "1 KB");
   });
+  await check("toConfig: a stored resource -> its config in the upload format; round-trips through readConfig", () => {
+    const fx = JSON.parse(fs.readFileSync(path.join(ROOT, "test/fixtures/trigonometry-playground.json"), "utf8"));
+    const full = { ...fx, relatedExamPage: "/exams/", related: ["projectile-motion-lab"], files: [{ file: "Unit_Circle.pdf", en: "Unit circle", es: "Círculo unitario" }] };
+    const r = toolconfig.readConfig(JSON.stringify(full));
+    assert.ok(r.ok, JSON.stringify(r.problems.filter((p) => p.level === "error")));
+    const f = r.fields;
+    const doc = M.normalize({
+      id: "abcdefghij", status: "published", slugEn: f.slugEn, slugEs: f.slugEs, en: f.en, es: f.es, subject: f.subject, levels: f.levels,
+      courseTags: f.courseTags, relatedExamPage: f.relatedExamPage, related: f.related,
+      files: f.files.map((x) => ({ ...x, path: "resources/abcdefghij/files/x.pdf" })),
+      file: { path: "p", version: 3, name: "trigonometry-playground.html" },
+    });
+    const out = toolconfig.toConfig(doc);
+    const sortKeys = (v) => (Array.isArray(v) ? v.map(sortKeys) : v && typeof v === "object" ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, sortKeys(v[k])])) : v);
+    assert.deepEqual(sortKeys(out), sortKeys(full));
+    assert.deepEqual(Object.keys(out), ["version", "file", "subject", "levels", "courseTags", "relatedExamPage", "related", "files", "en", "es"]);
+    assert.ok(toolconfig.configText(doc).endsWith("}\n"));
+    // optional keys left out when empty; a resource with no tool file yet has file ""
+    const bare = toolconfig.toConfig(M.normalize({ id: "x", slugEn: "a", slugEs: "b" }));
+    assert.deepEqual(Object.keys(bare), ["version", "file", "subject", "levels", "courseTags", "en", "es"]);
+    assert.equal(bare.file, "");
+    // an exam page that isn't one of the site's is named, not kept
+    assert.match(toolconfig.readConfig(JSON.stringify({ ...fx, relatedExamPage: "/nope/" })).problems.map((p) => p.message).join(), /relatedExamPage "\/nope\/" isn't one of/);
+  });
   await check("config `files`: labels and order from the JSON; bad, duplicate and unlabeled entries named", () => {
     const fx = JSON.parse(fs.readFileSync(path.join(ROOT, "test/fixtures/trigonometry-playground.json"), "utf8"));
     assert.equal(toolconfig.readConfig(JSON.stringify(fx)).fields.files, undefined, "no files key: list left alone");
