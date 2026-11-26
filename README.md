@@ -23,6 +23,7 @@ i18n/es.js        Spanish text for /es/ and the legal pages (one entry per data-
 pages/            English legal pages, built into www/ (never uploaded)     <- edit
   privacy.html, terms.html, accessibility.html
   legal.css       their extra CSS
+  book.html, book.css, book.js   online booking page (Cal.com embed), see "Online booking"
 docs/
   legal-pages-preview.html   approved design/text mockup (reference only, not deployed)
 scripts/
@@ -357,6 +358,7 @@ The page pushes these events to the `dataLayer` (no names, emails or messages):
 | Event | When | Parameters |
 |---|---|---|
 | `generate_lead` | booking form sent successfully | `form_name`, `student_level`, `page_language` |
+| `generate_lead` | a call booked in the Cal.com scheduler on `/book/` or `/es/reservar/` (its `bookingSuccessfulV2` event) | `contact_method` (`cal_booking`), `page_language` |
 | `contact_click` | WhatsApp, phone or email link clicked | `contact_method`, `link_location`, `page_language` |
 | `resource_link_copy` | Share on a tool page (share sheet or copied link) | `resource_id`, `has_state`, `method` (`share`/`copy`), `page_language` |
 | `resource_fullscreen` | Full screen on a tool page | `resource_id`, `page_language` |
@@ -375,6 +377,7 @@ Mark `generate_lead` as a key event in GA4. Preview mode shows the events firing
 | `/es/` | private, 10 min | `server.js` (prices filled in) |
 | `/exams/` | private, revalidated every visit (`Vary: Cookie`) | `server.js`; with `lang=es` it 302s to `/es/examenes/`. The other exam pages: 10 min |
 | `/privacy/`, `/terms/`, `/accessibility/`, `/es/privacidad/`, `/es/terminos/`, `/es/accesibilidad/` | private, 10 min | `server.js` (built files; not static, so they can re-send the `lang` cookie) |
+| `/book/`, `/es/reservar/` | private, 10 min (`/book/` revalidated, `Vary: Cookie`) | `server.js` (built files); `/book/` with `lang=es` 302s to `/es/reservar/`; `/book`, `/book.html` 301 to `/book/` |
 | the same without the trailing slash, or as `/privacy.html` | 1 hour | `server.js`: 301 to the slash URL |
 | `/og-image.png`, favicons | 7 days | static |
 | `/robots.txt` | 10 min | static |
@@ -403,7 +406,27 @@ Every handler: `secure: always` (HTTP → 301 to HTTPS), `Strict-Transport-Secur
 `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`.
 There is deliberately **no Content-Security-Policy**: the page uses inline
 `<script>`/`<style>` and Google Fonts, and a strict CSP would break the language
-toggle, the form and the WhatsApp button.
+toggle, the form and the WhatsApp button. If one is ever added, the booking page's
+Cal.com embed needs `https://app.cal.com` in `script-src` and `frame-src`.
+
+## Online booking (Cal.com)
+
+`/book/` and `/es/reservar/` show the Cal.com event `josediaztutoring/20min` with Cal's
+official inline embed. Every "Book a free intro" / "Llamada gratis" CTA (header, mobile
+bar, hero, exam pages, resource pages) links there; the home-page form (`#contact`) is
+unchanged and the page links back to it and to WhatsApp.
+
+- Source: `pages/book.html` (English, `data-i18n`), Spanish in `i18n/es.js` (keys `bk*`),
+  plus `pages/book.css` and `pages/book.js` (the embed). `npm run build` writes
+  `www/book.html` and `www/es/reservar.html`, adds both to the sitemap and stops if
+  their section ids differ (the EN/ES switch keeps the section).
+- `pages/book.js`: light theme, `cal-brand` #1C4C9E; `utm_*` from the page URL are
+  passed to the booking (nothing else from the URL); `bookingSuccessfulV2` pushes
+  `generate_lead` with `contact_method: "cal_booking"`, once per booking, no personal data.
+- Language: Cal.com documents no way to set the scheduler's language in an embed. It
+  follows the visitor's browser language, so `/es/reservar/` can show it in English.
+- Change the event (link, length, questions, availability) in Cal.com; the site needs no
+  change unless the link `josediaztutoring/20min` changes (`LINK` in `pages/book.js`).
 
 ## Google Cloud
 

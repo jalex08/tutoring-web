@@ -159,7 +159,7 @@ function resourcePage({ doc, lang, shell, all = [], preview = false, frameBase =
   const fullTitle = `${title} — ${S.titleSuffix} | Jose Diaz Tutoring`;
   const image = ogUrl(doc, lang);
   const libPath = BASE[lang];
-  const book = `${homeOf(lang)}#contact`;
+  const book = lang === "es" ? "/es/reservar/" : "/book/"; // the online booking page (Cal.com)
   const texts = [t.intro, ...t.howTo, ...t.keyIdeas, ...t.faq.flatMap((f) => [f.q, f.a])];
   const katex = texts.some(math.hasMath);
 
