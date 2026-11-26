@@ -146,6 +146,7 @@ srv.listen(0, async () => {
     ["/exams/", "es", 302, "/es/examenes/"], ["/exams/?for=hs9", "es", 302, "/es/examenes/?for=hs9"], ["/exams/", "en", 200], ["/exams/", null, 200],
     ["/es/", "es", 200], ["/es/", "en", 200], ["/es/examenes/", "es", 200], ["/exams/algebra-1-eoc/", "es", 200],
     ["/privacy/", "es", 200], ["/terms/", "es", 200], ["/?lang=es&topic=calculus", "en", 301, "/es/?topic=calculus"],
+    ["/book/", "es", 302, "/es/reservar/"], ["/book/?utm_source=x", "es", 302, "/es/reservar/?utm_source=x"], ["/book/", "en", 200], ["/es/reservar/", "es", 200],
   ]) {
     await check(`${p} ${cookieVal ? "lang=" + cookieVal : "no cookie"} -> ${status}${to ? " " + to : ""}`, async () => {
       for (const method of ["GET", "HEAD"]) {
@@ -161,12 +162,12 @@ srv.listen(0, async () => {
   }
   // Fix for Safari's 7-day limit on JS-set cookies: every HTML page re-sends a valid lang cookie
   const html = ["/", "/es/", "/exams/", "/exams/algebra-1-eoc/", "/es/examenes/", "/es/examenes/eoc-algebra-1/",
-    "/privacy/", "/terms/", "/accessibility/", "/es/privacidad/", "/es/terminos/", "/es/accesibilidad/", "/nope"];
+    "/privacy/", "/terms/", "/accessibility/", "/es/privacidad/", "/es/terminos/", "/es/accesibilidad/", "/book/", "/es/reservar/", "/nope"];
   const SET = (v) => `lang=${v}; Path=/; Max-Age=31536000; Secure; SameSite=Lax`;
   for (const p of html) {
     await check(`${p}: HTML private; Set-Cookie only echoes a valid lang cookie`, async () => {
       for (const [c, want] of [[null, null], ["en", SET("en")], ["es", SET("es")], ["fr", null]]) {
-        if (c === "es" && (p === "/" || p === "/exams/")) continue; // those 302 (checked above)
+        if (c === "es" && (p === "/" || p === "/exams/" || p === "/book/")) continue; // those 302 (checked above)
         const r = await get(p, c ? withLang(c) : {});
         assert.match(r.headers.get("content-type"), /^text\/html/);
         assert.match(r.headers.get("cache-control"), /^private/, `${p} ${c}`);
@@ -483,6 +484,72 @@ srv.listen(0, async () => {
     assert.ok(h.includes("Independent tutoring service.") && h.includes("Servicio independiente de tutorías."));
   });
   // ---- exam calendar ------------------------------------------------------------------------------
+  console.log("booking page (Cal.com inline embed)");
+  const BOOK = { en: "/book/", es: "/es/reservar/" };
+  for (const p of ["/book", "/book.html", "/book/index.html", "/es/reservar", "/es/reservar.html", "/es/reservar/index.html"]) {
+    await check(`${p} -> 301 ${p.startsWith("/es") ? BOOK.es : BOOK.en}`, async () => {
+      const r = await get(p);
+      assert.equal(r.status, 301);
+      assert.equal(r.headers.get("location"), p.startsWith("/es") ? BOOK.es : BOOK.en);
+    });
+  }
+  const bookHtml = {};
+  for (const lang of ["en", "es"]) bookHtml[lang] = await (await get(BOOK[lang])).text();
+  await check("booking pages: language, H1, canonical + hreflang pair, EN/ES switch links to the twin", () => {
+    for (const lang of ["en", "es"]) {
+      const h = bookHtml[lang];
+      assert.match(h, new RegExp(`<html lang="${lang}">`));
+      assert.match(h, lang === "es" ? /<h1[^>]*>Agenda tu llamada gratis de 20 minutos<\/h1>/ : /<h1[^>]*>Book your free 20-minute intro<\/h1>/);
+      assert.ok(h.includes(`<link rel="canonical" href="https://josediaztutoring.com${BOOK[lang]}">`));
+      assert.ok(h.includes('<link rel="alternate" hreflang="en" href="https://josediaztutoring.com/book/">'));
+      assert.ok(h.includes('<link rel="alternate" hreflang="es" href="https://josediaztutoring.com/es/reservar/">'));
+      assert.ok(h.includes('<a href="/book/" hreflang="en"') && h.includes('<a href="/es/reservar/" hreflang="es"'));
+    }
+  });
+  await check("booking pages: same section ids in both languages; fallback links to the form and WhatsApp", () => {
+    const ids = (h) => [...h.matchAll(/<section[^>]*\sid="([^"]+)"/g)].map((m) => m[1]).join();
+    assert.equal(ids(bookHtml.en), "book,scheduler");
+    assert.equal(ids(bookHtml.es), ids(bookHtml.en));
+    assert.match(bookHtml.en, /<strong>Prefer to message first\?<\/strong> <a href="\/#contact">/);
+    assert.match(bookHtml.es, /<strong>¿Prefieres escribirme primero\?<\/strong> <a href="\/es\/#contact">/);
+    for (const h of Object.values(bookHtml)) assert.match(h, /id="message-first"[\s\S]*?class="wa-link" href="https:\/\/wa\.me\/\d+"/);
+  });
+  await check("booking pages: Cal.com inline embed (light, brand color, utm_* only, generate_lead on bookingSuccessfulV2)", () => {
+    for (const h of Object.values(bookHtml)) {
+      assert.ok(h.includes('<div id="cal-inline" class="cal-inline"></div>'));
+      assert.ok(h.includes('"https://app.cal.com"') && h.includes('/embed/embed.js'));
+      assert.ok(h.includes('var LINK = LANG === "es" ? "josediaztutoring/20min-es" : "josediaztutoring/20min";'));
+      assert.match(h, /"cal-brand": "#1C4C9E"/);
+      assert.match(h, /theme: "light"/);
+      assert.match(h, /\^utm_/);
+      assert.match(h, /action: "bookingSuccessfulV2"[\s\S]*?track\("generate_lead", \{ contact_method: "cal_booking" \}\)/);
+      assert.doesNotMatch(h, /forwardQueryParams/);
+    }
+  });
+  await check("booking pages: each language links its own Cal.com event (fallback link too)", () => {
+    assert.match(bookHtml.en, /const LANG = "en";/);
+    assert.match(bookHtml.es, /const LANG = "es";/);
+    assert.ok(bookHtml.en.includes('href="https://cal.com/josediaztutoring/20min" target'));
+    assert.ok(bookHtml.es.includes('href="https://cal.com/josediaztutoring/20min-es" target'));
+  });
+  await check("every booking CTA points to the booking page (header, mobile bar, hero, exam pages, resource bar)", async () => {
+    for (const [p, to] of [["/", BOOK.en], ["/es/", BOOK.es], ["/exams/", BOOK.en], ["/es/examenes/", BOOK.es], ["/exams/algebra-1-eoc/", BOOK.en], ["/es/examenes/eoc-algebra-1/", BOOK.es], ["/privacy/", BOOK.en], ["/es/privacidad/", BOOK.es], [BOOK.en, BOOK.en], [BOOK.es, BOOK.es]]) {
+      const h = await (await get(p)).text();
+      assert.ok(h.includes(`<a class="btn btn-primary head-cta bar-cta" href="${to}">`), `${p}: mobile bar`);
+      assert.match(h, new RegExp(`<a class="btn btn-primary head-cta" href="${to}"`), `${p}: header`);
+      assert.doesNotMatch(h, /href="(\/es)?\/?#contact"[^>]*>(<span[^>]*>)?(Book a free|Agenda una llamada|Llamada gratis)/, `${p}: a booking CTA still points to the form`);
+    }
+    for (const lang of ["en", "es"]) {
+      const h = await (await get(lang === "es" ? "/es/" : "/")).text();
+      assert.ok(h.includes(`<a class="btn btn-primary" href="${BOOK[lang]}" data-i18n="ctaLong">`), `hero ${lang}`);
+      assert.ok(h.includes('<form'), "the home-page form stays");
+    }
+  });
+  await check("privacy policy lists Cal.com in both languages", async () => {
+    assert.match(await (await get("/privacy/")).text(), /<tr><td>Cal\.com<\/td><td>Scheduling[^<]*<\/td><td>Your name, email address and your answers to the booking questions<\/td><\/tr>/);
+    assert.match(await (await get("/es/privacidad/")).text(), /<tr><td>Cal\.com<\/td><td>Agenda[^<]*<\/td><td>Tu nombre, tu correo y tus respuestas a las preguntas de la reserva<\/td><\/tr>/);
+  });
+
   console.log("exam calendar (site-exams secret, filled by the server)");
   const fsx = require("node:fs");
   const examCal = require("../exam-calendar.js");
@@ -721,13 +788,13 @@ srv.listen(0, async () => {
       }
     }
   });
-  await check("sitemap lists all 12 pages, sitemap namespace only (hreflang lives in each page's <head>)", async () => {
+  await check("sitemap lists all 14 pages, sitemap namespace only (hreflang lives in each page's <head>)", async () => {
     const xml = await (await get("/sitemap.xml")).text();
-    assert.equal((xml.match(/<loc>/g) || []).length, 12);
+    assert.equal((xml.match(/<loc>/g) || []).length, 14);
     assert.doesNotMatch(xml, /xhtml|hreflang|changefreq|priority/);
     assert.deepEqual([...new Set(xml.match(/<\/?[a-z]+/g).map((t) => t.replace(/[<\/]/g, "")))].sort(), ["lastmod", "loc", "url", "urlset"]);
     assert.ok(xml.includes("<loc>https://josediaztutoring.com/es/terminos/</loc>"));
-    for (const p of ["/exams/", "/es/examenes/", "/exams/algebra-1-eoc/", "/es/examenes/eoc-algebra-1/"])
+    for (const p of ["/exams/", "/es/examenes/", "/exams/algebra-1-eoc/", "/es/examenes/eoc-algebra-1/", "/book/", "/es/reservar/"])
       assert.match(xml, new RegExp(`<loc>https://josediaztutoring.com${p}</loc>\\n    <lastmod>\\d{4}-\\d\\d-\\d\\d</lastmod>`), p);
   });
   await check("robots.txt disallows /api/ and keeps the sitemap", async () => {

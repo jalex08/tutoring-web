@@ -232,6 +232,7 @@ module.exports = {
           <tr><td>Google Cloud (App Engine)</td><td>Aloja el sitio</td><td>Datos técnicos de cada visita</td></tr>
           <tr><td>Google Analytics (mediante Google Tag Manager)</td><td>Cuenta las visitas</td><td>Un identificador de cookie, las páginas y los clics en botones, y una ubicación aproximada. Nunca tu nombre, correo ni teléfono.</td></tr>
           <tr><td>Google Fonts</td><td>Carga las fuentes del sitio</td><td>Tu dirección IP y tu tipo de navegador</td></tr>
+          <tr><td>Cal.com</td><td>Agenda, si reservas tu llamada de introducción en línea</td><td>Tu nombre, tu correo y tus respuestas a las preguntas de la reserva</td></tr>
           <tr><td>SMTP2GO</td><td>Entrega mis correos</td><td>Tu nombre, tu correo y el mensaje</td></tr>
           <tr><td>Amazon Web Services</td><td>Hace funcionar mi servidor de correo</td><td>Los correos que me envías</td></tr>
           <tr><td>WhatsApp (Meta)</td><td>Mensajería, solo si me escribes por ahí</td><td>Lo que envíes, según los términos de WhatsApp</td></tr>
@@ -557,7 +558,16 @@ module.exports = {
   egHelpOne: `
         <h3>Clases individuales</h3>
         <p>Una primera sesión para encontrar lo que falta y luego un plan hasta el día del examen. En línea o en persona en Broward y Miami-Dade.</p>
-        <div class="acts"><a class="btn btn-ghost" href="/es/#contact">Agenda una llamada gratis de 20 minutos</a></div>
+        <div class="acts"><a class="btn btn-ghost" href="/es/reservar/">Agenda una llamada gratis de 20 minutos</a></div>
       `,
   egSrcH: "Fuentes, revisadas el",
+
+  // --- booking page (/es/reservar/, from pages/book.html) ---
+  bkTitle: "Agenda tu llamada gratis de 20 minutos | Jose Diaz Tutoring",
+  bkDesc: "Elige un horario para una llamada gratis de 20 minutos sobre tutorías de matemáticas, física o ingeniería. En línea, en español o inglés.",
+  bkH1: "Agenda tu llamada gratis de 20 minutos",
+  bkLede: "Elige el horario que mejor te quede. Hablamos del curso, de dónde estás atascado y de cómo te ayudaría. Sin costo ni compromiso.",
+  bkCalH: "Elige un día y una hora",
+  bkFallback: '¿No cargó el calendario? <a href="https://cal.com/josediaztutoring/20min-es" target="_blank" rel="noopener">Ábrelo en Cal.com</a>.',
+  bkAlt: '<strong>¿Prefieres escribirme primero?</strong> <a href="/#contact">Envíame un mensaje</a> o escríbeme por <a class="wa-link" href="{{cfg:wa}}" target="_blank" rel="noopener" data-loc="book">WhatsApp</a>.',
 };

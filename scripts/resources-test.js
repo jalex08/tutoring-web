@@ -491,7 +491,7 @@ function sample(over = {}) {
     assert.equal(lds[0].learningResourceType, "interactive tool");
     assert.match(h, /class="katex"/); // math rendered on the server
     assert.match(h, /href="\/resources\/katex\/[\d.]+\/katex\.min\.css"/);
-    assert.match(h, /href="\/#contact" data-loc="bar"/);
+    assert.match(h, /href="\/book\/" data-loc="bar"/);
     assert.match(h, /resource_book_click/);
   }));
   await check("Spanish page: lang, ?lang=es on the frame, Spanish CTA, link to the English twin", quiet(async () => {
@@ -499,7 +499,7 @@ function sample(over = {}) {
     assert.match(h, /<html lang="es">/);
     assert.match(h, /"\/frame\/abcde12345\/v2\?lang=es"/);
     assert.match(h, /herramienta interactiva gratis \| Jose Diaz Tutoring/);
-    assert.match(h, /href="\/es\/#contact" data-loc="bar"/);
+    assert.match(h, /href="\/es\/reservar\/" data-loc="bar"/);
     assert.match(h, /<a href="\/resources\/unit-circle\/" hreflang="en"/);
   }));
   await check("old slug 301 (query kept), no slash 301, unpublished 410, draft / private / unknown 404", quiet(async () => {
@@ -662,7 +662,7 @@ function sample(over = {}) {
     const x = await (await get("/sitemap.xml")).text();
     for (const p of ["/resources/", "/es/recursos/", "/resources/unit-circle/", "/es/recursos/circulo-unitario/", "/resources/newer/", "/privacy/"]) assert.ok(x.includes(`<loc>https://josediaztutoring.com${p}</loc>`), p);
     for (const p of ["gone-tool", "draft-tool", "private-tool", "old-unit-circle"]) assert.ok(!x.includes(p), p);
-    assert.equal((x.match(/<loc>/g) || []).length, 12 + 2 + 4);
+    assert.equal((x.match(/<loc>/g) || []).length, 14 + 2 + 4);
     assert.doesNotMatch(x, /xhtml|hreflang/);
   }));
   await check("publishing is picked up after the 15-second cache, without a restart", quiet(async () => {

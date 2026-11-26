@@ -19,8 +19,8 @@
  *
  * /admin and /admin/: 302 to the admin service (env ADMIN_URL), which asks for Google sign-in.
  *
- * Language preference: / and /exams/ send a visitor with the cookie lang=es (saved by the EN/ES
- * toggle) to /es/ and /es/examenes/ (302). See LANG_ENTRY below.
+ * Language preference: /, /exams/, /resources/ and /book/ send a visitor with the cookie lang=es (saved by the EN/ES
+ * toggle) to their Spanish twins (302). See LANG_ENTRY below.
  *
  * Exam calendar: /exams/, /exams/algebra-1-eoc/, /es/examenes/, /es/examenes/eoc-algebra-1/ are
  * built templates (www/exams.html, ...) filled here at request time from the JSON secret
@@ -598,11 +598,14 @@ for (const p of Object.keys(EXAM_PAGES).map((u) => u.slice(0, -1))) {
 }
 // resources library: /resources, /resources.html, /resources/index.html -> /resources/ (and /es/recursos)
 for (const p of ["/resources", "/es/recursos"]) REDIRECTS[p] = REDIRECTS[`${p}.html`] = REDIRECTS[`${p}/index.html`] = `${p}/`;
+// booking page: /book, /book.html, /book/index.html -> /book/ (and /es/reservar)
+for (const p of ["/book", "/es/reservar"]) REDIRECTS[p] = REDIRECTS[`${p}.html`] = REDIRECTS[`${p}/index.html`] = `${p}/`;
 let page404 = null;
 
-// legal pages (built files, no filling). Served here, not as static files, so they can re-send the lang cookie.
+// legal pages and the booking page (built files, no filling). Served here, not as static files, so they can
+// re-send the lang cookie. The booking page embeds Cal.com's scheduler (pages/book.js); no CSP is sent.
 const LEGAL_PAGES = {};
-for (const p of ["privacy", "terms", "accessibility", "es/privacidad", "es/terminos", "es/accesibilidad"]) LEGAL_PAGES[`/${p}/`] = `www/${p}.html`;
+for (const p of ["privacy", "terms", "accessibility", "es/privacidad", "es/terminos", "es/accesibilidad", "book", "es/reservar"]) LEGAL_PAGES[`/${p}/`] = `www/${p}.html`;
 function legalPage(req, res, pathname) {
   if (!pageFiles.has(pathname)) pageFiles.set(pathname, fs.readFileSync(path.join(__dirname, LEGAL_PAGES[pathname])));
   res.writeHead(200, { ...SECURITY_HEADERS, "Content-Type": "text/html; charset=utf-8", ...htmlHeaders(req, pathname) });
@@ -615,7 +618,7 @@ function legalPage(req, res, pathname) {
 // missing cookie, not the Spanish pages (so there's no loop), not the guides or legal pages.
 // Accept-Language and IP are never used. These two pages depend on the cookie, so no shared cache
 // may keep them (private + Vary: Cookie), and the redirect itself is never stored.
-const LANG_ENTRY = { "/": "/es/", "/exams/": "/es/examenes/", "/resources/": "/es/recursos/" };
+const LANG_ENTRY = { "/": "/es/", "/exams/": "/es/examenes/", "/resources/": "/es/recursos/", "/book/": "/es/reservar/" };
 const LANG_ENTRY_CACHE = { "Cache-Control": "private, no-cache", Vary: "Cookie" };
 // Every HTML page re-sends a valid lang cookie from the server (Safari deletes cookies set by
 // JavaScript after 7 days, not server-set ones). Never created here: no cookie in, none out. A page

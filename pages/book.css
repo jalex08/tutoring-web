@@ -1,0 +1,23 @@
+/* Booking page (/book/, /es/reservar/). scripts/build.js inlines this after the shared site CSS.
+   Pad band with the H1 and lede, kept short so the scheduler starts in the first screen on desktop. */
+.book-band{border-bottom:1px solid var(--grid);padding:28px 0 26px}
+.book-band h1{font-size:clamp(2rem,3.6vw,2.75rem);max-width:20em}
+.book-band .lede{color:var(--graphite);max-width:62ch;margin-top:10px;font-size:1.1rem}
+.book-cal{padding:22px 0 56px}
+/* min-height reserves the scheduler's space so the page doesn't jump while Cal.com loads */
+.cal-box{position:relative;background:#fff;border:1px solid var(--rule);border-radius:8px;
+  box-shadow:0 1px 2px rgba(35,42,42,.04),0 6px 18px rgba(35,42,42,.06);overflow:hidden}
+.cal-inline{width:100%;min-height:560px;overflow:auto}
+.cal-inline.is-ready{min-height:0}
+.cal-fallback{display:none;padding:18px 20px;font-size:1rem}
+.cal-box.is-failed .cal-fallback,.cal-box.no-js .cal-fallback{display:block}
+.cal-box.is-failed .cal-inline{min-height:0}
+.book-alt{margin-top:18px;font-size:1.05rem}
+@media (max-width:700px){
+  .book-band{padding:20px 0 18px}
+  .book-band .lede{font-size:1.02rem}
+  .book-cal .wrap{padding:0 8px}
+  .book-cal{padding:12px 0 40px}
+  .book-alt{padding:0 8px}
+  .cal-inline{min-height:620px}
+}

@@ -1,0 +1,27 @@
+<!--
+  Online booking (/book/): English source. Spanish text is in i18n/es.js (keys bk*).
+  `npm run build` turns this into www/book.html and www/es/reservar.html (/es/reservar/), with the
+  site's header, footer, CSS, analytics, pages/book.css and pages/book.js (the Cal.com inline embed).
+  Section ids are the same in both languages, so the EN/ES switch keeps your place.
+  {{cfg:wa}} = the WhatsApp link from CONFIG in www/index.html.
+-->
+<meta name="title" content="Book a free 20-minute intro call | Jose Diaz Tutoring" data-i18n-attr="content:bkTitle">
+<meta name="description" content="Pick a time for a free 20-minute intro call about math, physics or engineering tutoring. Online, in English or Spanish." data-i18n-attr="content:bkDesc">
+
+<section class="pad band book-band" id="book">
+  <div class="wrap">
+    <h1 data-i18n="bkH1">Book your free 20-minute intro</h1>
+    <p class="lede" data-i18n="bkLede">Pick a time that suits you. We'll talk about the course, where you're stuck and how I'd help. No cost, no commitment.</p>
+  </div>
+</section>
+
+<section class="book-cal" id="scheduler" aria-labelledby="scheduler-h">
+  <div class="wrap">
+    <h2 class="sr-only" id="scheduler-h" data-i18n="bkCalH">Choose a day and time</h2>
+    <div class="cal-box">
+      <div id="cal-inline" class="cal-inline"></div>
+      <p class="cal-fallback" id="cal-fallback" data-i18n="bkFallback">The calendar didn't load? <a href="https://cal.com/josediaztutoring/20min" target="_blank" rel="noopener">Open it on Cal.com</a>.</p>
+    </div>
+    <p class="book-alt" id="message-first" data-i18n="bkAlt"><strong>Prefer to message first?</strong> <a href="/#contact">Send me a message</a> or write to me on <a class="wa-link" href="{{cfg:wa}}" target="_blank" rel="noopener" data-loc="book">WhatsApp</a>.</p>
+  </div>
+</section>
