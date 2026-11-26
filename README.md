@@ -411,8 +411,8 @@ Cal.com embed needs `https://app.cal.com` in `script-src` and `frame-src`.
 
 ## Online booking (Cal.com)
 
-`/book/` and `/es/reservar/` show the Cal.com event `josediaztutoring/20min` with Cal's
-official inline embed. Every "Book a free intro" / "Llamada gratis" CTA (header, mobile
+`/book/` shows the Cal.com event `josediaztutoring/20min` (English) and `/es/reservar/`
+shows `josediaztutoring/20min-es` (set to Spanish in Cal.com), with Cal's official inline embed. Every "Book a free intro" / "Llamada gratis" CTA (header, mobile
 bar, hero, exam pages, resource pages) links there; the home-page form (`#contact`) is
 unchanged and the page links back to it and to WhatsApp.
 
@@ -423,10 +423,11 @@ unchanged and the page links back to it and to WhatsApp.
 - `pages/book.js`: light theme, `cal-brand` #1C4C9E; `utm_*` from the page URL are
   passed to the booking (nothing else from the URL); `bookingSuccessfulV2` pushes
   `generate_lead` with `contact_method: "cal_booking"`, once per booking, no personal data.
-- Language: Cal.com documents no way to set the scheduler's language in an embed. It
-  follows the visitor's browser language, so `/es/reservar/` can show it in English.
+- Language: Cal.com documents no way to set an embed's language, so each page embeds its own
+  event: the Spanish one is set to Spanish in Cal.com (calendar, title, booking questions).
 - Change the event (link, length, questions, availability) in Cal.com; the site needs no
-  change unless the link `josediaztutoring/20min` changes (`LINK` in `pages/book.js`).
+  change unless a link changes (`LINK` in `pages/book.js`, and the fallback link in
+  `pages/book.html` / `bkFallback` in `i18n/es.js`).
 
 ## Google Cloud
 

@@ -568,6 +568,6 @@ module.exports = {
   bkH1: "Agenda tu llamada gratis de 20 minutos",
   bkLede: "Elige el horario que mejor te quede. Hablamos del curso, de dónde estás atascado y de cómo te ayudaría. Sin costo ni compromiso.",
   bkCalH: "Elige un día y una hora",
-  bkFallback: '¿No cargó el calendario? <a href="https://cal.com/josediaztutoring/20min" target="_blank" rel="noopener">Ábrelo en Cal.com</a>.',
+  bkFallback: '¿No cargó el calendario? <a href="https://cal.com/josediaztutoring/20min-es" target="_blank" rel="noopener">Ábrelo en Cal.com</a>.',
   bkAlt: '<strong>¿Prefieres escribirme primero?</strong> <a href="/#contact">Envíame un mensaje</a> o escríbeme por <a class="wa-link" href="{{cfg:wa}}" target="_blank" rel="noopener" data-loc="book">WhatsApp</a>.',
 };

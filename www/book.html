@@ -554,12 +554,15 @@ document.addEventListener("click", e => {
      (https://cal.com/help/embedding/utm-tracking-embed). Only utm_* keys: nothing else from the URL is forwarded.
    - bookingSuccessfulV2 (https://cal.com/help/embedding/embed-events) -> dataLayer generate_lead with
      contact_method "cal_booking". No personal data: the event's own fields are never pushed.
-   - Language: Cal.com documents no way to set the scheduler's language in an embed, so it's the same on /es/.
+   - Language: each page embeds its own event. /book/ -> josediaztutoring/20min (English);
+     /es/reservar/ -> josediaztutoring/20min-es, which is set to Spanish in Cal.com (its own title,
+     description and booking questions). Cal.com has no documented language option for embeds.
    LANG and track() come from the page's analytics block (scripts/build.js). */
 (function () {
   var box = document.querySelector(".cal-box"), el = document.getElementById("cal-inline");
   if (!box || !el) return;
-  var NS = "20min", LINK = "josediaztutoring/20min", ORIGIN = "https://app.cal.com";
+  var NS = "20min", ORIGIN = "https://app.cal.com";
+  var LINK = LANG === "es" ? "josediaztutoring/20min-es" : "josediaztutoring/20min";
   var BRAND = { "cal-brand": "#1C4C9E", "cal-brand-emphasis": "#143A7A", "cal-brand-text": "#FFFFFF" };
   var failed = function () { box.classList.add("is-failed"); };
   try {

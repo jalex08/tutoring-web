@@ -338,7 +338,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <h2 class="sr-only" id="scheduler-h" data-i18n="bkCalH">Elige un día y una hora</h2>
     <div class="cal-box">
       <div id="cal-inline" class="cal-inline"></div>
-      <p class="cal-fallback" id="cal-fallback" data-i18n="bkFallback">¿No cargó el calendario? <a href="https://cal.com/josediaztutoring/20min" target="_blank" rel="noopener">Ábrelo en Cal.com</a>.</p>
+      <p class="cal-fallback" id="cal-fallback" data-i18n="bkFallback">¿No cargó el calendario? <a href="https://cal.com/josediaztutoring/20min-es" target="_blank" rel="noopener">Ábrelo en Cal.com</a>.</p>
     </div>
     <p class="book-alt" id="message-first" data-i18n="bkAlt"><strong>¿Prefieres escribirme primero?</strong> <a href="/es/#contact">Envíame un mensaje</a> o escríbeme por <a class="wa-link" href="https://wa.me/17868329107" target="_blank" rel="noopener" data-loc="book">WhatsApp</a>.</p>
   </div>
@@ -554,12 +554,15 @@ document.addEventListener("click", e => {
      (https://cal.com/help/embedding/utm-tracking-embed). Only utm_* keys: nothing else from the URL is forwarded.
    - bookingSuccessfulV2 (https://cal.com/help/embedding/embed-events) -> dataLayer generate_lead with
      contact_method "cal_booking". No personal data: the event's own fields are never pushed.
-   - Language: Cal.com documents no way to set the scheduler's language in an embed, so it's the same on /es/.
+   - Language: each page embeds its own event. /book/ -> josediaztutoring/20min (English);
+     /es/reservar/ -> josediaztutoring/20min-es, which is set to Spanish in Cal.com (its own title,
+     description and booking questions). Cal.com has no documented language option for embeds.
    LANG and track() come from the page's analytics block (scripts/build.js). */
 (function () {
   var box = document.querySelector(".cal-box"), el = document.getElementById("cal-inline");
   if (!box || !el) return;
-  var NS = "20min", LINK = "josediaztutoring/20min", ORIGIN = "https://app.cal.com";
+  var NS = "20min", ORIGIN = "https://app.cal.com";
+  var LINK = LANG === "es" ? "josediaztutoring/20min-es" : "josediaztutoring/20min";
   var BRAND = { "cal-brand": "#1C4C9E", "cal-brand-emphasis": "#143A7A", "cal-brand-text": "#FFFFFF" };
   var failed = function () { box.classList.add("is-failed"); };
   try {

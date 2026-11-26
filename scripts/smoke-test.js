@@ -518,13 +518,19 @@ srv.listen(0, async () => {
     for (const h of Object.values(bookHtml)) {
       assert.ok(h.includes('<div id="cal-inline" class="cal-inline"></div>'));
       assert.ok(h.includes('"https://app.cal.com"') && h.includes('/embed/embed.js'));
-      assert.ok(h.includes('LINK = "josediaztutoring/20min"'));
+      assert.ok(h.includes('var LINK = LANG === "es" ? "josediaztutoring/20min-es" : "josediaztutoring/20min";'));
       assert.match(h, /"cal-brand": "#1C4C9E"/);
       assert.match(h, /theme: "light"/);
       assert.match(h, /\^utm_/);
       assert.match(h, /action: "bookingSuccessfulV2"[\s\S]*?track\("generate_lead", \{ contact_method: "cal_booking" \}\)/);
       assert.doesNotMatch(h, /forwardQueryParams/);
     }
+  });
+  await check("booking pages: each language links its own Cal.com event (fallback link too)", () => {
+    assert.match(bookHtml.en, /const LANG = "en";/);
+    assert.match(bookHtml.es, /const LANG = "es";/);
+    assert.ok(bookHtml.en.includes('href="https://cal.com/josediaztutoring/20min" target'));
+    assert.ok(bookHtml.es.includes('href="https://cal.com/josediaztutoring/20min-es" target'));
   });
   await check("every booking CTA points to the booking page (header, mobile bar, hero, exam pages, resource bar)", async () => {
     for (const [p, to] of [["/", BOOK.en], ["/es/", BOOK.es], ["/exams/", BOOK.en], ["/es/examenes/", BOOK.es], ["/exams/algebra-1-eoc/", BOOK.en], ["/es/examenes/eoc-algebra-1/", BOOK.es], ["/privacy/", BOOK.en], ["/es/privacidad/", BOOK.es], [BOOK.en, BOOK.en], [BOOK.es, BOOK.es]]) {
